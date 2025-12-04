@@ -44,13 +44,15 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
             <View style={styles.brandPill}>
               <Text style={styles.brandPillText}>Skillsy</Text>
             </View>
-            <Text style={styles.title}>Welkom terug</Text>
-            <Text style={styles.subtitle}>
-              Log in om verder te bouwen aan je skills en voortgang.
-            </Text>
           </View>
 
           <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Log in</Text>
+              <Text style={styles.cardSubtitle}>
+                Log in om verder te bouwen aan je skills en voortgang.
+              </Text>
+            </View>
             <TouchableOpacity
               activeOpacity={0.9}
               style={styles.socialButton}
@@ -59,7 +61,7 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               }}
             >
               <View style={styles.socialButtonIcon} />
-              <Text style={styles.socialButtonText}>log in with Google</Text>
+              <Text style={styles.socialButtonText}>log in met Google</Text>
             </TouchableOpacity>
 
             <View style={styles.dividerRow}>
