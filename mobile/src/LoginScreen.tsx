@@ -22,6 +22,7 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleLogin = () => {
     // TODO: wire up with backend auth flow
@@ -50,6 +51,23 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
           </View>
 
           <View style={styles.card}>
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={styles.socialButton}
+              onPress={() => {
+                
+              }}
+            >
+              <View style={styles.socialButtonIcon} />
+              <Text style={styles.socialButtonText}>log in with Google</Text>
+            </TouchableOpacity>
+
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>Of</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
             <View style={styles.fieldGroup}>
               <View style={styles.labelRow}>
                 <Text style={styles.label}>E-mailadres</Text>
@@ -74,9 +92,6 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
             <View style={styles.fieldGroup}>
               <View style={styles.labelRow}>
                 <Text style={styles.label}>Wachtwoord</Text>
-                <TouchableOpacity>
-                  <Text style={styles.link}>Wachtwoord vergeten?</Text>
-                </TouchableOpacity>
               </View>
               <TextInput
                 style={[
@@ -91,6 +106,25 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                 onFocus={() => setFocusedField('password')}
                 onBlur={() => setFocusedField(null)}
               />
+            </View>
+
+            <View style={styles.inlineRow}>
+              <TouchableOpacity
+                style={styles.checkboxRow}
+                activeOpacity={0.8}
+                onPress={() => setRememberMe((prev) => !prev)}
+              >
+                <View
+                  style={[
+                    styles.checkboxBox,
+                    rememberMe && { backgroundColor: authColors.accent },
+                  ]}
+                />
+                <Text style={styles.checkboxLabel}>onthoud me</Text>
+              </TouchableOpacity>
+              <TouchableOpacity>
+                <Text style={styles.link}>wachtwoord vergeten</Text>
+              </TouchableOpacity>
             </View>
 
             <TouchableOpacity

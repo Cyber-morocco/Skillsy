@@ -77,6 +77,43 @@ export const authStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.25)',
   },
+  socialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    paddingVertical: Platform.OS === 'ios' ? 14 : 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#F9FAFB',
+    marginBottom: 20,
+  },
+  socialButtonIcon: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    backgroundColor: '#EA4335', 
+    marginRight: 10,
+  },
+  socialButtonText: {
+    color: '#111827',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(148, 163, 184, 0.45)',
+  },
+  dividerText: {
+    marginHorizontal: 12,
+    color: TEXT_SECONDARY,
+    fontSize: 13,
+  },
   fieldGroup: {
     marginBottom: 16,
   },
@@ -113,6 +150,29 @@ export const authStyles = StyleSheet.create({
     marginTop: 8,
   },
   helperText: {
+    color: TEXT_SECONDARY,
+    fontSize: 13,
+  },
+  inlineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  checkboxBox: {
+    width: 16,
+    height: 16,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.9)',
+    marginRight: 8,
+    backgroundColor: 'transparent',
+  },
+  checkboxLabel: {
     color: TEXT_SECONDARY,
     fontSize: 13,
   },
