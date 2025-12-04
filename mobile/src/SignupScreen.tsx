@@ -45,13 +45,33 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
             <View style={styles.brandPill}>
               <Text style={styles.brandPillText}>Skillsy</Text>
             </View>
-            <Text style={styles.title}>Account aanmaken</Text>
-            <Text style={styles.subtitle}>
-              Creëer je Skillsy-profiel en volg je leerreis met vertrouwen.
-            </Text>
           </View>
 
           <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Sign up</Text>
+              <Text style={styles.cardSubtitle}>
+                sign up om onze app te verkennen
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={styles.socialButton}
+              onPress={() => {
+                // TODO: hook up Google sign-up
+              }}
+            >
+              <View style={styles.socialButtonIcon} />
+              <Text style={styles.socialButtonText}>Sign up met Google</Text>
+            </TouchableOpacity>
+
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>Of</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
             <View style={styles.fieldGroup}>
               <View style={styles.labelRow}>
                 <Text style={styles.label}>Naam</Text>
