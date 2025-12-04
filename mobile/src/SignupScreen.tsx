@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -62,7 +63,10 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                 // TODO: hook up Google sign-up
               }}
             >
-              <View style={styles.socialButtonIcon} />
+              <Image
+                source={require('../../assets/google-logo.png')}
+                style={styles.socialButtonIcon}
+              />
               <Text style={styles.socialButtonText}>Sign up met Google</Text>
             </TouchableOpacity>
 

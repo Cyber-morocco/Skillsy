@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -60,7 +61,10 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                 
               }}
             >
-              <View style={styles.socialButtonIcon} />
+              <Image
+                source={require('../../assets/google-logo.png')}
+                style={styles.socialButtonIcon}
+              />
               <Text style={styles.socialButtonText}>log in met Google</Text>
             </TouchableOpacity>
 

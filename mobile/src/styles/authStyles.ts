@@ -42,7 +42,7 @@ export const authStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   headingContainer: {
-    marginBottom: 32,
+  marginBottom: 32,
   },
   brandPill: {
     alignSelf: 'flex-start',
@@ -69,6 +69,20 @@ export const authStyles = StyleSheet.create({
     fontSize: 16,
     color: TEXT_SECONDARY,
     lineHeight: 22,
+  },
+  cardHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  cardTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: ACCENT,
+    marginBottom: 6,
+  },
+  cardSubtitle: {
+    fontSize: 14,
+    color: TEXT_SECONDARY,
   },
   card: {
     backgroundColor: CARD,
