@@ -62,7 +62,7 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               }}
             >
               <Image
-                source={require('../../assets/google-logo.png')}
+                source={require('../../../assets/google-logo.png')}
                 style={styles.socialButtonIcon}
               />
               <Text style={styles.socialButtonText}>log in met Google</Text>

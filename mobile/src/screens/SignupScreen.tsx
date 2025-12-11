@@ -64,7 +64,7 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               }}
             >
               <Image
-                source={require('../../assets/google-logo.png')}
+                source={require('../../../assets/google-logo.png')}
                 style={styles.socialButtonIcon}
               />
               <Text style={styles.socialButtonText}>Sign up met Google</Text>
