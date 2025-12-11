@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  SafeAreaView,
+  SafeAreaView  ,
   StatusBar,
   StyleSheet,
   Text,
@@ -27,12 +27,7 @@ const ExploreProfileScreen: React.FC = () => {
             <TouchableOpacity
               activeOpacity={0.8}
               style={styles.roundIconButton}
-            >
-              <Text style={styles.roundIconText}>⇪</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={styles.roundIconButton}
+            
             >
               <Text style={styles.roundIconText}>♡</Text>
             </TouchableOpacity>
@@ -61,6 +56,25 @@ const ExploreProfileScreen: React.FC = () => {
             <Text style={styles.ratingValue}>4.8</Text>
             <Text style={styles.ratingReviews}>(18 reviews)</Text>
           </View>
+        </View>
+
+        {/* Afspraakknop + bericht */}
+        <View style={styles.actionRow}>
+          <TouchableOpacity activeOpacity={0.9} style={styles.primaryButton}>
+            <Text style={styles.primaryButtonText}>Afspraak maken</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity activeOpacity={0.9} style={styles.ghostButton}>
+            <Text style={styles.ghostButtonText}>Bericht</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Over Thomas */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Over Thomas</Text>
+          <Text style={styles.cardBody}>
+            Gepassioneerd leraar met jarenlange ervaring.
+          </Text>
         </View>
       </View>
     </SafeAreaView>
@@ -173,6 +187,64 @@ const styles = StyleSheet.create({
   ratingReviews: {
     fontSize: 12,
     color: '#6b6c80',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 20,
+  },
+  primaryButton: {
+    flex: 1,
+    backgroundColor: '#7c2cff',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  primaryButtonText: {
+    color: '#ffffff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  ghostButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#d7d7e3',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+  },
+  ghostButtonText: {
+    color: '#4a4b63',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 14,
+    marginTop: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 1,
+  },
+  cardTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#2f3042',
+    marginBottom: 6,
+  },
+  cardBody: {
+    fontSize: 13,
+    color: '#666778',
+    lineHeight: 18,
   },
 });
 
