@@ -86,17 +86,37 @@ const ExploreProfileScreen: React.FC = () => {
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={() => setActiveTab('vaardigheden')}
-            style={styles.tabButton}
+            style={[
+              styles.tabButton,
+              activeTab === 'vaardigheden' && styles.tabButtonActive,
+            ]}
           >
-            <Text style={styles.tabText}>Vaardigheden</Text>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'vaardigheden' && styles.tabTextActive,
+              ]}
+            >
+              Vaardigheden
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             activeOpacity={0.9}
             onPress={() => setActiveTab('reviews')}
-            style={styles.tabButton}
+            style={[
+              styles.tabButton,
+              activeTab === 'reviews' && styles.tabButtonActive,
+            ]}
           >
-            <Text style={styles.tabText}>Reviews</Text>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'reviews' && styles.tabTextActive,
+              ]}
+            >
+              Reviews
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -291,10 +311,18 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: 'center',
   },
+  tabButtonActive: {
+    backgroundColor: '#e8e1ff',
+    borderWidth: 1,
+    borderColor: '#7c2cff',
+  },
   tabText: {
     fontSize: 13,
     fontWeight: '600',
     color: '#4a4b63',
+  },
+  tabTextActive: {
+    color: '#7c2cff',
   },
   tabContent: {
     marginTop: 12,
