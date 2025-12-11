@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 
 const ExploreProfileScreen: React.FC = () => {
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
@@ -75,6 +76,17 @@ const ExploreProfileScreen: React.FC = () => {
           <Text style={styles.cardBody}>
             Gepassioneerd leraar met jarenlange ervaring.
           </Text>
+        </View>
+
+        {/* Tab: vaardigheden */}
+        <View style={styles.tabRow}>
+          <TouchableOpacity activeOpacity={0.9} style={styles.tabButton}>
+            <Text style={styles.tabText}>Vaardigheden</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.tabContent}>
+          <Text style={styles.tabContentText}>Hier komen de vaardigheden.</Text>
         </View>
       </View>
     </SafeAreaView>
@@ -245,6 +257,38 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#666778',
     lineHeight: 18,
+  },
+  tabRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 18,
+  },
+  tabButton: {
+    flex: 1,
+    borderRadius: 12,
+    backgroundColor: '#f0f0f5',
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#4a4b63',
+  },
+  tabContent: {
+    marginTop: 12,
+    padding: 14,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  tabContentText: {
+    fontSize: 13,
+    color: '#4a4b63',
   },
 });
 

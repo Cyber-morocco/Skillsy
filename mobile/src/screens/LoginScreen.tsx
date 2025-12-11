@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { authColors, authStyles as styles } from './styles/authStyles';
+import { authColors, authStyles as styles } from '../styles/authStyles';
 
 type AuthScreenProps = {
   navigation?: {
