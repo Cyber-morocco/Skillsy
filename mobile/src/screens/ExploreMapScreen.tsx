@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image, SafeAreaView, Dimensions } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -17,14 +17,30 @@ interface Talent {
 
 const DISTANCE_OPTIONS = [1, 2, 5, 10, 15];
 
+// Calculate distance between two coordinates in km
+const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+  const R = 6371; // Earth's radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 export default function ExploreMapScreen() {
   const [searchLocation, setSearchLocation] = useState('Amsterdam');
   const [selectedDistance, setSelectedDistance] = useState(5);
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
+  const webViewRef = useRef<WebView>(null);
   
   const userLocation = { lat: 52.3676, lng: 4.9041 }; // Amsterdam center
   
-  const talents: Talent[] = [
+  const allTalents: Talent[] = [
     { 
       id: 1, 
       name: 'John', 
@@ -62,6 +78,28 @@ export default function ExploreMapScreen() {
       skills: [{ name: 'Leadership' }, { name: 'Analytics' }] 
     },
   ];
+
+  // Filter talents based on selected distance
+  const filteredTalents = allTalents.filter((talent) => {
+    const distance = calculateDistance(
+      userLocation.lat,
+      userLocation.lng,
+      talent.lat,
+      talent.lng
+    );
+    return distance <= selectedDistance;
+  });
+
+  // Update map when filtered talents or selectedDistance changes
+  useEffect(() => {
+    if (webViewRef.current) {
+      webViewRef.current.postMessage(JSON.stringify({ 
+        type: 'updateRadius', 
+        radiusKm: selectedDistance,
+        talents: filteredTalents
+      }));
+    }
+  }, [selectedDistance, filteredTalents]);
 
   const mapHTML = `
     <!DOCTYPE html>
@@ -113,7 +151,9 @@ export default function ExploreMapScreen() {
           try {
             const centerLat = ${userLocation.lat};
             const centerLng = ${userLocation.lng};
-            const radiusKm = ${selectedDistance};
+            let radiusKm = 5;
+            let radiusCircle = null;
+            let talentMarkers = {};
             
             const map = L.map('map').setView([centerLat, centerLng], 13);
             
@@ -133,8 +173,8 @@ export default function ExploreMapScreen() {
             }).addTo(map);
             userMarker.bindPopup('<strong>You</strong>');
 
-            // Radius circle
-            L.circle([centerLat, centerLng], {
+            // Initial radius circle
+            radiusCircle = L.circle([centerLat, centerLng], {
               radius: radiusKm * 1000,
               color: '#7c3aed',
               fillColor: '#7c3aed',
@@ -143,31 +183,72 @@ export default function ExploreMapScreen() {
               dashArray: '5, 5'
             }).addTo(map);
 
-            // Talent markers
-            const talents = ${JSON.stringify(talents)};
-            const colors = ['#a78bfa', '#f472b6', '#60a5fa', '#fbbf24'];
-            
-            talents.forEach((talent, index) => {
-              const customIcon = L.divIcon({
-                html: \`<div style="width: 50px; height: 50px; border-radius: 50%; border: 3px solid \${colors[index % 4]}; overflow: hidden; display: flex; align-items: center; justify-content: center; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.2);"><img src="\${talent.avatar}" style="width: 100%; height: 100%; border-radius: 50%;"/></div>\`,
-                iconSize: [50, 50],
-                className: 'custom-marker'
+            // Function to add talent markers
+            const addTalentMarkers = (talents) => {
+              // Remove old markers
+              Object.values(talentMarkers).forEach(marker => {
+                map.removeLayer(marker);
               });
+              talentMarkers = {};
 
-              const marker = L.marker([talent.lat, talent.lng], { icon: customIcon }).addTo(map);
+              const colors = ['#a78bfa', '#f472b6', '#60a5fa', '#fbbf24'];
               
-              const popupContent = \`
-                <div style="font-family: Arial; padding: 10px; text-align: center; min-width: 150px;">
-                  <img src="\${talent.avatar}" style="width: 50px; height: 50px; border-radius: 50%; margin-bottom: 8px;"/>
-                  <strong style="display: block; margin-bottom: 4px;">\${talent.name}</strong>
-                  <small style="color: #666;">\${talent.shortBio}</small>
-                </div>
-              \`;
-              
-              marker.bindPopup(popupContent);
-              marker.on('click', () => {
-                window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'talentClick', talentId: talent.id }));
+              talents.forEach((talent, index) => {
+                const customIcon = L.divIcon({
+                  html: \`<div style="width: 50px; height: 50px; border-radius: 50%; border: 3px solid \${colors[index % 4]}; overflow: hidden; display: flex; align-items: center; justify-content: center; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.2);"><img src="\${talent.avatar}" style="width: 100%; height: 100%; border-radius: 50%;"/></div>\`,
+                  iconSize: [50, 50],
+                  className: 'custom-marker'
+                });
+
+                const marker = L.marker([talent.lat, talent.lng], { icon: customIcon }).addTo(map);
+                
+                const popupContent = \`
+                  <div style="font-family: Arial; padding: 10px; text-align: center; min-width: 150px;">
+                    <img src="\${talent.avatar}" style="width: 50px; height: 50px; border-radius: 50%; margin-bottom: 8px;"/>
+                    <strong style="display: block; margin-bottom: 4px;">\${talent.name}</strong>
+                    <small style="color: #666;">\${talent.shortBio}</small>
+                  </div>
+                \`;
+                
+                marker.bindPopup(popupContent);
+                marker.on('click', () => {
+                  window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'talentClick', talentId: talent.id }));
+                });
+                
+                talentMarkers[talent.id] = marker;
               });
+            };
+
+            // Initial talent markers
+            const initialTalents = ${JSON.stringify(filteredTalents)};
+            addTalentMarkers(initialTalents);
+
+            // Handle messages from React Native
+            document.addEventListener('message', (event) => {
+              try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'updateRadius') {
+                  radiusKm = data.radiusKm;
+                  if (radiusCircle) {
+                    map.removeLayer(radiusCircle);
+                  }
+                  radiusCircle = L.circle([centerLat, centerLng], {
+                    radius: radiusKm * 1000,
+                    color: '#7c3aed',
+                    fillColor: '#7c3aed',
+                    fillOpacity: 0.05,
+                    weight: 2,
+                    dashArray: '5, 5'
+                  }).addTo(map);
+
+                  // Update talent markers
+                  if (data.talents) {
+                    addTalentMarkers(data.talents);
+                  }
+                }
+              } catch (e) {
+                console.error('Error handling message:', e);
+              }
             });
             
           } catch (error) {
@@ -228,6 +309,7 @@ export default function ExploreMapScreen() {
       {viewMode === 'map' ? (
         <View style={styles.mapContainer}>
           <WebView
+            ref={webViewRef}
             source={{ html: mapHTML }}
             style={styles.map}
             onMessage={(event) => {
@@ -240,7 +322,7 @@ export default function ExploreMapScreen() {
         </View>
       ) : (
         <ScrollView style={styles.listContainer}>
-          {talents.map((talent) => (
+          {filteredTalents.map((talent) => (
             <TouchableOpacity key={talent.id} style={styles.talentCard}>
               <Image source={{ uri: talent.avatar }} style={styles.talentAvatar} />
               <View style={styles.talentInfo}>
@@ -260,7 +342,7 @@ export default function ExploreMapScreen() {
       {/* Results Info */}
       <View style={styles.resultsContainer}>
         <View style={styles.resultsInfo}>
-          <Text style={styles.resultsCount}>{talents.length} talenten gevonden</Text>
+          <Text style={styles.resultsCount}>{filteredTalents.length} talenten gevonden</Text>
           <Text style={styles.resultsSubtext}>In een straal van {selectedDistance} km</Text>
         </View>
         <TouchableOpacity
@@ -294,7 +376,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
+    paddingTop: 20,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
@@ -331,7 +414,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   distanceButton: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     backgroundColor: '#f0f0f0',
