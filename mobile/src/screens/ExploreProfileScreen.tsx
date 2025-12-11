@@ -39,11 +39,9 @@ const ExploreProfileScreen: React.FC = () => {
         </View>
 
         {/* Profielfoto + naam + locatie + rating */}
-        <View style={styles.profileHeader}>
-          <View style={styles.avatarWrapper}>
-            <View style={styles.avatarCircle}>
-              <Text style={styles.avatarInitials}>TB</Text>
-            </View>
+          <View style={styles.profileHeader}>
+           <View style={styles.avatarWrapper}>
+           <View style={styles.avatarCircle} />
           </View>
 
           <Text style={styles.nameText}>Thomas Berg</Text>
@@ -191,11 +189,6 @@ const styles = StyleSheet.create({
     borderColor: '#ffffff',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  avatarInitials: {
-    fontSize: 26,
-    fontWeight: '600',
-    color: '#333752',
   },
   nameText: {
     fontSize: 20,
