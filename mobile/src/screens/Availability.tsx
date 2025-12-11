@@ -14,6 +14,27 @@ const Availability: React.FC = () => {
     copy[index].enabled = !copy[index].enabled;
     setDays(copy);
   };
+  {days.map((day, idx) => (
+  <View key={idx}>
+    <TouchableOpacity onPress={() => toggleDay(idx)}>
+      <Text>{day.enabled ? '🟣' : '⚪'} {day.name}</Text>
+    </TouchableOpacity>
+
+    {day.enabled && (
+      <View style={{ flexDirection: 'row' }}>
+        <View style={{ padding: 10 }}>
+          <Text>Start</Text>
+          <Text>{day.start}</Text>
+        </View>
+
+        <View style={{ padding: 10 }}>
+          <Text>Einde</Text>
+          <Text>{day.end}</Text>
+        </View>
+      </View>
+    )}
+  </View>
+))}
 
   return (
     <SafeAreaView>
