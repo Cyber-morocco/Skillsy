@@ -32,9 +32,9 @@ const AuthStackNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="ProfileCreationStep1" screenOptions={screenOptions}>
+        <Stack.Screen name="ProfileCreationStep1" component={ProfileCreationStep1} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Signup" component={SignupScreen} />
-        <Stack.Screen name="ProfileCreationStep1" component={ProfileCreationStep1} />
       </Stack.Navigator>
     </NavigationContainer>
   );

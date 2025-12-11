@@ -6,10 +6,10 @@ import {
     ScrollView,
     StatusBar,
     Text,
-    TextInput,
     View,
 } from 'react-native';
 import { authColors, authStyles as styles } from '../styles/authStyles';
+import { AppInput } from '../components/AppInput';
 
 type NavProps = {
     navigation: {
@@ -22,13 +22,6 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
     const [name, setName] = useState('');
     const [bio, setBio] = useState('');
     const [street, setStreet] = useState('');
-
-    const [focusedField, setFocusedField] = useState<string | null>(null);
-
-    const getInputStyle = (field: string) => [
-        styles.input,
-        focusedField === field && styles.inputFocused,
-    ];
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -60,33 +53,22 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                             </Text>
                         </View>
 
-                        <View style={styles.fieldGroup}>
-                            <Text style={styles.label}>Wat is je naam?</Text>
-                            <TextInput
-                                style={getInputStyle('name')}
-                                placeholder="Je naam..."
-                                placeholderTextColor={authColors.placeholder}
-                                value={name}
-                                onChangeText={setName}
-                                onFocus={() => setFocusedField('name')}
-                                onBlur={() => setFocusedField(null)}
-                            />
-                        </View>
+                        <AppInput
+                            label="Wat is je naam?"
+                            placeholder="Je naam..."
+                            value={name}
+                            onChangeText={setName}
+                        />
 
-                        <View style={styles.fieldGroup}>
-                            <Text style={styles.label}>Vertel iets over jezelf</Text>
-                            <TextInput
-                                style={[getInputStyle('bio'), { height: 100, textAlignVertical: 'top', paddingTop: 12 }]}
-                                placeholder="Ik ben een gepassioneerde leraar en wil graag mijn kennis delen..."
-                                placeholderTextColor={authColors.placeholder}
-                                multiline
-                                numberOfLines={4}
-                                value={bio}
-                                onChangeText={setBio}
-                                onFocus={() => setFocusedField('bio')}
-                                onBlur={() => setFocusedField(null)}
-                            />
-                        </View>
+                        <AppInput
+                            label="Vertel iets over jezelf"
+                            placeholder="Ik ben een gepassioneerde leraar en wil graag mijn kennis delen..."
+                            multiline
+                            numberOfLines={4}
+                            value={bio}
+                            onChangeText={setBio}
+                            style={{ height: 100, textAlignVertical: 'top', paddingTop: 12 }}
+                        />
 
                         <View style={{ marginBottom: 20, marginTop: 16 }}>
                             <Text style={[styles.label, { fontSize: 18, marginBottom: 6 }]}>Locatie</Text>
@@ -94,23 +76,13 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                                 We delen je exacte adres niet. Alleen je wijk of buurt wordt getoond.
                             </Text>
 
-                            <View style={styles.fieldGroup}>
-                                <Text style={styles.label}>Straatnaam</Text>
-                                <TextInput
-                                    style={getInputStyle('street')}
-                                    placeholder="Bijv. Amsterdam Centrum"
-                                    placeholderTextColor={authColors.placeholder}
-                                    value={street}
-                                    onChangeText={setStreet}
-                                    onFocus={() => setFocusedField('street')}
-                                    onBlur={() => setFocusedField(null)}
-                                />
-                            </View>
-
-
+                            <AppInput
+                                label="Straatnaam"
+                                placeholder="Bijv. Amsterdam Centrum"
+                                value={street}
+                                onChangeText={setStreet}
+                            />
                         </View>
-
-
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
@@ -119,3 +91,4 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
 };
 
 export default ProfileCreationStep1;
+
