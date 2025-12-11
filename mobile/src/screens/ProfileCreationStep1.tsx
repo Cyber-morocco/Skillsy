@@ -6,6 +6,7 @@ import {
     ScrollView,
     StatusBar,
     Text,
+    TouchableOpacity,
     View,
 } from 'react-native';
 import { authColors, authStyles as styles } from '../styles/authStyles';
@@ -100,6 +101,24 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                                     onChangeText={setCity}
                                     containerStyle={{ flex: 0.48 }}
                                 />
+                            </View>
+
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, alignItems: 'center' }}>
+                                <TouchableOpacity
+                                    onPress={() => navigation.goBack()}
+                                    style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(148,163,184,0.2)' }}
+                                >
+                                    <Text style={{ color: authColors.text, fontWeight: '600' }}>‹ Vorige</Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.primaryButton, { marginTop: 0, paddingVertical: 12, paddingHorizontal: 32 }]}
+                                    onPress={() => {
+                                        console.log('Next Step');
+                                    }}
+                                >
+                                    <Text style={styles.primaryButtonText}>Volgende ›</Text>
+                                </TouchableOpacity>
                             </View>
                         </View>
                     </View>
