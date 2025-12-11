@@ -5,8 +5,8 @@ import {
   createNativeStackNavigator,
 } from '@react-navigation/native-stack';
 import { authColors } from '../styles/authStyles';
-import LoginScreen from '../LoginScreen';
-import SignupScreen from '../SignupScreen';
+import LoginScreen from '../screens/LoginScreen';
+import SignupScreen from '../screens/SignupScreen';
 
 export type AuthStackParamList = {
   Login: undefined;
