@@ -6,6 +6,7 @@ import {
     ScrollView,
     StatusBar,
     Text,
+    TextInput,
     View,
 } from 'react-native';
 import { authColors, authStyles as styles } from '../styles/authStyles';
@@ -18,6 +19,16 @@ type NavProps = {
 };
 
 const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
+    const [name, setName] = useState('');
+    const [bio, setBio] = useState('');
+    const [focusedField, setFocusedField] = useState<string | null>(null);
+
+    // Helper for consistent input styling
+    const getInputStyle = (field: string) => [
+        styles.input,
+        focusedField === field && styles.inputFocused,
+    ];
+
     return (
         <SafeAreaView style={styles.safeArea}>
             <StatusBar barStyle="light-content" />
@@ -53,6 +64,37 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                             <Text style={{ fontSize: 15, color: authColors.muted, lineHeight: 22 }}>
                                 Laten we beginnen met je profiel
                             </Text>
+                        </View>
+
+                        {/* FORM FIELDS */}
+                        {/* Name */}
+                        <View style={styles.fieldGroup}>
+                            <Text style={styles.label}>Wat is je naam?</Text>
+                            <TextInput
+                                style={getInputStyle('name')}
+                                placeholder="Je naam..."
+                                placeholderTextColor={authColors.placeholder}
+                                value={name}
+                                onChangeText={setName}
+                                onFocus={() => setFocusedField('name')}
+                                onBlur={() => setFocusedField(null)}
+                            />
+                        </View>
+
+                        {/* Bio */}
+                        <View style={styles.fieldGroup}>
+                            <Text style={styles.label}>Vertel iets over jezelf</Text>
+                            <TextInput
+                                style={[getInputStyle('bio'), { height: 100, textAlignVertical: 'top', paddingTop: 12 }]}
+                                placeholder="Ik ben een gepassioneerde leraar en wil graag mijn kennis delen..."
+                                placeholderTextColor={authColors.placeholder}
+                                multiline
+                                numberOfLines={4}
+                                value={bio}
+                                onChangeText={setBio}
+                                onFocus={() => setFocusedField('bio')}
+                                onBlur={() => setFocusedField(null)}
+                            />
                         </View>
 
                         {/* De rest volgt later... */}

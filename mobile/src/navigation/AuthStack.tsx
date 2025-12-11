@@ -6,13 +6,12 @@ import {
 } from '@react-navigation/native-stack';
 import { authColors } from '../styles/authStyles';
 
-import LoginScreen from '../LoginScreen';
-import SignupScreen from '../SignupScreen';
-
-import LoginScreen from '../screens/LoginScreen';
-import SignupScreen from '../screens/SignupScreen';
-import ProfileCreationStep1 from '../screens/ProfileCreationStep1';
-
+// Import screens
+import {
+  LoginScreen,
+  SignupScreen,
+  ProfileCreationStep1,
+} from '../screens';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -42,5 +41,3 @@ const AuthStackNavigator = () => {
 };
 
 export default AuthStackNavigator;
-
-
