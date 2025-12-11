@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   SafeAreaView  ,
   StatusBar,
@@ -9,6 +9,9 @@ import {
 } from 'react-native';
 
 const ExploreProfileScreen: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews'>(
+    'vaardigheden',
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -80,13 +83,29 @@ const ExploreProfileScreen: React.FC = () => {
 
         {/* Tabs: vaardigheden + reviews */}
         <View style={styles.tabRow}>
-          <TouchableOpacity activeOpacity={0.9} style={styles.tabButton}>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => setActiveTab('vaardigheden')}
+            style={styles.tabButton}
+          >
             <Text style={styles.tabText}>Vaardigheden</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity activeOpacity={0.9} style={styles.tabButton}>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => setActiveTab('reviews')}
+            style={styles.tabButton}
+          >
             <Text style={styles.tabText}>Reviews</Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.tabContent}>
+          <Text style={styles.tabContentText}>
+            {activeTab === 'vaardigheden'
+              ? 'Hier komen de vaardigheden.'
+              : 'Hier komen de reviews.'}
+          </Text>
         </View>
 
         
