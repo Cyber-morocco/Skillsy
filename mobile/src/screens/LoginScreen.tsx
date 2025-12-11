@@ -11,7 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { authColors, authStyles as styles } from './styles/authStyles';
+import { authColors, authStyles as styles } from '../styles/authStyles';
 
 type AuthScreenProps = {
   navigation?: {
@@ -58,11 +58,11 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               activeOpacity={0.9}
               style={styles.socialButton}
               onPress={() => {
-                
+
               }}
             >
               <Image
-                source={require('../../assets/google-logo.png')}
+                source={require('../../../assets/google-logo.png')}
                 style={styles.socialButtonIcon}
               />
               <Text style={styles.socialButtonText}>log in met Google</Text>
