@@ -78,16 +78,18 @@ const ExploreProfileScreen: React.FC = () => {
           </Text>
         </View>
 
-        {/* Tab: vaardigheden */}
+        {/* Tabs: vaardigheden + reviews */}
         <View style={styles.tabRow}>
           <TouchableOpacity activeOpacity={0.9} style={styles.tabButton}>
             <Text style={styles.tabText}>Vaardigheden</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity activeOpacity={0.9} style={styles.tabButton}>
+            <Text style={styles.tabText}>Reviews</Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.tabContent}>
-          <Text style={styles.tabContentText}>Hier komen de vaardigheden.</Text>
-        </View>
+        
       </View>
     </SafeAreaView>
   );
