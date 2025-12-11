@@ -22,6 +22,8 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
     const [name, setName] = useState('');
     const [bio, setBio] = useState('');
     const [street, setStreet] = useState('');
+    const [zipCode, setZipCode] = useState('');
+    const [city, setCity] = useState('');
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -82,6 +84,23 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                                 value={street}
                                 onChangeText={setStreet}
                             />
+
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                <AppInput
+                                    label="Postcode"
+                                    placeholder="Bijv. 1030"
+                                    value={zipCode}
+                                    onChangeText={setZipCode}
+                                    containerStyle={{ flex: 0.48 }}
+                                />
+                                <AppInput
+                                    label="Stad"
+                                    placeholder="Bijv. Schaarbeek"
+                                    value={city}
+                                    onChangeText={setCity}
+                                    containerStyle={{ flex: 0.48 }}
+                                />
+                            </View>
                         </View>
                     </View>
                 </ScrollView>
