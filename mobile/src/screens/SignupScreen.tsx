@@ -27,7 +27,6 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const handleSignup = () => {
-    // TODO: replace with actual sign-up flow
     console.log('Signing up:', { fullName, email, password, confirmPassword });
   };
 
@@ -59,9 +58,7 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
             <TouchableOpacity
               activeOpacity={0.9}
               style={styles.socialButton}
-              onPress={() => {
-                // TODO: hook up Google sign-up
-              }}
+              onPress={() => { }}
             >
               <Image
                 source={require('../../../assets/google-logo.png')}

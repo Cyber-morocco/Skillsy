@@ -21,9 +21,10 @@ type NavProps = {
 const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
     const [name, setName] = useState('');
     const [bio, setBio] = useState('');
+    const [street, setStreet] = useState('');
+
     const [focusedField, setFocusedField] = useState<string | null>(null);
 
-    // Helper for consistent input styling
     const getInputStyle = (field: string) => [
         styles.input,
         focusedField === field && styles.inputFocused,
@@ -40,23 +41,16 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                     contentContainerStyle={styles.scrollContent}
                     keyboardShouldPersistTaps="handled"
                 >
-                    {/* HEADER / PROGRESS */}
-                    {/* Dit is het eerste stuk: De voortgangsbalk en stapindicator */}
                     <View style={{ alignItems: 'center', marginBottom: 32 }}>
                         <View style={{ flexDirection: 'row', width: '100%', justifyContent: 'space-between', marginBottom: 16, paddingHorizontal: 16 }}>
-                            {/* Huidige stap (actief) */}
                             <View style={{ height: 4, flex: 1, backgroundColor: authColors.accent, borderRadius: 2, marginRight: 8 }} />
-                            {/* Stap 2 (inactief) */}
                             <View style={{ height: 4, flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2, marginRight: 8 }} />
-                            {/* Stap 3 (inactief) */}
                             <View style={{ height: 4, flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }} />
                         </View>
                         <Text style={{ color: authColors.muted, fontSize: 14 }}>Stap 1 van 3</Text>
                     </View>
 
                     <View style={styles.card}>
-                        {/* TITLE */}
-                        {/* Titel en subtitel sectie */}
                         <View style={{ marginBottom: 24 }}>
                             <Text style={{ fontSize: 22, fontWeight: '700', color: authColors.text, marginBottom: 8 }}>
                                 Welkom bij Skillsy! 👋
@@ -66,8 +60,6 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                             </Text>
                         </View>
 
-                        {/* FORM FIELDS */}
-                        {/* Name */}
                         <View style={styles.fieldGroup}>
                             <Text style={styles.label}>Wat is je naam?</Text>
                             <TextInput
@@ -81,7 +73,6 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                             />
                         </View>
 
-                        {/* Bio */}
                         <View style={styles.fieldGroup}>
                             <Text style={styles.label}>Vertel iets over jezelf</Text>
                             <TextInput
@@ -97,7 +88,29 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                             />
                         </View>
 
-                        {/* De rest volgt later... */}
+                        <View style={{ marginBottom: 20, marginTop: 16 }}>
+                            <Text style={[styles.label, { fontSize: 18, marginBottom: 6 }]}>Locatie</Text>
+                            <Text style={{ color: authColors.muted, fontSize: 13, lineHeight: 20, marginBottom: 12 }}>
+                                We delen je exacte adres niet. Alleen je wijk of buurt wordt getoond.
+                            </Text>
+
+                            <View style={styles.fieldGroup}>
+                                <Text style={styles.label}>Straatnaam</Text>
+                                <TextInput
+                                    style={getInputStyle('street')}
+                                    placeholder="Bijv. Amsterdam Centrum"
+                                    placeholderTextColor={authColors.placeholder}
+                                    value={street}
+                                    onChangeText={setStreet}
+                                    onFocus={() => setFocusedField('street')}
+                                    onBlur={() => setFocusedField(null)}
+                                />
+                            </View>
+
+
+                        </View>
+
+
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>

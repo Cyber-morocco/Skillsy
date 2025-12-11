@@ -26,7 +26,6 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleLogin = () => {
-    // TODO: wire up with backend auth flow
     console.log('Logging in with:', { email, password });
   };
 
@@ -58,7 +57,7 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               activeOpacity={0.9}
               style={styles.socialButton}
               onPress={() => {
-                
+
               }}
             >
               <Image

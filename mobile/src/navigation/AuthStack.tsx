@@ -6,7 +6,7 @@ import {
 } from '@react-navigation/native-stack';
 import { authColors } from '../styles/authStyles';
 
-// Import screens
+
 import {
   LoginScreen,
   SignupScreen,
