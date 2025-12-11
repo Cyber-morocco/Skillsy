@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "skillsy-app",
-    "slug": "skillsy-app",
+    "name": "skillsy",
+    "slug": "Skillsy",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

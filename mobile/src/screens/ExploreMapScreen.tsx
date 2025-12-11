@@ -1,0 +1,452 @@
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image, SafeAreaView, Dimensions } from 'react-native';
+import { WebView } from 'react-native-webview';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+
+const { width, height } = Dimensions.get('window');
+
+interface Talent {
+  id: number;
+  name: string;
+  lat: number;
+  lng: number;
+  shortBio: string;
+  avatar: string;
+  skills: { name: string }[];
+}
+
+const DISTANCE_OPTIONS = [1, 2, 5, 10, 15];
+
+export default function ExploreMapScreen() {
+  const [searchLocation, setSearchLocation] = useState('Amsterdam');
+  const [selectedDistance, setSelectedDistance] = useState(5);
+  const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
+  
+  const userLocation = { lat: 52.3676, lng: 4.9041 }; // Amsterdam center
+  
+  const talents: Talent[] = [
+    { 
+      id: 1, 
+      name: 'John', 
+      lat: 52.3676, 
+      lng: 4.9041, 
+      shortBio: 'Web Developer',
+      avatar: 'https://i.pravatar.cc/150?img=1',
+      skills: [{ name: 'React' }, { name: 'Node.js' }] 
+    },
+    { 
+      id: 2, 
+      name: 'Jane', 
+      lat: 52.3750, 
+      lng: 4.9050, 
+      shortBio: 'UI Designer',
+      avatar: 'https://i.pravatar.cc/150?img=2',
+      skills: [{ name: 'Figma' }, { name: 'CSS' }] 
+    },
+    { 
+      id: 3, 
+      name: 'Bob', 
+      lat: 52.3600, 
+      lng: 4.8950, 
+      shortBio: 'Mobile Dev',
+      avatar: 'https://i.pravatar.cc/150?img=3',
+      skills: [{ name: 'React Native' }, { name: 'Flutter' }] 
+    },
+    { 
+      id: 4, 
+      name: 'Lisa', 
+      lat: 52.3700, 
+      lng: 4.9100, 
+      shortBio: 'Product Manager',
+      avatar: 'https://i.pravatar.cc/150?img=4',
+      skills: [{ name: 'Leadership' }, { name: 'Analytics' }] 
+    },
+  ];
+
+  const mapHTML = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+        <style>
+          body, html { margin: 0; padding: 0; width: 100%; height: 100%; }
+          #map { width: 100%; height: 100%; }
+          .custom-marker { 
+            width: 50px; 
+            height: 50px; 
+            border-radius: 50%; 
+            border: 3px solid #7c3aed;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+          }
+          .custom-marker img { 
+            width: 100%; 
+            height: 100%; 
+            border-radius: 50%;
+          }
+          .user-marker {
+            width: 40px;
+            height: 40px;
+            background: #10b981;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+          }
+          .radius-circle {
+            fill: none;
+            stroke: #7c3aed;
+            stroke-width: 2;
+            stroke-dasharray: 5, 5;
+            opacity: 0.3;
+          }
+        </style>
+      </head>
+      <body>
+        <div id="map"></div>
+        <script>
+          try {
+            const centerLat = ${userLocation.lat};
+            const centerLng = ${userLocation.lng};
+            const radiusKm = ${selectedDistance};
+            
+            const map = L.map('map').setView([centerLat, centerLng], 13);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '© OpenStreetMap',
+              maxZoom: 19
+            }).addTo(map);
+
+            // User location marker
+            const userMarker = L.circleMarker([centerLat, centerLng], {
+              radius: 8,
+              fillColor: '#10b981',
+              color: 'white',
+              weight: 3,
+              opacity: 1,
+              fillOpacity: 0.8
+            }).addTo(map);
+            userMarker.bindPopup('<strong>You</strong>');
+
+            // Radius circle
+            L.circle([centerLat, centerLng], {
+              radius: radiusKm * 1000,
+              color: '#7c3aed',
+              fillColor: '#7c3aed',
+              fillOpacity: 0.05,
+              weight: 2,
+              dashArray: '5, 5'
+            }).addTo(map);
+
+            // Talent markers
+            const talents = ${JSON.stringify(talents)};
+            const colors = ['#a78bfa', '#f472b6', '#60a5fa', '#fbbf24'];
+            
+            talents.forEach((talent, index) => {
+              const customIcon = L.divIcon({
+                html: \`<div style="width: 50px; height: 50px; border-radius: 50%; border: 3px solid \${colors[index % 4]}; overflow: hidden; display: flex; align-items: center; justify-content: center; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.2);"><img src="\${talent.avatar}" style="width: 100%; height: 100%; border-radius: 50%;"/></div>\`,
+                iconSize: [50, 50],
+                className: 'custom-marker'
+              });
+
+              const marker = L.marker([talent.lat, talent.lng], { icon: customIcon }).addTo(map);
+              
+              const popupContent = \`
+                <div style="font-family: Arial; padding: 10px; text-align: center; min-width: 150px;">
+                  <img src="\${talent.avatar}" style="width: 50px; height: 50px; border-radius: 50%; margin-bottom: 8px;"/>
+                  <strong style="display: block; margin-bottom: 4px;">\${talent.name}</strong>
+                  <small style="color: #666;">\${talent.shortBio}</small>
+                </div>
+              \`;
+              
+              marker.bindPopup(popupContent);
+              marker.on('click', () => {
+                window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'talentClick', talentId: talent.id }));
+              });
+            });
+            
+          } catch (error) {
+            document.body.innerHTML = '<div style="padding: 20px; color: red;">' + error.message + '</div>';
+          }
+        </script>
+      </body>
+    </html>
+  `;
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton}>
+          <Ionicons name="chevron-back" size={24} color="#7c3aed" />
+        </TouchableOpacity>
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={18} color="#999" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search location..."
+            value={searchLocation}
+            onChangeText={setSearchLocation}
+          />
+        </View>
+      </View>
+
+      {/* Distance Selector */}
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        style={styles.distanceSelector}
+        contentContainerStyle={styles.distanceContent}
+      >
+        {DISTANCE_OPTIONS.map((distance) => (
+          <TouchableOpacity
+            key={distance}
+            style={[
+              styles.distanceButton,
+              selectedDistance === distance && styles.distanceButtonActive
+            ]}
+            onPress={() => setSelectedDistance(distance)}
+          >
+            <Text
+              style={[
+                styles.distanceText,
+                selectedDistance === distance && styles.distanceTextActive
+              ]}
+            >
+              {distance} km
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      {/* Map or List View */}
+      {viewMode === 'map' ? (
+        <View style={styles.mapContainer}>
+          <WebView
+            source={{ html: mapHTML }}
+            style={styles.map}
+            onMessage={(event) => {
+              const data = JSON.parse(event.nativeEvent.data);
+              if (data.type === 'talentClick') {
+                console.log('Clicked talent:', data.talentId);
+              }
+            }}
+          />
+        </View>
+      ) : (
+        <ScrollView style={styles.listContainer}>
+          {talents.map((talent) => (
+            <TouchableOpacity key={talent.id} style={styles.talentCard}>
+              <Image source={{ uri: talent.avatar }} style={styles.talentAvatar} />
+              <View style={styles.talentInfo}>
+                <Text style={styles.talentName}>{talent.name}</Text>
+                <Text style={styles.talentBio}>{talent.shortBio}</Text>
+                <View style={styles.skillsContainer}>
+                  {talent.skills.map((skill, index) => (
+                    <Text key={index} style={styles.skillTag}>{skill.name}</Text>
+                  ))}
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
+
+      {/* Results Info */}
+      <View style={styles.resultsContainer}>
+        <View style={styles.resultsInfo}>
+          <Text style={styles.resultsCount}>{talents.length} talenten gevonden</Text>
+          <Text style={styles.resultsSubtext}>In een straal van {selectedDistance} km</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.toggleButton}
+          onPress={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
+        >
+          <MaterialCommunityIcons
+            name={viewMode === 'map' ? 'format-list-bulleted' : 'map'}
+            size={20}
+            color="#7c3aed"
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* View Toggle Button */}
+      <TouchableOpacity style={styles.listViewButton}>
+        <Text style={styles.listViewButtonText}>
+          {viewMode === 'map' ? 'Toon lijstweersgave' : 'Toon kaart'}
+        </Text>
+      </TouchableOpacity>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9ff',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 24,
+    paddingHorizontal: 14,
+    marginLeft: 8,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#333',
+  },
+  distanceSelector: {
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  distanceContent: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  distanceButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  distanceButtonActive: {
+    backgroundColor: '#7c3aed',
+    borderColor: '#7c3aed',
+  },
+  distanceText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+  },
+  distanceTextActive: {
+    color: '#fff',
+  },
+  mapContainer: {
+    flex: 1,
+    overflow: 'hidden',
+  },
+  map: {
+    flex: 1,
+  },
+  listContainer: {
+    flex: 1,
+    backgroundColor: '#f8f9ff',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  talentCard: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+  },
+  talentAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 12,
+  },
+  talentInfo: {
+    flex: 1,
+  },
+  talentName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1f2937',
+  },
+  talentBio: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+  },
+  skillsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+    gap: 6,
+  },
+  skillTag: {
+    fontSize: 11,
+    backgroundColor: '#f0f0f0',
+    color: '#7c3aed',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  resultsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  resultsInfo: {
+    flex: 1,
+  },
+  resultsCount: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1f2937',
+  },
+  resultsSubtext: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
+  },
+  toggleButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  listViewButton: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: '#1f2937',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  listViewButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});

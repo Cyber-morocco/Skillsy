@@ -1,6 +1,6 @@
 import React from 'react';
-import AuthStackNavigator from './mobile/src/navigation/AuthStack';
+import ExploreMapScreen from './mobile/src/screens/ExploreMapScreen';
 
 export default function App() {
-  return <AuthStackNavigator />;
+  return <ExploreMapScreen />;
 }
