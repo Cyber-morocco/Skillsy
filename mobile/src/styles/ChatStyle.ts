@@ -78,4 +78,55 @@ export const chatStyles = StyleSheet.create({
         color: NOTEXT,
         fontSize: 14,
     },
+    // Styles pour la liste des contacts
+    contactsList: {
+        paddingHorizontal: 16,
+    },
+    contactItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(30, 41, 59, 0.5)',
+    },
+    avatarContainer: {
+        position: 'relative',
+        marginRight: 12,
+    },
+    contactAvatar: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    contactAvatarText: {
+        color: TEXT,
+        fontWeight: '600',
+        fontSize: 16,
+    },
+    onlineIndicator: {
+        position: 'absolute',
+        bottom: 2,
+        right: 2,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        backgroundColor: '#22C55E',
+        borderWidth: 2,
+        borderColor: BACKGROUND,
+    },
+    contactInfo: {
+        flex: 1,
+    },
+    contactName: {
+        color: TEXT,
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 2,
+    },
+    contactStatus: {
+        color: NOTEXT,
+        fontSize: 13,
+    },
 });
