@@ -35,6 +35,24 @@ const Availability: React.FC = () => {
     )}
   </View>
 ))}
+const [pickerVisible, setPickerVisible] = useState(false);
+const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
+const [editingField, setEditingField] = useState<'start' | 'end' | null>(null);
+
+const openPicker = (index: number, field: 'start' | 'end') => {
+  setSelectedDayIndex(index);
+  setEditingField(field);
+  setPickerVisible(true);
+};
+
+const selectTime = (newTime: string) => {
+  if (selectedDayIndex === null || editingField === null) return;
+  const copy = [...days];
+  copy[selectedDayIndex][editingField] = newTime;
+  setDays(copy);
+  setPickerVisible(false);
+};
+
 
   return (
     <SafeAreaView>
