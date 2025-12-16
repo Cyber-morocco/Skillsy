@@ -1,4 +1,5 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import AuthStackNavigator from './mobile/src/navigation/AuthStack';
 import Availability from './mobile/src/screens/Availability';
 
