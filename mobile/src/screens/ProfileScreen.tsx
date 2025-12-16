@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 
 export default function ProfileScreen() {
   return (
@@ -9,7 +9,19 @@ export default function ProfileScreen() {
 
       <View style={styles.content}>
         
-        <Text style={styles.placeholderText}>Profielpagina</Text>
+        <View style={styles.topRow}>
+          <TouchableOpacity activeOpacity={0.85} style={styles.squareButton}>
+            <Text style={styles.squareButtonText}>←</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity activeOpacity={0.85} style={styles.squareButtonWide}>
+            <Text style={styles.squareButtonText}>Beschikbaarheid</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity activeOpacity={0.85} style={styles.squareButtonWide}>
+            <Text style={styles.squareButtonText}>Edit</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -28,11 +40,44 @@ const styles = StyleSheet.create({
     flex: 1,
     marginTop: -140,
     paddingHorizontal: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  placeholderText: {
-    fontSize: 16,
-    color: '#4a4b63',
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 10,
+    marginBottom: 16,
+  } as const,
+  squareButton: {
+    height: 44,
+    minWidth: 44,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  squareButtonWide: {
+    flex: 1,
+    height: 44,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  squareButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#24253d',
   },
 });
