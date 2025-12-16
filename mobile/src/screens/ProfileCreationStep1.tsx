@@ -121,7 +121,7 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                                 </TouchableOpacity>
                             </View>
                         </View>
-                    </View>
+                    </View> 
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
