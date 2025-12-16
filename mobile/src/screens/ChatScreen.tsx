@@ -10,7 +10,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { chatStyles as styles, chatColors } from '../styles/ChatStyle';
-import { ChatStackParamList } from '../navigation/ChatStack';
+import { AuthStackParamList } from '../navigation/AuthStack';
 
 type Contact = {
     id: string;
@@ -31,7 +31,7 @@ const CONTACTS: Contact[] = [
 ];
 
 function ChatScreen() {
-    const navigation = useNavigation<NativeStackNavigationProp<ChatStackParamList>>();
+    const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
     const [searchQuery, setSearchQuery] = useState('');
 
     const filteredContacts = CONTACTS.filter(contact =>

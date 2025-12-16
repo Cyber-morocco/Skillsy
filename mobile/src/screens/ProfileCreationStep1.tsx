@@ -114,14 +114,14 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                                 <TouchableOpacity
                                     style={[styles.primaryButton, { marginTop: 0, paddingVertical: 12, paddingHorizontal: 32 }]}
                                     onPress={() => {
-                                        console.log('Next Step');
+                                        navigation.navigate('ProfileCreationStep2');
                                     }}
                                 >
                                     <Text style={styles.primaryButtonText}>Volgende ›</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
-                    </View> 
+                    </View>
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
