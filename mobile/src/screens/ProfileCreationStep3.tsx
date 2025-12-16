@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     KeyboardAvoidingView,
     Platform,
@@ -19,33 +19,33 @@ type NavProps = {
     };
 };
 
-const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
-    const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
-    const [customSkill, setCustomSkill] = React.useState('');
+const ProfileCreationStep3: React.FC<NavProps> = ({ navigation }) => {
+    const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+    const [customInterest, setCustomInterest] = useState('');
 
-    const PREDEFINED_SKILLS = [
-        'Fitness', 'Dans', 'Meditatie',
-        'Gitaar', 'Piano', 'Zang',
-        'Muziektheorie', 'Fotografie',
-        'Tekenen', 'Schilderen',
-        'Grafisch ontwerp', 'Timmeren',
-        'Tuinieren', 'Breien', 'Naaien',
-        'Wiskunde', 'Natuurkunde',
-        'Scheikunde', 'Bijles'
+    const PREDEFINED_INTERESTS = [
+        'Frans', 'Engels', 'Spaans',
+        'Duits', 'Nederlands',
+        'Programmeren', 'Python',
+        'JavaScript', 'Web Development',
+        'Koken', 'Bakken',
+        'Italiaans koken',
+        'Vegetarisch koken', 'Yoga',
+        'Fitness', 'Dans', 'Meditatie'
     ];
 
-    const toggleSkill = (skill: string) => {
-        if (selectedSkills.includes(skill)) {
-            setSelectedSkills(selectedSkills.filter(s => s !== skill));
+    const toggleInterest = (interest: string) => {
+        if (selectedInterests.includes(interest)) {
+            setSelectedInterests(selectedInterests.filter(i => i !== interest));
         } else {
-            setSelectedSkills([...selectedSkills, skill]);
+            setSelectedInterests([...selectedInterests, interest]);
         }
     };
 
-    const addCustomSkill = () => {
-        if (customSkill.trim() && !selectedSkills.includes(customSkill)) {
-            setSelectedSkills([...selectedSkills, customSkill]);
-            setCustomSkill('');
+    const addCustomInterest = () => {
+        if (customInterest.trim() && !selectedInterests.includes(customInterest)) {
+            setSelectedInterests([...selectedInterests, customInterest]);
+            setCustomInterest('');
         }
     };
 
@@ -64,28 +64,28 @@ const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
                         <View style={{ flexDirection: 'row', width: '100%', justifyContent: 'space-between', marginBottom: 16, paddingHorizontal: 16 }}>
                             <View style={{ height: 4, flex: 1, backgroundColor: authColors.accent, borderRadius: 2, marginRight: 8 }} />
                             <View style={{ height: 4, flex: 1, backgroundColor: authColors.accent, borderRadius: 2, marginRight: 8 }} />
-                            <View style={{ height: 4, flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }} />
+                            <View style={{ height: 4, flex: 1, backgroundColor: authColors.accent, borderRadius: 2 }} />
                         </View>
-                        <Text style={{ color: authColors.muted, fontSize: 14 }}>Stap 2 van 3</Text>
+                        <Text style={{ color: authColors.muted, fontSize: 14 }}>Stap 3 van 3</Text>
                     </View>
 
                     <View style={styles.card}>
                         <View style={{ marginBottom: 24 }}>
                             <Text style={{ fontSize: 22, fontWeight: '700', color: authColors.text, marginBottom: 8 }}>
-                                Wat kun je aanleren? 🛠️
+                                Wat wil je leren? �
                             </Text>
                             <Text style={{ fontSize: 15, color: authColors.muted, lineHeight: 22 }}>
-                                Selecteer alle vaardigheden die je kunt delen
+                                Kies vaardigheden die je wilt ontwikkelen
                             </Text>
                         </View>
 
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 24 }}>
-                            {[...PREDEFINED_SKILLS, ...selectedSkills.filter(s => !PREDEFINED_SKILLS.includes(s))].map((skill) => {
-                                const isSelected = selectedSkills.includes(skill);
+                            {[...PREDEFINED_INTERESTS, ...selectedInterests.filter(i => !PREDEFINED_INTERESTS.includes(i))].map((interest) => {
+                                const isSelected = selectedInterests.includes(interest);
                                 return (
                                     <TouchableOpacity
-                                        key={skill}
-                                        onPress={() => toggleSkill(skill)}
+                                        key={interest}
+                                        onPress={() => toggleInterest(interest)}
                                         style={{
                                             paddingHorizontal: 16,
                                             paddingVertical: 10,
@@ -101,7 +101,7 @@ const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
                                             color: isSelected ? authColors.accent : authColors.text,
                                             fontSize: 14,
                                             fontWeight: isSelected ? '600' : '400'
-                                        }}>{skill}</Text>
+                                        }}>{interest}</Text>
                                     </TouchableOpacity>
                                 );
                             })}
@@ -109,14 +109,14 @@ const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
 
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 32 }}>
                             <AppInput
-                                placeholder="Eigen vaardigheid toevoegen"
-                                value={customSkill}
-                                onChangeText={setCustomSkill}
+                                placeholder="Eigen interesse toevoegen"
+                                value={customInterest}
+                                onChangeText={setCustomInterest}
                                 containerStyle={{ flex: 1, marginBottom: 0, marginRight: 12 }}
                                 style={{ height: 50, marginTop: 0 }}
                             />
                             <TouchableOpacity
-                                onPress={addCustomSkill}
+                                onPress={addCustomInterest}
                                 style={{
                                     backgroundColor: 'rgba(124, 58, 237, 0.2)',
                                     height: 50,
@@ -150,8 +150,8 @@ const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
                             <TouchableOpacity
                                 style={[styles.primaryButton, { marginTop: 0, paddingVertical: 12, paddingHorizontal: 32 }]}
                                 onPress={() => {
-                                    console.log('Selected skills:', selectedSkills);
-                                    navigation.navigate('ProfileCreationStep3');
+                                    console.log('Selected interests:', selectedInterests);
+                                
                                 }}
                             >
                                 <Text style={styles.primaryButtonText}>Volgende ›</Text>
@@ -164,4 +164,4 @@ const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
     );
 };
 
-export default ProfileCreationStep2;
+export default ProfileCreationStep3;

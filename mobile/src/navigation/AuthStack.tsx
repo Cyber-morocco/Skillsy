@@ -11,6 +11,7 @@ import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
 import ProfileCreationStep1 from '../screens/ProfileCreationStep1';
 import ProfileCreationStep2 from '../screens/ProfileCreationStep2';
+import ProfileCreationStep3 from '../screens/ProfileCreationStep3';
 import ChatScreen from '../screens/ChatScreen';
 import ConversationScreen from '../screens/ConversationScreen';
 
@@ -19,6 +20,7 @@ export type AuthStackParamList = {
   Signup: undefined;
   ProfileCreationStep1: undefined;
   ProfileCreationStep2: undefined;
+  ProfileCreationStep3: undefined;
   Chat: undefined;
   Conversation: {
     contactId: string;
@@ -40,9 +42,10 @@ const screenOptions: NativeStackNavigationOptions = {
 const AuthStackNavigator = () => {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="ProfileCreationStep1" screenOptions={screenOptions}>
+      <Stack.Navigator initialRouteName="ProfileCreationStep2" screenOptions={screenOptions}>
         <Stack.Screen name="ProfileCreationStep1" component={ProfileCreationStep1} />
         <Stack.Screen name="ProfileCreationStep2" component={ProfileCreationStep2} />
+        <Stack.Screen name="ProfileCreationStep3" component={ProfileCreationStep3} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Signup" component={SignupScreen} />
         <Stack.Screen name="Chat" component={ChatScreen} />
