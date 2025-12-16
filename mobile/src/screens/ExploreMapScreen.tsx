@@ -502,9 +502,10 @@ export default function ExploreMapScreen() {
   `;
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
+    <View style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        {/* Header */}
+        <View style={styles.header}>
         <TouchableOpacity style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color="#7c3aed" />
         </TouchableOpacity>
@@ -614,7 +615,8 @@ export default function ExploreMapScreen() {
           {viewMode === 'map' ? 'Toon lijstweersgave' : 'Toon kaart'}
         </Text>
       </TouchableOpacity>
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
@@ -622,6 +624,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9ff',
+  },
+  safeArea: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',

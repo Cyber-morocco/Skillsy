@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
 
-export default function HomePage() {
+export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Home</Text>
-        <Text style={styles.subtitle}>Welcome to Skillsy</Text>
+        <Text style={styles.title}>Profiel</Text>
+        <Text style={styles.subtitle}>Your profile information</Text>
       </View>
     </SafeAreaView>
   );
