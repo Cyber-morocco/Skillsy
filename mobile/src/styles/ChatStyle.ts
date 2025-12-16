@@ -1,4 +1,3 @@
-// styles/ChatStyle.ts
 import { StyleSheet } from 'react-native';
 
 const PRIMARY = '#7C3AED';
@@ -78,7 +77,6 @@ export const chatStyles = StyleSheet.create({
         color: NOTEXT,
         fontSize: 14,
     },
-    // Styles pour la liste des contacts
     contactsList: {
         paddingHorizontal: 16,
     },

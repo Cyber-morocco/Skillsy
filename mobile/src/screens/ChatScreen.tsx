@@ -1,4 +1,3 @@
-// screens/ChatScreen.tsx
 import React, { useState } from 'react';
 import {
     StatusBar,
@@ -10,7 +9,6 @@ import {
 } from 'react-native';
 import { chatStyles as styles, chatColors } from '../styles/ChatStyle';
 
-// Type pour un contact
 type Contact = {
     id: string;
     name: string;
