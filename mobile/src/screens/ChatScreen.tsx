@@ -4,10 +4,13 @@ import {
     Text,
     TextInput,
     View,
-     FlatList,
+    FlatList,
     TouchableOpacity,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { chatStyles as styles, chatColors } from '../styles/ChatStyle';
+import { ChatStackParamList } from '../navigation/ChatStack';
 
 type Contact = {
     id: string;
@@ -28,12 +31,28 @@ const CONTACTS: Contact[] = [
 ];
 
 function ChatScreen() {
+    const navigation = useNavigation<NativeStackNavigationProp<ChatStackParamList>>();
     const [searchQuery, setSearchQuery] = useState('');
+
     const filteredContacts = CONTACTS.filter(contact =>
         contact.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    const openConversation = (contact: Contact) => {
+        navigation.navigate('Conversation', {
+            contactId: contact.id,
+            contactName: contact.name,
+            contactInitials: contact.initials,
+            contactColor: contact.avatarColor,
+        });
+    };
+
     const renderContact = ({ item }: { item: Contact }) => (
-        <TouchableOpacity style={styles.contactItem} activeOpacity={0.7}>
+        <TouchableOpacity
+            style={styles.contactItem}
+            activeOpacity={0.7}
+            onPress={() => openConversation(item)}
+        >
             <View style={styles.avatarContainer}>
                 <View style={[styles.contactAvatar, { backgroundColor: item.avatarColor }]}>
                     <Text style={styles.contactAvatarText}>{item.initials}</Text>
