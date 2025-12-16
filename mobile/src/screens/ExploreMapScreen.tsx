@@ -41,42 +41,66 @@ export default function ExploreMapScreen() {
   const userLocation = { lat: 52.3676, lng: 4.9041 }; // Amsterdam center
   
   const allTalents: Talent[] = [
-    { 
-      id: 1, 
-      name: 'John', 
-      lat: 52.3676, 
-      lng: 4.9041, 
-      shortBio: 'Web Developer',
-      avatar: 'https://i.pravatar.cc/150?img=1',
-      skills: [{ name: 'React' }, { name: 'Node.js' }] 
-    },
-    { 
-      id: 2, 
-      name: 'Jane', 
-      lat: 52.3750, 
-      lng: 4.9050, 
-      shortBio: 'UI Designer',
-      avatar: 'https://i.pravatar.cc/150?img=2',
-      skills: [{ name: 'Figma' }, { name: 'CSS' }] 
-    },
-    { 
-      id: 3, 
-      name: 'Bob', 
-      lat: 52.3600, 
-      lng: 4.8950, 
-      shortBio: 'Mobile Dev',
-      avatar: 'https://i.pravatar.cc/150?img=3',
-      skills: [{ name: 'React Native' }, { name: 'Flutter' }] 
-    },
-    { 
-      id: 4, 
-      name: 'Lisa', 
-      lat: 52.3700, 
-      lng: 4.9100, 
-      shortBio: 'Product Manager',
-      avatar: 'https://i.pravatar.cc/150?img=4',
-      skills: [{ name: 'Leadership' }, { name: 'Analytics' }] 
-    },
+    // Amsterdam Center
+    { id: 1, name: 'John', lat: 52.3676, lng: 4.9041, shortBio: 'Web Developer', avatar: 'https://i.pravatar.cc/150?img=1', skills: [{ name: 'React' }, { name: 'Node.js' }] },
+    { id: 2, name: 'Jane', lat: 52.3750, lng: 4.9050, shortBio: 'UI Designer', avatar: 'https://i.pravatar.cc/150?img=2', skills: [{ name: 'Figma' }, { name: 'CSS' }] },
+    { id: 3, name: 'Bob', lat: 52.3600, lng: 4.8950, shortBio: 'Mobile Dev', avatar: 'https://i.pravatar.cc/150?img=3', skills: [{ name: 'React Native' }, { name: 'Flutter' }] },
+    { id: 4, name: 'Lisa', lat: 52.3700, lng: 4.9100, shortBio: 'Product Manager', avatar: 'https://i.pravatar.cc/150?img=4', skills: [{ name: 'Leadership' }, { name: 'Analytics' }] },
+    
+    // Amsterdam - nearby (1-3 km)
+    { id: 5, name: 'Mark', lat: 52.3710, lng: 4.8980, shortBio: 'DevOps Engineer', avatar: 'https://i.pravatar.cc/150?img=5', skills: [{ name: 'Docker' }, { name: 'Kubernetes' }] },
+    { id: 6, name: 'Sarah', lat: 52.3640, lng: 4.9120, shortBio: 'Data Scientist', avatar: 'https://i.pravatar.cc/150?img=6', skills: [{ name: 'Python' }, { name: 'ML' }] },
+    { id: 7, name: 'Tom', lat: 52.3720, lng: 4.9000, shortBio: 'Backend Developer', avatar: 'https://i.pravatar.cc/150?img=7', skills: [{ name: 'Java' }, { name: 'Spring' }] },
+    { id: 8, name: 'Emma', lat: 52.3650, lng: 4.9080, shortBio: 'UX Researcher', avatar: 'https://i.pravatar.cc/150?img=8', skills: [{ name: 'Research' }, { name: 'Usability' }] },
+    { id: 9, name: 'Lucas', lat: 52.3690, lng: 4.9020, shortBio: 'Full Stack Dev', avatar: 'https://i.pravatar.cc/150?img=9', skills: [{ name: 'Vue.js' }, { name: 'Express' }] },
+    
+    // Amsterdam - slightly further (3-8 km)
+    { id: 10, name: 'Sophie', lat: 52.3800, lng: 4.9200, shortBio: 'QA Engineer', avatar: 'https://i.pravatar.cc/150?img=10', skills: [{ name: 'Testing' }, { name: 'Automation' }] },
+    { id: 11, name: 'Alex', lat: 52.3500, lng: 4.8850, shortBio: 'Security Expert', avatar: 'https://i.pravatar.cc/150?img=11', skills: [{ name: 'Cybersecurity' }, { name: 'Pentesting' }] },
+    { id: 12, name: 'Nina', lat: 52.3820, lng: 4.9150, shortBio: 'Scrum Master', avatar: 'https://i.pravatar.cc/150?img=12', skills: [{ name: 'Agile' }, { name: 'Coaching' }] },
+    { id: 13, name: 'Daniel', lat: 52.3550, lng: 4.8900, shortBio: 'Cloud Architect', avatar: 'https://i.pravatar.cc/150?img=13', skills: [{ name: 'AWS' }, { name: 'Azure' }] },
+    { id: 14, name: 'Laura', lat: 52.3900, lng: 4.9100, shortBio: 'Content Strategist', avatar: 'https://i.pravatar.cc/150?img=14', skills: [{ name: 'SEO' }, { name: 'Copywriting' }] },
+    
+    // Rotterdam (60 km from Amsterdam)
+    { id: 15, name: 'Peter', lat: 51.9225, lng: 4.4792, shortBio: 'Blockchain Dev', avatar: 'https://i.pravatar.cc/150?img=15', skills: [{ name: 'Solidity' }, { name: 'Web3' }] },
+    { id: 16, name: 'Maria', lat: 51.9244, lng: 4.4777, shortBio: 'Brand Designer', avatar: 'https://i.pravatar.cc/150?img=16', skills: [{ name: 'Branding' }, { name: 'Illustration' }] },
+    { id: 17, name: 'Kevin', lat: 51.9200, lng: 4.4800, shortBio: 'iOS Developer', avatar: 'https://i.pravatar.cc/150?img=17', skills: [{ name: 'Swift' }, { name: 'SwiftUI' }] },
+    
+    // The Hague (50 km from Amsterdam)
+    { id: 18, name: 'Julia', lat: 52.0705, lng: 4.3007, shortBio: 'Game Developer', avatar: 'https://i.pravatar.cc/150?img=18', skills: [{ name: 'Unity' }, { name: 'C#' }] },
+    { id: 19, name: 'Mike', lat: 52.0800, lng: 4.3100, shortBio: 'AI Specialist', avatar: 'https://i.pravatar.cc/150?img=19', skills: [{ name: 'TensorFlow' }, { name: 'Deep Learning' }] },
+    
+    // Utrecht (35 km from Amsterdam)
+    { id: 20, name: 'Anna', lat: 52.0907, lng: 5.1214, shortBio: 'Frontend Lead', avatar: 'https://i.pravatar.cc/150?img=20', skills: [{ name: 'TypeScript' }, { name: 'Angular' }] },
+    { id: 21, name: 'Chris', lat: 52.0850, lng: 5.1150, shortBio: 'Systems Engineer', avatar: 'https://i.pravatar.cc/150?img=21', skills: [{ name: 'Linux' }, { name: 'Networking' }] },
+    { id: 22, name: 'Eva', lat: 52.0950, lng: 5.1300, shortBio: 'Video Editor', avatar: 'https://i.pravatar.cc/150?img=22', skills: [{ name: 'Premiere' }, { name: 'After Effects' }] },
+    
+    // Berlin, Germany
+    { id: 23, name: 'Hans', lat: 52.5200, lng: 13.4050, shortBio: 'Hardware Engineer', avatar: 'https://i.pravatar.cc/150?img=23', skills: [{ name: 'IoT' }, { name: 'Embedded' }] },
+    { id: 24, name: 'Ingrid', lat: 52.5150, lng: 13.3900, shortBio: 'Tech Writer', avatar: 'https://i.pravatar.cc/150?img=24', skills: [{ name: 'Documentation' }, { name: 'API Docs' }] },
+    { id: 25, name: 'Franz', lat: 52.5300, lng: 13.4100, shortBio: 'AR/VR Developer', avatar: 'https://i.pravatar.cc/150?img=25', skills: [{ name: 'Unity' }, { name: 'AR Kit' }] },
+    
+    // Paris, France
+    { id: 26, name: 'Pierre', lat: 48.8566, lng: 2.3522, shortBio: 'Fashion Tech', avatar: 'https://i.pravatar.cc/150?img=26', skills: [{ name: '3D Modeling' }, { name: 'Blender' }] },
+    { id: 27, name: 'Camille', lat: 48.8600, lng: 2.3500, shortBio: 'Growth Hacker', avatar: 'https://i.pravatar.cc/150?img=27', skills: [{ name: 'Marketing' }, { name: 'Analytics' }] },
+    
+    // London, UK
+    { id: 28, name: 'James', lat: 51.5074, lng: -0.1278, shortBio: 'FinTech Developer', avatar: 'https://i.pravatar.cc/150?img=28', skills: [{ name: 'Rust' }, { name: 'Trading Systems' }] },
+    { id: 29, name: 'Emily', lat: 51.5100, lng: -0.1200, shortBio: 'Voice UI Designer', avatar: 'https://i.pravatar.cc/150?img=29', skills: [{ name: 'Alexa' }, { name: 'Voice Design' }] },
+    { id: 30, name: 'Oliver', lat: 51.5050, lng: -0.1300, shortBio: 'Crypto Analyst', avatar: 'https://i.pravatar.cc/150?img=30', skills: [{ name: 'DeFi' }, { name: 'Research' }] },
+    
+    // Barcelona, Spain
+    { id: 31, name: 'Carlos', lat: 41.3851, lng: 2.1734, shortBio: 'Motion Designer', avatar: 'https://i.pravatar.cc/150?img=31', skills: [{ name: 'Animation' }, { name: 'Cinema 4D' }] },
+    { id: 32, name: 'Isabella', lat: 41.3900, lng: 2.1700, shortBio: 'Startup Advisor', avatar: 'https://i.pravatar.cc/150?img=32', skills: [{ name: 'Strategy' }, { name: 'Fundraising' }] },
+    
+    // Copenhagen, Denmark
+    { id: 33, name: 'Lars', lat: 55.6761, lng: 12.5683, shortBio: 'Green Tech Dev', avatar: 'https://i.pravatar.cc/150?img=33', skills: [{ name: 'Sustainability' }, { name: 'Clean Tech' }] },
+    
+    // Stockholm, Sweden
+    { id: 34, name: 'Astrid', lat: 59.3293, lng: 18.0686, shortBio: 'EdTech Designer', avatar: 'https://i.pravatar.cc/150?img=34', skills: [{ name: 'E-learning' }, { name: 'Instructional Design' }] },
+    
+    // Brussels, Belgium
+    { id: 35, name: 'Maxime', lat: 50.8503, lng: 4.3517, shortBio: 'Legal Tech', avatar: 'https://i.pravatar.cc/150?img=35', skills: [{ name: 'Legal Tech' }, { name: 'Compliance' }] },
   ];
 
   // Filter talents based on selected distance
@@ -356,13 +380,6 @@ export default function ExploreMapScreen() {
           />
         </TouchableOpacity>
       </View>
-
-      {/* View Toggle Button */}
-      <TouchableOpacity style={styles.listViewButton}>
-        <Text style={styles.listViewButtonText}>
-          {viewMode === 'map' ? 'Toon lijstweersgave' : 'Toon kaart'}
-        </Text>
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
