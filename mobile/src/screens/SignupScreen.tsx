@@ -7,11 +7,11 @@ import {
   ScrollView,
   StatusBar,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { authColors, authStyles as styles } from '../styles/authStyles';
+import { AppInput } from '../components/AppInput';
 
 type AuthScreenProps = {
   navigation?: {
@@ -24,10 +24,8 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const handleSignup = () => {
-    // TODO: replace with actual sign-up flow
     console.log('Signing up:', { fullName, email, password, confirmPassword });
   };
 
@@ -59,9 +57,7 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
             <TouchableOpacity
               activeOpacity={0.9}
               style={styles.socialButton}
-              onPress={() => {
-                // TODO: hook up Google sign-up
-              }}
+              onPress={() => { }}
             >
               <Image
                 source={require('../../../assets/google-logo.png')}
@@ -76,83 +72,47 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               <View style={styles.dividerLine} />
             </View>
 
-            <View style={styles.fieldGroup}>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>Naam</Text>
-              </View>
-              <TextInput
-                style={[
-                  styles.input,
-                  focusedField === 'fullName' && styles.inputFocused,
-                ]}
-                placeholder="Volledige naam"
-                placeholderTextColor={authColors.placeholder}
-                value={fullName}
-                onChangeText={setFullName}
-                onFocus={() => setFocusedField('fullName')}
-                onBlur={() => setFocusedField(null)}
-              />
-            </View>
+            <AppInput
+              label="Naam"
+              placeholder="Volledige naam"
+              value={fullName}
+              onChangeText={setFullName}
+            />
 
-            <View style={styles.fieldGroup}>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>E-mailadres</Text>
-              </View>
-              <TextInput
-                style={[
-                  styles.input,
-                  focusedField === 'email' && styles.inputFocused,
-                ]}
-                placeholder="jij@voorbeeld.com"
-                placeholderTextColor={authColors.placeholder}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                value={email}
-                onChangeText={setEmail}
-                onFocus={() => setFocusedField('email')}
-                onBlur={() => setFocusedField(null)}
-              />
-            </View>
+            <AppInput
+              label="E-mailadres"
+              placeholder="jij@voorbeeld.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              value={email}
+              onChangeText={setEmail}
+            />
 
             <View style={styles.fieldGroup}>
               <View style={styles.labelRow}>
                 <Text style={styles.label}>Wachtwoord</Text>
                 <Text style={styles.helperText}>Min. 8 tekens</Text>
               </View>
-              <TextInput
-                style={[
-                  styles.input,
-                  focusedField === 'password' && styles.inputFocused,
-                ]}
+              {/* We use AppInput but want to preserve the custom label row with helper text above,
+                   so we might just pass 'style' or leave it blank and key off label.
+                   To simplify, we can use AppInput without label prop and render label manually,
+                   OR just update AppInput to support RightLabel, BUT for now I will manual render label */}
+              <AppInput
                 placeholder="Sterk wachtwoord"
-                placeholderTextColor={authColors.placeholder}
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
-                onFocus={() => setFocusedField('password')}
-                onBlur={() => setFocusedField(null)}
               />
             </View>
 
-            <View style={styles.fieldGroup}>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>Bevestig wachtwoord</Text>
-              </View>
-              <TextInput
-                style={[
-                  styles.input,
-                  focusedField === 'confirmPassword' && styles.inputFocused,
-                ]}
-                placeholder="Herhaal wachtwoord"
-                placeholderTextColor={authColors.placeholder}
-                secureTextEntry
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
-                onFocus={() => setFocusedField('confirmPassword')}
-                onBlur={() => setFocusedField(null)}
-              />
-            </View>
+            <AppInput
+              label="Bevestig wachtwoord"
+              placeholder="Herhaal wachtwoord"
+              secureTextEntry
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
 
             <TouchableOpacity
               activeOpacity={0.85}
@@ -181,4 +141,5 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 };
 
 export default SignupScreen;
+
 
