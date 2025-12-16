@@ -122,4 +122,126 @@ export const appointmentStyles = StyleSheet.create({
         color: TEXT_SECONDARY,
         textAlign: 'center',
     },
+
+    // Appointment Card
+    card: {
+        backgroundColor: CARD,
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: BORDER,
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        marginBottom: 12,
+    },
+    avatar: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        marginRight: 12,
+    },
+    avatarPlaceholder: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: PRIMARY,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    avatarText: {
+        color: TEXT,
+        fontWeight: '700',
+        fontSize: 18,
+    },
+    cardInfo: {
+        flex: 1,
+    },
+    cardTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: TEXT,
+        marginBottom: 2,
+    },
+    cardSubtitle: {
+        fontSize: 13,
+        color: TEXT_SECONDARY,
+    },
+    statusBadge: {
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    statusConfirmed: {
+        backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    },
+    statusPending: {
+        backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    },
+    statusText: {
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    statusConfirmedText: {
+        color: SUCCESS,
+    },
+    statusPendingText: {
+        color: WARNING,
+    },
+
+    // Card details
+    cardDetails: {
+        marginBottom: 12,
+    },
+    detailRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 6,
+    },
+    detailIcon: {
+        width: 20,
+        marginRight: 8,
+    },
+    detailIconText: {
+        fontSize: 14,
+    },
+    detailText: {
+        fontSize: 14,
+        color: TEXT_SECONDARY,
+    },
+    feeContainer: {
+        backgroundColor: 'rgba(124, 58, 237, 0.1)',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 8,
+        alignSelf: 'flex-start',
+        marginTop: 8,
+    },
+    feeText: {
+        color: PRIMARY,
+        fontWeight: '600',
+        fontSize: 13,
+    },
+
+    // Card actions
+    cardActions: {
+        borderTopWidth: 1,
+        borderTopColor: BORDER,
+        paddingTop: 12,
+    },
+    cancelButton: {
+        borderWidth: 1,
+        borderColor: BORDER,
+        borderRadius: 12,
+        paddingVertical: 12,
+        alignItems: 'center',
+    },
+    cancelButtonText: {
+        color: TEXT,
+        fontWeight: '600',
+        fontSize: 14,
+    },
 });
