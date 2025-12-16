@@ -2,17 +2,20 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
+type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile';
+
 interface NavBarItem {
-  name: string;
+  name: NavName;
   label: string;
   icon: string;
-  badge?: number;
   type?: 'ionicons' | 'material';
 }
 
 interface BottomNavBarProps {
-  activeScreen: string;
-  onNavigate: (screen: string) => void;
+  activeScreen: NavName;
+  onNavigate: (screen: NavName) => void;
+  // Optional dynamic badges you can pass later, e.g. { messages: 3 }
+  badges?: Partial<Record<NavName, number>>;
 }
 
 const NAV_ITEMS: NavBarItem[] = [
@@ -33,14 +36,12 @@ const NAV_ITEMS: NavBarItem[] = [
     label: 'Afspraken',
     icon: 'calendar',
     type: 'ionicons',
-    badge: 1,
   },
   {
     name: 'messages',
     label: 'Berichten',
     icon: 'chatbubble',
     type: 'ionicons',
-    badge: 3,
   },
   {
     name: 'profile',
@@ -50,12 +51,13 @@ const NAV_ITEMS: NavBarItem[] = [
   },
 ];
 
-export default function BottomNavBar({ activeScreen, onNavigate }: BottomNavBarProps) {
+export default function BottomNavBar({ activeScreen, onNavigate, badges }: BottomNavBarProps) {
   return (
     <View style={styles.container}>
       <View style={styles.navBar}>
         {NAV_ITEMS.map((item) => {
           const isActive = activeScreen === item.name;
+          const badgeCount = badges?.[item.name] ?? 0;
 
           return (
             <TouchableOpacity
@@ -81,14 +83,14 @@ export default function BottomNavBar({ activeScreen, onNavigate }: BottomNavBarP
                 )}
 
                 {/* Badge */}
-                {item.badge && item.badge > 0 && (
+                {badgeCount > 0 && (
                   <View
                     style={[
                       styles.badge,
                       isActive ? styles.badgeActive : styles.badgeInactive,
                     ]}
                   >
-                    <Text style={styles.badgeText}>{item.badge}</Text>
+                    <Text style={styles.badgeText}>{badgeCount}</Text>
                   </View>
                 )}
               </View>
