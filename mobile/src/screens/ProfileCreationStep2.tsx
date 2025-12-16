@@ -20,8 +20,34 @@ type NavProps = {
 };
 
 const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
-    const [role, setRole] = React.useState('');
-    const [skills, setSkills] = React.useState('');
+    const [selectedSkills, setSelectedSkills] = React.useState<string[]>([]);
+    const [customSkill, setCustomSkill] = React.useState('');
+
+    const PREDEFINED_SKILLS = [
+        'Fitness', 'Dans', 'Meditatie',
+        'Gitaar', 'Piano', 'Zang',
+        'Muziektheorie', 'Fotografie',
+        'Tekenen', 'Schilderen',
+        'Grafisch ontwerp', 'Timmeren',
+        'Tuinieren', 'Breien', 'Naaien',
+        'Wiskunde', 'Natuurkunde',
+        'Scheikunde', 'Bijles'
+    ];
+
+    const toggleSkill = (skill: string) => {
+        if (selectedSkills.includes(skill)) {
+            setSelectedSkills(selectedSkills.filter(s => s !== skill));
+        } else {
+            setSelectedSkills([...selectedSkills, skill]);
+        }
+    };
+
+    const addCustomSkill = () => {
+        if (customSkill.trim() && !selectedSkills.includes(customSkill)) {
+            setSelectedSkills([...selectedSkills, customSkill]);
+            setCustomSkill('');
+        }
+    };
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -36,11 +62,8 @@ const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
                 >
                     <View style={{ alignItems: 'center', marginBottom: 32 }}>
                         <View style={{ flexDirection: 'row', width: '100%', justifyContent: 'space-between', marginBottom: 16, paddingHorizontal: 16 }}>
-                            { }
                             <View style={{ height: 4, flex: 1, backgroundColor: authColors.accent, borderRadius: 2, marginRight: 8 }} />
-                            { }
                             <View style={{ height: 4, flex: 1, backgroundColor: authColors.accent, borderRadius: 2, marginRight: 8 }} />
-                            { }
                             <View style={{ height: 4, flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }} />
                         </View>
                         <Text style={{ color: authColors.muted, fontSize: 14 }}>Stap 2 van 3</Text>
@@ -49,28 +72,64 @@ const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
                     <View style={styles.card}>
                         <View style={{ marginBottom: 24 }}>
                             <Text style={{ fontSize: 22, fontWeight: '700', color: authColors.text, marginBottom: 8 }}>
-                                Wat zijn je skills? 🛠️
+                                Wat kun je aanleren? 🛠️
                             </Text>
                             <Text style={{ fontSize: 15, color: authColors.muted, lineHeight: 22 }}>
-                                Vertel ons waar je goed in bent.
+                                Selecteer alle vaardigheden die je kunt delen
                             </Text>
                         </View>
 
-                        <AppInput
-                            label="Huidige functie"
-                            placeholder="Bijv. Software Developer, Loodgieter..."
-                            value={role}
-                            onChangeText={setRole}
-                        />
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 24 }}>
+                            {PREDEFINED_SKILLS.map((skill) => {
+                                const isSelected = selectedSkills.includes(skill);
+                                return (
+                                    <TouchableOpacity
+                                        key={skill}
+                                        onPress={() => toggleSkill(skill)}
+                                        style={{
+                                            paddingHorizontal: 16,
+                                            paddingVertical: 10,
+                                            borderRadius: 12,
+                                            marginRight: 8,
+                                            marginBottom: 12,
+                                            backgroundColor: isSelected ? 'rgba(124, 58, 237, 0.2)' : 'rgba(255,255,255,0.03)',
+                                            borderWidth: 1,
+                                            borderColor: isSelected ? authColors.accent : 'rgba(148,163,184,0.2)',
+                                        }}
+                                    >
+                                        <Text style={{
+                                            color: isSelected ? authColors.accent : authColors.text,
+                                            fontSize: 14,
+                                            fontWeight: isSelected ? '600' : '400'
+                                        }}>{skill}</Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </View>
 
-                        <AppInput
-                            label="Vaardigheden"
-                            placeholder="Bijv. React Native, Houtbewerking..."
-                            value={skills}
-                            onChangeText={setSkills}
-                        />
-
-
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 32 }}>
+                            <AppInput
+                                placeholder="Eigen vaardigheid toevoegen"
+                                value={customSkill}
+                                onChangeText={setCustomSkill}
+                                containerStyle={{ flex: 1, marginBottom: 0, marginRight: 12 }}
+                                style={{ height: 50, marginTop: 0 }}
+                            />
+                            <TouchableOpacity
+                                onPress={addCustomSkill}
+                                style={{
+                                    backgroundColor: 'rgba(124, 58, 237, 0.2)',
+                                    height: 50,
+                                    justifyContent: 'center',
+                                    paddingHorizontal: 20,
+                                    borderRadius: 16,
+                                    borderWidth: 1,
+                                    borderColor: authColors.accent
+                                }}
+                            >
+                                <Text style={{ color: authColors.text, fontWeight: '600', fontSize: 14 }}>Toevoegen</Text>
+                            </TouchableOpacity>
+                        </View>
 
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, alignItems: 'center' }}>
                             <TouchableOpacity
@@ -91,8 +150,7 @@ const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
                             <TouchableOpacity
                                 style={[styles.primaryButton, { marginTop: 0, paddingVertical: 12, paddingHorizontal: 32 }]}
                                 onPress={() => {
-
-                                    console.log('Next step');
+                                    console.log('Selected skills:', selectedSkills);
                                 }}
                             >
                                 <Text style={styles.primaryButtonText}>Volgende ›</Text>
