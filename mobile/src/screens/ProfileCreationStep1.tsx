@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import {
     KeyboardAvoidingView,
     Platform,
-    SafeAreaView,
     ScrollView,
     StatusBar,
     Text,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { authColors, authStyles as styles } from '../styles/authStyles';
 import { AppInput } from '../components/AppInput';
 
@@ -121,7 +121,7 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                                 </TouchableOpacity>
                             </View>
                         </View>
-                    </View> 
+                    </View>
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView>
