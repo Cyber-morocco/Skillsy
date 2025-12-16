@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import {
-  SafeAreaView  ,
   StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ExploreProfileScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews'>(
@@ -50,9 +50,9 @@ const ExploreProfileScreen: React.FC = () => {
         </View>
 
         {/* Profielfoto + naam + locatie + rating */}
-          <View style={styles.profileHeader}>
-           <View style={styles.avatarWrapper}>
-           <View style={styles.avatarCircle} />
+        <View style={styles.profileHeader}>
+          <View style={styles.avatarWrapper}>
+            <View style={styles.avatarCircle} />
           </View>
 
           <Text style={styles.nameText}>Thomas Berg</Text>
@@ -137,7 +137,7 @@ const ExploreProfileScreen: React.FC = () => {
           </Text>
         </View>
 
-        
+
       </View>
     </SafeAreaView>
   );
