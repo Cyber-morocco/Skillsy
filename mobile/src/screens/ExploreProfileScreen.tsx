@@ -12,6 +12,7 @@ const ExploreProfileScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews'>(
     'vaardigheden',
   );
+  const [liked, setLiked] = useState(false);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -30,10 +31,20 @@ const ExploreProfileScreen: React.FC = () => {
           <View style={styles.topRightIcons}>
             <TouchableOpacity
               activeOpacity={0.8}
-              style={styles.roundIconButton}
-            
+              style={[
+                styles.roundIconButton,
+                liked && styles.roundIconButtonLiked,
+              ]}
+              onPress={() => setLiked((prev) => !prev)}
             >
-              <Text style={styles.roundIconText}>♡</Text>
+              <Text
+                style={[
+                  styles.roundIconText,
+                  liked && styles.roundIconTextLiked,
+                ]}
+              >
+                {liked ? '♥' : '♡'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -67,7 +78,7 @@ const ExploreProfileScreen: React.FC = () => {
           </TouchableOpacity>
 
           <TouchableOpacity activeOpacity={0.9} style={styles.ghostButton}>
-            <Text style={styles.ghostButtonText}>Bericht</Text>
+            <Text style={styles.ghostButtonText}>Bericht zenden</Text>
           </TouchableOpacity>
         </View>
 
@@ -170,8 +181,14 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
+  roundIconButtonLiked: {
+    backgroundColor: '#ffe5ec',
+  },
   roundIconText: {
     fontSize: 18,
+  },
+  roundIconTextLiked: {
+    color: '#e0245e',
   },
   profileHeader: {
     alignItems: 'center',
