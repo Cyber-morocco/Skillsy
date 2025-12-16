@@ -25,114 +25,14 @@ const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: numbe
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-    Math.cos((lat2 * Math.PI) / 180) *
-    Math.sin(dLng / 2) *
-    Math.sin(dLng / 2);
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
 
 export default function ExploreMapScreen() {
-/**
- * Geocode an address using Nominatim (OpenStreetMap)
- * @param address - The address to search for
- * @returns Location with lat/lng or null if not found
- */
-const geocodeAddress = async (address: string): Promise<Location | null> => {
-  try {
-    const response = await fetch(
-      `${NOMINATIM_API}?format=json&q=${encodeURIComponent(address)}&limit=1`,
-      {
-        headers: {
-          'User-Agent': 'Skillsy-App/1.0' // Required by Nominatim
-        }
-      }
-    );
-
-    const data: GeocodingResult[] = await response.json();
-
-    if (data && data.length > 0) {
-      return {
-        lat: parseFloat(data[0].lat),
-        lng: parseFloat(data[0].lon),
-        address: data[0].display_name
-      };
-    }
-
-    return null;
-  } catch (error) {
-    console.error('Geocoding error:', error);
-    return null;
-  }
-};
-
-// ========================================
-// 🗂️ Mock Data
-// ========================================
-
-const MOCK_SKILL_CATEGORIES: SkillCategory[] = [
-  { id: 1, name: 'Development', icon: 'code-slash' },
-  { id: 2, name: 'Design', icon: 'color-palette' },
-  { id: 3, name: 'Business', icon: 'briefcase' },
-  { id: 4, name: 'Marketing', icon: 'megaphone' },
-];
-
-const MOCK_TALENTS: Talent[] = [
-  {
-    id: 1,
-    name: 'John',
-    location: { lat: 52.3676, lng: 4.9041 },
-    shortBio: 'Web Developer',
-    avatar: 'https://i.pravatar.cc/150?img=1',
-    skills: [
-      { id: 1, name: 'React', categoryId: 1, level: 'expert' },
-      { id: 2, name: 'Node.js', categoryId: 1, level: 'intermediate' }
-    ]
-  },
-  {
-    id: 2,
-    name: 'Jane',
-    location: { lat: 52.3750, lng: 4.9050 },
-    shortBio: 'UI Designer',
-    avatar: 'https://i.pravatar.cc/150?img=2',
-    skills: [
-      { id: 3, name: 'Figma', categoryId: 2, level: 'expert' },
-      { id: 4, name: 'CSS', categoryId: 2, level: 'intermediate' }
-    ]
-  },
-  {
-    id: 3,
-    name: 'Bob',
-    location: { lat: 52.3600, lng: 4.8950 },
-    shortBio: 'Mobile Dev',
-    avatar: 'https://i.pravatar.cc/150?img=3',
-    skills: [
-      { id: 5, name: 'React Native', categoryId: 1, level: 'expert' },
-      { id: 6, name: 'Flutter', categoryId: 1, level: 'beginner' }
-    ]
-  },
-  {
-    id: 4,
-    name: 'Lisa',
-    location: { lat: 52.3700, lng: 4.9100 },
-    shortBio: 'Product Manager',
-    avatar: 'https://i.pravatar.cc/150?img=4',
-    skills: [
-      { id: 7, name: 'Leadership', categoryId: 3, level: 'expert' },
-      { id: 8, name: 'Analytics', categoryId: 3, level: 'intermediate' }
-    ]
-  },
-];
-
-// ========================================
-// 📱 Main Component
-// ========================================
-
-export default function ExploreMapScreen() {
-  // ========================================
-  // 🔄 State Management
-  // ========================================
-
   const [searchLocation, setSearchLocation] = useState('Amsterdam');
   const [selectedDistance, setSelectedDistance] = useState(5);
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
@@ -179,12 +79,6 @@ export default function ExploreMapScreen() {
     },
   ];
 
-  const allTalents: Talent[] = MOCK_TALENTS;
-
-  // ========================================
-  // 🧮 Filtering Logic
-  // ========================================
-
   // Filter talents based on selected distance
   const filteredTalents = allTalents.filter((talent) => {
     const distance = calculateDistance(
@@ -193,69 +87,14 @@ export default function ExploreMapScreen() {
       talent.lat,
       talent.lng
     );
-<<<<<<< HEAD
     return distance <= selectedDistance;
   });
 
-=======
-
-    // Distance filter
-    if (distance > selectedDistance) return false;
-
-    // Category filter (if any selected)
-    if (selectedCategories.length > 0) {
-      const hasMatchingSkill = talent.skills.some(skill =>
-        selectedCategories.includes(skill.categoryId)
-      );
-      return hasMatchingSkill;
-    }
-
-    return true;
-  });
-
-  // ========================================
-  // 🔍 Address Search Handler
-  // ========================================
-
-  const handleSearchLocation = async () => {
-    if (!searchLocation.trim()) {
-      Alert.alert('Error', 'Please enter a location to search');
-      return;
-    }
-
-    setIsSearching(true);
-    const result = await geocodeAddress(searchLocation);
-    setIsSearching(false);
-
-    if (result) {
-      setUserLocation(result);
-
-      // Update map to new location
-      if (webViewRef.current) {
-        webViewRef.current.postMessage(JSON.stringify({
-          type: 'updateLocation',
-          location: result,
-          radiusKm: selectedDistance,
-          talents: filteredTalents
-        }));
-      }
-
-      Alert.alert('Success', `Location found: ${result.address || searchLocation}`);
-    } else {
-      Alert.alert('Not Found', 'Could not find that location. Try another search term.');
-    }
-  };
-
-  // ========================================
-  // ⚡ Effects
-  // ========================================
-
->>>>>>> 09e9b1647cf905177481de8f58ffd1fa3cde903c
   // Update map when filtered talents or selectedDistance changes
   useEffect(() => {
     if (webViewRef.current) {
-      webViewRef.current.postMessage(JSON.stringify({
-        type: 'updateRadius',
+      webViewRef.current.postMessage(JSON.stringify({ 
+        type: 'updateRadius', 
         radiusKm: selectedDistance,
         talents: filteredTalents
       }));
@@ -421,7 +260,6 @@ export default function ExploreMapScreen() {
   `;
 
   return (
-<<<<<<< HEAD
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
@@ -463,116 +301,62 @@ export default function ExploreMapScreen() {
             >
               {distance} km
             </Text>
-=======
-    <View style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color="#7c3aed" />
->>>>>>> 09e9b1647cf905177481de8f58ffd1fa3cde903c
           </TouchableOpacity>
-          <View style={styles.searchContainer}>
-            <Ionicons name="search" size={18} color="#999" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search location..."
-              value={searchLocation}
-              onChangeText={setSearchLocation}
-              onSubmitEditing={handleSearchLocation}
-              returnKeyType="search"
-            />
-            {isSearching ? (
-              <ActivityIndicator size="small" color="#7c3aed" />
-            ) : (
-              <TouchableOpacity onPress={handleSearchLocation} style={styles.searchButton}>
-                <Ionicons name="arrow-forward" size={18} color="#7c3aed" />
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
+        ))}
+      </ScrollView>
 
-        {/* Distance Selector */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.distanceSelector}
-          contentContainerStyle={styles.distanceContent}
-        >
-          {DISTANCE_OPTIONS.map((distance) => (
-            <TouchableOpacity
-              key={distance}
-              style={[
-                styles.distanceButton,
-                selectedDistance === distance && styles.distanceButtonActive
-              ]}
-              onPress={() => setSelectedDistance(distance)}
-            >
-              <Text
-                style={[
-                  styles.distanceText,
-                  selectedDistance === distance && styles.distanceTextActive
-                ]}
-              >
-                {distance} km
-              </Text>
+      {/* Map or List View */}
+      {viewMode === 'map' ? (
+        <View style={styles.mapContainer}>
+          <WebView
+            ref={webViewRef}
+            source={{ html: mapHTML }}
+            style={styles.map}
+            onMessage={(event) => {
+              const data = JSON.parse(event.nativeEvent.data);
+              if (data.type === 'talentClick') {
+                console.log('Clicked talent:', data.talentId);
+              }
+            }}
+          />
+        </View>
+      ) : (
+        <ScrollView style={styles.listContainer}>
+          {filteredTalents.map((talent) => (
+            <TouchableOpacity key={talent.id} style={styles.talentCard}>
+              <Image source={{ uri: talent.avatar }} style={styles.talentAvatar} />
+              <View style={styles.talentInfo}>
+                <Text style={styles.talentName}>{talent.name}</Text>
+                <Text style={styles.talentBio}>{talent.shortBio}</Text>
+                <View style={styles.skillsContainer}>
+                  {talent.skills.map((skill, index) => (
+                    <Text key={index} style={styles.skillTag}>{skill.name}</Text>
+                  ))}
+                </View>
+              </View>
             </TouchableOpacity>
           ))}
         </ScrollView>
+      )}
 
-        {/* Map or List View */}
-        {viewMode === 'map' ? (
-          <View style={styles.mapContainer}>
-            <WebView
-              ref={webViewRef}
-              source={{ html: mapHTML }}
-              style={styles.map}
-              onMessage={(event: { nativeEvent: { data: string } }) => {
-                const data = JSON.parse(event.nativeEvent.data);
-                if (data.type === 'talentClick') {
-                  console.log('Clicked talent:', data.talentId);
-                }
-              }}
-            />
-          </View>
-        ) : (
-          <ScrollView style={styles.listContainer}>
-            {filteredTalents.map((talent) => (
-              <TouchableOpacity key={talent.id} style={styles.talentCard}>
-                <Image source={{ uri: talent.avatar }} style={styles.talentAvatar} />
-                <View style={styles.talentInfo}>
-                  <Text style={styles.talentName}>{talent.name}</Text>
-                  <Text style={styles.talentBio}>{talent.shortBio}</Text>
-                  <View style={styles.skillsContainer}>
-                    {talent.skills.map((skill, index) => (
-                      <Text key={index} style={styles.skillTag}>{skill.name}</Text>
-                    ))}
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
-
-        {/* Results Info */}
-        <View style={styles.resultsContainer}>
-          <View style={styles.resultsInfo}>
-            <Text style={styles.resultsCount}>{filteredTalents.length} talenten gevonden</Text>
-            <Text style={styles.resultsSubtext}>In een straal van {selectedDistance} km</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.toggleButton}
-            onPress={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
-          >
-            <MaterialCommunityIcons
-              name={viewMode === 'map' ? 'format-list-bulleted' : 'map'}
-              size={20}
-              color="#7c3aed"
-            />
-          </TouchableOpacity>
+      {/* Results Info */}
+      <View style={styles.resultsContainer}>
+        <View style={styles.resultsInfo}>
+          <Text style={styles.resultsCount}>{filteredTalents.length} talenten gevonden</Text>
+          <Text style={styles.resultsSubtext}>In een straal van {selectedDistance} km</Text>
         </View>
+        <TouchableOpacity
+          style={styles.toggleButton}
+          onPress={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
+        >
+          <MaterialCommunityIcons
+            name={viewMode === 'map' ? 'format-list-bulleted' : 'map'}
+            size={20}
+            color="#7c3aed"
+          />
+        </TouchableOpacity>
+      </View>
 
-<<<<<<< HEAD
       {/* View Toggle Button */}
       <TouchableOpacity style={styles.listViewButton}>
         <Text style={styles.listViewButtonText}>
@@ -580,16 +364,6 @@ export default function ExploreMapScreen() {
         </Text>
       </TouchableOpacity>
     </SafeAreaView>
-=======
-        {/* View Toggle Button */}
-        <TouchableOpacity style={styles.listViewButton}>
-          <Text style={styles.listViewButtonText}>
-            {viewMode === 'map' ? 'Toon lijstweersgave' : 'Toon kaart'}
-          </Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    </View>
->>>>>>> 09e9b1647cf905177481de8f58ffd1fa3cde903c
   );
 }
 
