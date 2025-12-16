@@ -1,10 +1,3 @@
-
-import React from 'react';
-import AuthStackNavigator from './mobile/src/navigation/AuthStack';
-
-export default function App() {
-  return <AuthStackNavigator />;
-
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import HomePage from './mobile/src/screens/HomePage';
@@ -47,5 +40,14 @@ export default function App() {
       <BottomNavBar activeScreen={activeScreen} onNavigate={handleNavigate} />
     </View>
   );
-
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  screenContainer: {
+    flex: 1,
+  },
+});

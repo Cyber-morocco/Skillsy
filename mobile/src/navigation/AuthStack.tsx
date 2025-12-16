@@ -40,7 +40,7 @@ const screenOptions: NativeStackNavigationOptions = {
 const AuthStackNavigator = () => {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="ProfileCreationStep2" screenOptions={screenOptions}>
+      <Stack.Navigator initialRouteName="ProfileCreationStep1" screenOptions={screenOptions}>
         <Stack.Screen name="ProfileCreationStep1" component={ProfileCreationStep1} />
         <Stack.Screen name="ProfileCreationStep2" component={ProfileCreationStep2} />
         <Stack.Screen name="Login" component={LoginScreen} />

@@ -80,7 +80,7 @@ const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
                         </View>
 
                         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 24 }}>
-                            {PREDEFINED_SKILLS.map((skill) => {
+                            {[...PREDEFINED_SKILLS, ...selectedSkills.filter(s => !PREDEFINED_SKILLS.includes(s))].map((skill) => {
                                 const isSelected = selectedSkills.includes(skill);
                                 return (
                                     <TouchableOpacity
