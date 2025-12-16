@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile';
+type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability';
 
 interface NavBarItem {
   name: NavName;
