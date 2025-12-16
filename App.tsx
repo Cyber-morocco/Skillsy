@@ -1,6 +1,6 @@
 import React from 'react';
-import ChatStackNavigator from './mobile/src/navigation/ChatStack';
+import AuthStackNavigator from './mobile/src/navigation/AuthStack';
 
 export default function App() {
-  return <ChatStackNavigator />;
+  return <AuthStackNavigator />;
 }

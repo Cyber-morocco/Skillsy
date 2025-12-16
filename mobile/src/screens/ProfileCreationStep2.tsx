@@ -20,6 +20,8 @@ type NavProps = {
 };
 
 const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
+    const [role, setRole] = React.useState('');
+    const [skills, setSkills] = React.useState('');
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -34,11 +36,11 @@ const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
                 >
                     <View style={{ alignItems: 'center', marginBottom: 32 }}>
                         <View style={{ flexDirection: 'row', width: '100%', justifyContent: 'space-between', marginBottom: 16, paddingHorizontal: 16 }}>
-                            {}
+                            { }
                             <View style={{ height: 4, flex: 1, backgroundColor: authColors.accent, borderRadius: 2, marginRight: 8 }} />
-                            {}
+                            { }
                             <View style={{ height: 4, flex: 1, backgroundColor: authColors.accent, borderRadius: 2, marginRight: 8 }} />
-                            {}
+                            { }
                             <View style={{ height: 4, flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }} />
                         </View>
                         <Text style={{ color: authColors.muted, fontSize: 14 }}>Stap 2 van 3</Text>
@@ -54,7 +56,19 @@ const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
                             </Text>
                         </View>
 
-                        {}
+                        <AppInput
+                            label="Huidige functie"
+                            placeholder="Bijv. Software Developer, Loodgieter..."
+                            value={role}
+                            onChangeText={setRole}
+                        />
+
+                        <AppInput
+                            label="Vaardigheden"
+                            placeholder="Bijv. React Native, Houtbewerking..."
+                            value={skills}
+                            onChangeText={setSkills}
+                        />
 
 
 
@@ -77,7 +91,7 @@ const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
                             <TouchableOpacity
                                 style={[styles.primaryButton, { marginTop: 0, paddingVertical: 12, paddingHorizontal: 32 }]}
                                 onPress={() => {
-                                    
+
                                     console.log('Next step');
                                 }}
                             >
