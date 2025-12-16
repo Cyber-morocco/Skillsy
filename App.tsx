@@ -1,3 +1,9 @@
+import React from 'react';
+import AuthStackNavigator from './mobile/src/navigation/AuthStack';
+import ExploreProfileScreen from './mobile/src/screens/ExploreProfileScreen';
+
+export default function App() {
+  return <ExploreProfileScreen />;
 explore-map
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
