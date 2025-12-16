@@ -1,6 +1,51 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { View, StyleSheet } from 'react-native';
+import HomePage from './mobile/src/screens/HomePage';
+import ExploreMapScreen from './mobile/src/screens/ExploreMapScreen';
+import AppointmentsScreen from './mobile/src/screens/AppointmentsScreen';
+import ProfileScreen from './mobile/src/screens/ProfileScreen';
+import BottomNavBar from './mobile/src/components/BottomNavBar';
 import ChatStackNavigator from './mobile/src/navigation/ChatStack';
 
 export default function App() {
-  return <ChatStackNavigator />;
+  const [activeScreen, setActiveScreen] = useState<'home' | 'explore' | 'appointments' | 'messages' | 'profile'>('home');
+
+  const renderScreen = () => {
+    switch (activeScreen) {
+      case 'home':
+        return <HomePage />;
+      case 'explore':
+        return <ExploreMapScreen />;
+      case 'appointments':
+        return <AppointmentsScreen />;
+      case 'messages':
+        // Chat stack provides its own header/navigation internally
+        return <ChatStackNavigator />;
+      case 'profile':
+        return <ProfileScreen />;
+      default:
+        return <HomePage />;
+    }
+  };
+
+  const handleNavigate = (screen: string) => {
+    setActiveScreen(screen as 'home' | 'explore' | 'appointments' | 'messages' | 'profile');
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.screenContainer}>{renderScreen()}</View>
+      <BottomNavBar activeScreen={activeScreen} onNavigate={handleNavigate} />
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  screenContainer: {
+    flex: 1,
+  },
+});
