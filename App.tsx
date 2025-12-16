@@ -1,3 +1,4 @@
+explore-map
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import HomePage from './mobile/src/screens/HomePage';
@@ -30,6 +31,12 @@ export default function App() {
       <BottomNavBar activeScreen={activeScreen} onNavigate={setActiveScreen} />
     </View>
   );
+
+import React from 'react';
+import ChatStackNavigator from './mobile/src/navigation/ChatStack';
+export default function App() {
+  return <ChatStackNavigator />;
+ master
 }
 
 const styles = StyleSheet.create({
