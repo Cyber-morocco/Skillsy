@@ -7,11 +7,11 @@ import {
   ScrollView,
   StatusBar,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { authColors, authStyles as styles } from './styles/authStyles';
+import { authColors, authStyles as styles } from '../styles/authStyles';
+import { AppInput } from '../components/AppInput';
 
 type AuthScreenProps = {
   navigation?: {
@@ -22,11 +22,9 @@ type AuthScreenProps = {
 const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [focusedField, setFocusedField] = useState<string | null>(null);
   const [rememberMe, setRememberMe] = useState(false);
 
   const handleLogin = () => {
-    // TODO: wire up with backend auth flow
     console.log('Logging in with:', { email, password });
   };
 
@@ -57,12 +55,10 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
             <TouchableOpacity
               activeOpacity={0.9}
               style={styles.socialButton}
-              onPress={() => {
-                
-              }}
+              onPress={() => { }}
             >
               <Image
-                source={require('../../assets/google-logo.png')}
+                source={require('../../../assets/google-logo.png')}
                 style={styles.socialButtonIcon}
               />
               <Text style={styles.socialButtonText}>log in met Google</Text>
@@ -74,45 +70,23 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               <View style={styles.dividerLine} />
             </View>
 
-            <View style={styles.fieldGroup}>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>E-mailadres</Text>
-              </View>
-              <TextInput
-                style={[
-                  styles.input,
-                  focusedField === 'email' && styles.inputFocused,
-                ]}
-                placeholder="jij@voorbeeld.com"
-                placeholderTextColor={authColors.placeholder}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                value={email}
-                onChangeText={setEmail}
-                onFocus={() => setFocusedField('email')}
-                onBlur={() => setFocusedField(null)}
-              />
-            </View>
+            <AppInput
+              label="E-mailadres"
+              placeholder="jij@voorbeeld.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              value={email}
+              onChangeText={setEmail}
+            />
 
-            <View style={styles.fieldGroup}>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>Wachtwoord</Text>
-              </View>
-              <TextInput
-                style={[
-                  styles.input,
-                  focusedField === 'password' && styles.inputFocused,
-                ]}
-                placeholder="••••••••"
-                placeholderTextColor={authColors.placeholder}
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-                onFocus={() => setFocusedField('password')}
-                onBlur={() => setFocusedField(null)}
-              />
-            </View>
+            <AppInput
+              label="Wachtwoord"
+              placeholder="••••••••"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+            />
 
             <View style={styles.inlineRow}>
               <TouchableOpacity
@@ -160,4 +134,3 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 };
 
 export default LoginScreen;
-
