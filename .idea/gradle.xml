@@ -1,18 +1,85 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
+        <compositeConfiguration>
+          <compositeBuild compositeDefinitionSource="SCRIPT">
+            <builds>
+              <build path="$PROJECT_DIR$/node_modules/expo-modules-autolinking/android/expo-gradle-plugin" name="expo-gradle-plugin">
+                <projects>
+                  <project path="$PROJECT_DIR$/node_modules/expo-modules-autolinking/android/expo-gradle-plugin" />
+                  <project path="$PROJECT_DIR$/node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin" />
+                  <project path="$PROJECT_DIR$/node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin-shared" />
+                  <project path="$PROJECT_DIR$/node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-settings-plugin" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/node_modules/expo-modules-core/expo-module-gradle-plugin" name="expo-module-gradle-plugin">
+                <projects>
+                  <project path="$PROJECT_DIR$/node_modules/expo-modules-core/expo-module-gradle-plugin" />
+                </projects>
+              </build>
+              <build path="$PROJECT_DIR$/node_modules/@react-native/gradle-plugin" name="gradle-plugin-root">
+                <projects>
+                  <project path="$PROJECT_DIR$/node_modules/@react-native/gradle-plugin" />
+                  <project path="$PROJECT_DIR$/node_modules/@react-native/gradle-plugin/react-native-gradle-plugin" />
+                  <project path="$PROJECT_DIR$/node_modules/@react-native/gradle-plugin/settings-plugin" />
+                  <project path="$PROJECT_DIR$/node_modules/@react-native/gradle-plugin/shared" />
+                  <project path="$PROJECT_DIR$/node_modules/@react-native/gradle-plugin/shared-testutil" />
+                </projects>
+              </build>
+            </builds>
+          </compositeBuild>
+        </compositeConfiguration>
         <option name="externalProjectPath" value="$PROJECT_DIR$/android" />
         <option name="gradleJvm" value="#JAVA_HOME" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/android" />
+            <option value="$PROJECT_DIR$/android/app" />
+            <option value="$PROJECT_DIR$/node_modules/@react-native/gradle-plugin" />
+            <option value="$PROJECT_DIR$/node_modules/@react-native/gradle-plugin/react-native-gradle-plugin" />
+            <option value="$PROJECT_DIR$/node_modules/@react-native/gradle-plugin/settings-plugin" />
+            <option value="$PROJECT_DIR$/node_modules/@react-native/gradle-plugin/shared" />
+            <option value="$PROJECT_DIR$/node_modules/@react-native/gradle-plugin/shared-testutil" />
+            <option value="$PROJECT_DIR$/node_modules/expo-modules-autolinking/android/expo-gradle-plugin" />
+            <option value="$PROJECT_DIR$/node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin" />
+            <option value="$PROJECT_DIR$/node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin-shared" />
+            <option value="$PROJECT_DIR$/node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-settings-plugin" />
+            <option value="$PROJECT_DIR$/node_modules/expo-modules-core/android" />
+            <option value="$PROJECT_DIR$/node_modules/expo-modules-core/expo-module-gradle-plugin" />
+            <option value="$PROJECT_DIR$/node_modules/expo/android" />
+            <option value="$PROJECT_DIR$/node_modules/expo/node_modules/expo-constants/android" />
+            <option value="$PROJECT_DIR$/node_modules/react-native-safe-area-context/android" />
+            <option value="$PROJECT_DIR$/node_modules/react-native-screens/android" />
+          </set>
+        </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/node_modules/@react-native/gradle-plugin" />
         <option name="gradleJvm" value="#JAVA_HOME" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/node_modules/@react-native/gradle-plugin" />
+            <option value="$PROJECT_DIR$/node_modules/@react-native/gradle-plugin/react-native-gradle-plugin" />
+            <option value="$PROJECT_DIR$/node_modules/@react-native/gradle-plugin/settings-plugin" />
+            <option value="$PROJECT_DIR$/node_modules/@react-native/gradle-plugin/shared" />
+            <option value="$PROJECT_DIR$/node_modules/@react-native/gradle-plugin/shared-testutil" />
+          </set>
+        </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/node_modules/expo-modules-autolinking/android/expo-gradle-plugin" />
         <option name="gradleJvm" value="#JAVA_HOME" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/node_modules/expo-modules-autolinking/android/expo-gradle-plugin" />
+            <option value="$PROJECT_DIR$/node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin" />
+            <option value="$PROJECT_DIR$/node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-plugin-shared" />
+            <option value="$PROJECT_DIR$/node_modules/expo-modules-autolinking/android/expo-gradle-plugin/expo-autolinking-settings-plugin" />
+          </set>
+        </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/node_modules/expo-modules-autolinking/scripts/android" />
@@ -25,6 +92,11 @@
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/node_modules/expo-modules-core/expo-module-gradle-plugin" />
         <option name="gradleJvm" value="#JAVA_HOME" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/node_modules/expo-modules-core/expo-module-gradle-plugin" />
+          </set>
+        </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/node_modules/expo/android" />
@@ -65,6 +137,11 @@
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/node_modules/react-native-safe-area-context/android" />
         <option name="gradleJvm" value="#JAVA_HOME" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/node_modules/react-native-safe-area-context/android" />
+          </set>
+        </option>
       </GradleProjectSettings>
       <GradleProjectSettings>
         <option name="externalProjectPath" value="$PROJECT_DIR$/node_modules/react-native-screens/android" />
