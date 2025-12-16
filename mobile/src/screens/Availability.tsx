@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, View,  StyleSheet, Modal, } from 'react-native';
+import {
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+  StyleSheet,
+  Modal,
+} from 'react-native';
 
 const purple = '#A020F0';
 
@@ -7,14 +15,15 @@ const Availability: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'week' | 'dates'>('week');
 
   const [days, setDays] = useState([
-    { name: 'Maandag', enabled: false, start: '15:00', end: '19:00' },
-    { name: 'Dinsdag', enabled: true, start: '15:00', end: '19:00' },
-    { name: 'Woensdag', enabled: false, start: '15:00', end: '19:00' },
-    { name: 'Donderdag', enabled: true, start: '16:00', end: '19:00' },
-    { name: 'Vrijdag', enabled: false, start: '15:00', end: '19:00' },
+    { name: 'Maandag', enabled: false, start: '08:00', end: '22:00' },
+    { name: 'Dinsdag', enabled: true, start: '08:00', end: '22:00' },
+    { name: 'Woensdag', enabled: false, start: '08:00', end: '22:00' },
+    { name: 'Donderdag', enabled: true, start: '08:00', end: '22:00' },
+    { name: 'Vrijdag', enabled: false, start: '08:00', end: '22:00' },
+    { name: 'Zaterdag', enabled: false, start: '08:00', end: '22:00' },
+    { name: 'Zondag', enabled: false, start: '08:00', end: '22:00' },
   ]);
 
-  // Eén state-object voor modal + target
   const [picker, setPicker] = useState<{
     index: number;
     field: 'start' | 'end';
@@ -31,10 +40,20 @@ const Availability: React.FC = () => {
     setPicker({ ...picker, visible: false });
   };
 
+  const handleSave = () => {
+    console.log('Beschikbaarheid opgeslagen:', days);
+  };
+
+  const TIMES = [
+    '08:00','09:00','10:00','11:00','12:00',
+    '13:00','14:00','15:00','16:00','17:00',
+    '18:00','19:00','20:00','21:00','22:00',
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        
+
         <Text style={styles.headerTitle}>Beschikbaarheid</Text>
         <Text style={styles.headerSub}>Stel in wanneer je beschikbaar bent</Text>
 
@@ -92,6 +111,11 @@ const Availability: React.FC = () => {
             )}
           </View>
         ))}
+
+        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          <Text style={styles.saveButtonText}>Opslaan</Text>
+        </TouchableOpacity>
+
       </ScrollView>
 
       <Modal visible={picker.visible} transparent animationType="fade">
@@ -99,7 +123,7 @@ const Availability: React.FC = () => {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Kies een tijd</Text>
 
-            {['14:00', '15:00', '16:00', '17:00'].map((t) => (
+            {TIMES.map((t) => (
               <TouchableOpacity key={t} onPress={() => selectTime(t)}>
                 <Text style={styles.modalOption}>{t}</Text>
               </TouchableOpacity>
@@ -188,4 +212,18 @@ const styles = StyleSheet.create({
 
   closeButton: { marginTop: 20, backgroundColor: purple, paddingVertical: 10, borderRadius: 8 },
   closeButtonText: { color: '#fff', textAlign: 'center', fontWeight: '600' },
+
+  saveButton: {
+    marginHorizontal: 20,
+    marginTop: 30,
+    backgroundColor: purple,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
 });
