@@ -37,6 +37,14 @@ export default function ProfileScreen() {
             <Ionicons name="location-outline" size={16} color="rgba(255,255,255,0.9)" />
             <Text style={styles.locationText}>Centrum, Amsterdam</Text>
           </View>
+
+          <View style={styles.reviewsContainer}>
+            <Ionicons name="star" size={16} color="#FFD700" />
+            <Text style={styles.reviewsText}>4.9 (15 reviews)</Text>
+            <Text style={styles.punt}>•</Text>
+            <Ionicons name="laptop-outline" size={16} color="rgba(255,255,255,0.9)" />
+            <Text style={styles.reviewsText}>Lid sinds Maart 2024</Text>
+          </View>
         </View>
       </View>
     </SafeAreaView>
@@ -117,6 +125,21 @@ const styles = StyleSheet.create({
   locationText: {
     fontSize: 16,
     color: 'rgba(255,255,255,0.9)',
+  },
+  reviewsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  reviewsText: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '500',
+  },
+  punt: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.6)',
   },
 });
 
