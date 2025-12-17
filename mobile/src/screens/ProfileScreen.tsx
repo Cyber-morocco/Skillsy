@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ProfileScreen() {
+  const [activeTab, setActiveTab] = useState<'skills' | 'wilLeren' | 'reviews'>('skills');
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.headerBackground} />
@@ -49,6 +51,29 @@ export default function ProfileScreen() {
           <Text style={styles.aboutText}>
             Gepassioneerd lerares met een liefde voor talen en koken.
           </Text>
+
+          <View style={styles.tabsContainer}>
+            <TouchableOpacity onPress={() => setActiveTab('skills')} style={styles.tabItem}>
+              <Text style={[styles.tabText, activeTab === 'skills' && styles.tabTextActive]}>
+                Vaardigheden
+              </Text>
+              {activeTab === 'skills' && <View style={styles.tabButtonActive} />}
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => setActiveTab('wilLeren')} style={styles.tabItem}>
+              <Text style={[styles.tabText, activeTab === 'wilLeren' && styles.tabTextActive]}>
+                Wil leren
+              </Text>
+              {activeTab === 'wilLeren' && <View style={styles.tabButtonActive} />}
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => setActiveTab('reviews')} style={styles.tabItem}>
+              <Text style={[styles.tabText, activeTab === 'reviews' && styles.tabTextActive]}>
+                Reviews
+              </Text>
+              {activeTab === 'reviews' && <View style={styles.tabButtonActive} />}
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </SafeAreaView>
@@ -152,6 +177,36 @@ const styles = StyleSheet.create({
     marginTop: 16,
     lineHeight: 20,
     paddingHorizontal: 20,
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    marginTop: 24,
+    width: '100%',
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingBottom: 16,
+  },
+  tabText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#999',
+  },
+  tabTextActive: {
+    color: '#b832ff',
+    fontWeight: '700',
+  },
+  tabButtonActive: {
+    position: 'absolute',
+    bottom: 0,
+    width: 40,
+    height: 3,
+    backgroundColor: '#b832ff',
+    borderRadius: 1.5,
   },
 });
 
