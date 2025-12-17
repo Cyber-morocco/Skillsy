@@ -8,10 +8,10 @@ import {
     TouchableOpacity,
     KeyboardAvoidingView,
     Platform,
-    Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { conversationStyles as styles, conversationColors } from '../styles/ConversationStyle';
+import ScheduleMatchScreen from './ScheduleMatchScreen';
 
 type Message = {
     id: string;
@@ -41,6 +41,7 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
     const contactSubtitle = route?.params?.contactSubtitle || '';
 
     const [messageText, setMessageText] = useState('');
+    const [showScheduleMatch, setShowScheduleMatch] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
         { id: '1', text: 'Hallo! Hoe gaat het?', sender: 'other', time: '10:30' },
         { id: '2', text: 'Goed! En met jou?', sender: 'me', time: '10:32' },
@@ -61,19 +62,21 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
     };
 
     const handleAppointmentPress = () => {
-        Alert.alert(
-            'Afspraak maken',
-            `Wil je een afspraak maken met ${contactName}?`,
-            [
-                { text: 'Annuleren', style: 'cancel' },
-                {
-                    text: 'Ja, maak afspraak', onPress: () => {
-                        Alert.alert('Afspraak', 'Deze functie komt binnenkort beschikbaar.');
-                    }
-                },
-            ]
-        );
+        setShowScheduleMatch(true);
     };
+
+    // Show ScheduleMatchScreen when button is pressed
+    if (showScheduleMatch) {
+        return (
+            <ScheduleMatchScreen
+                contactName={contactName}
+                contactInitials={contactInitials}
+                contactColor={contactColor}
+                contactSubtitle={contactSubtitle}
+                onBack={() => setShowScheduleMatch(false)}
+            />
+        );
+    }
 
     const renderMessage = ({ item }: { item: Message }) => (
         <View style={[
