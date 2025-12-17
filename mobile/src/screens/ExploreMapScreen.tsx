@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image, Dimensions, ActivityIndicator, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image, SafeAreaView, Dimensions, Modal } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -16,7 +15,38 @@ interface Talent {
   skills: { name: string }[];
 }
 
-const DISTANCE_OPTIONS = [1, 2, 5, 10, 15];
+interface Location {
+  lat: number;
+  lng: number;
+  address?: string;
+}
+
+interface GeocodingResult {
+  lat: string;
+  lon: string;
+  display_name: string;
+}
+
+const DISTANCE_OPTIONS = [1, 2, 5, 10, 15, 25, 50, 100];
+
+const CATEGORY_OPTIONS = [
+  'Dans',
+  'Muziek',
+  'Wiskunde',
+  'Taal',
+  'Schilderkunst',
+  'Fotografie',
+  'Programmeren',
+  'Design',
+  'Fitness',
+  'Yoga',
+  'Koken',
+  'Gitaar',
+  'Schrijven',
+  'Theaterkunst',
+  'Marketing',
+  'Engels',
+];
 
 // Calculate distance between two coordinates in km
 const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
@@ -34,12 +64,16 @@ const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: numbe
 };
 
 export default function ExploreMapScreen() {
-  const [searchLocation, setSearchLocation] = useState('Amsterdam');
-  const [selectedDistance, setSelectedDistance] = useState(5);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [skillSearch, setSkillSearch] = useState('');
+  const [selectedDistance, setSelectedDistance] = useState<number | null>(null);
+  const [showDistanceDropdown, setShowDistanceDropdown] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
+  const [userLocation, setUserLocation] = useState<Location>({ lat: 52.3676, lng: 4.9041 });
+  const [isSearching, setIsSearching] = useState(false);
   const webViewRef = useRef<WebView>(null);
-  
-  const userLocation = { lat: 52.3676, lng: 4.9041 }; // Amsterdam center
   
   const allTalents: Talent[] = [
     // Amsterdam Center
@@ -104,18 +138,103 @@ export default function ExploreMapScreen() {
     { id: 35, name: 'Maxime', lat: 50.8503, lng: 4.3517, shortBio: 'Legal Tech', avatar: 'https://i.pravatar.cc/150?img=35', skills: [{ name: 'Legal Tech' }, { name: 'Compliance' }] },
   ];
 
-  // Filter talents based on selected distance
+  // Geocode address to coordinates
+  const geocodeAddress = async (address: string): Promise<Location | null> => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+        { headers: { 'User-Agent': 'Skillsy-App/1.0' } }
+      );
+      const data: GeocodingResult[] = await response.json();
+      if (data && data.length > 0) {
+        return {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon),
+          address: data[0].display_name
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      return null;
+    }
+  };
+
+  // Unified search: try geocoding; if it fails, treat as skill search
+  const handleSearch = async () => {
+    const q = searchQuery.trim();
+    if (!q) return;
+
+    setIsSearching(true);
+    const result = await geocodeAddress(q);
+    setIsSearching(false);
+
+    if (result) {
+      // It's a location search
+      setUserLocation(result);
+      // Clear skill search since location changed
+      // Keep the query visible in the input
+      if (webViewRef.current) {
+        webViewRef.current.postMessage(
+          JSON.stringify({
+            type: 'updateLocation',
+            location: result,
+            radiusKm: selectedDistance,
+            talents: filteredTalents
+          })
+        );
+      }
+    } else {
+      // Treat as skill search term
+      setSkillSearch(q);
+      // Update markers to reflect new filtered talents
+      if (webViewRef.current) {
+        webViewRef.current.postMessage(
+          JSON.stringify({
+            type: 'updateRadius',
+            radiusKm: selectedDistance,
+            talents: filteredTalents
+          })
+        );
+      }
+    }
+  };
+
+  // Filter talents based on all filters (distance, categories, and skill search)
   const filteredTalents = allTalents.filter((talent) => {
-    const distance = calculateDistance(
-      userLocation.lat,
-      userLocation.lng,
-      talent.lat,
-      talent.lng
-    );
-    return distance <= selectedDistance;
+    // Distance filter
+    if (selectedDistance !== null) {
+      const distance = calculateDistance(
+        userLocation.lat,
+        userLocation.lng,
+        talent.lat,
+        talent.lng
+      );
+      if (distance > selectedDistance) return false;
+    }
+    
+    // Category filter (any selected category must match)
+    if (selectedCategories.length > 0) {
+      const talentSkillNames = talent.skills.map(s => s.name.toLowerCase());
+      const hasMatchingCategory = selectedCategories.some(category => 
+        talentSkillNames.some(skill => skill.includes(category.toLowerCase()))
+      );
+      if (!hasMatchingCategory) return false;
+    }
+    
+    // Skill search filter
+    if (skillSearch.trim()) {
+      const searchTerm = skillSearch.toLowerCase().trim();
+      const hasMatchingSkill = talent.skills.some(skill => 
+        skill.name.toLowerCase().includes(searchTerm)
+      );
+      if (!hasMatchingSkill) return false;
+    }
+    
+    return true;
   });
 
-  // Update map when filtered talents or selectedDistance changes
+  // Update map when filtered talents or filters change
   useEffect(() => {
     if (webViewRef.current) {
       webViewRef.current.postMessage(JSON.stringify({ 
@@ -124,7 +243,7 @@ export default function ExploreMapScreen() {
         talents: filteredTalents
       }));
     }
-  }, [selectedDistance, filteredTalents]);
+  }, [selectedDistance, selectedCategories, skillSearch, filteredTalents]);
 
   const mapHTML = `
     <!DOCTYPE html>
@@ -271,6 +390,29 @@ export default function ExploreMapScreen() {
                     addTalentMarkers(data.talents);
                   }
                 }
+                if (data.type === 'updateLocation') {
+                  const { location, radiusKm: r, talents } = data;
+                  centerLat = location.lat;
+                  centerLng = location.lng;
+                  map.setView([location.lat, location.lng], 13);
+                  userMarker.setLatLng([location.lat, location.lng]);
+                  
+                  if (radiusCircle) {
+                    map.removeLayer(radiusCircle);
+                  }
+                  radiusCircle = L.circle([location.lat, location.lng], {
+                    radius: r * 1000,
+                    color: '#7c3aed',
+                    fillColor: '#7c3aed',
+                    fillOpacity: 0.05,
+                    weight: 2,
+                    dashArray: '5, 5'
+                  }).addTo(map);
+                  
+                  if (talents) {
+                    addTalentMarkers(talents);
+                  }
+                }
               } catch (e) {
                 console.error('Error handling message:', e);
               }
@@ -284,6 +426,45 @@ export default function ExploreMapScreen() {
     </html>
   `;
 
+  // Handle distance button press
+  const handleDistancePress = (distance: number) => {
+    if (selectedDistance === distance) {
+      // If clicking the same button, deselect it
+      setSelectedDistance(null);
+    } else {
+      // Otherwise, select the new distance
+      setSelectedDistance(distance);
+    }
+  };
+
+  // Handle distance selection
+  const handleDistanceSelect = (distance: number) => {
+    if (selectedDistance === distance) {
+      // Deselect if clicking the same distance
+      setSelectedDistance(null);
+    } else {
+      setSelectedDistance(distance);
+    }
+    setShowDistanceDropdown(false);
+  };
+
+  // Handle category selection (multiple selections allowed)
+  const handleCategorySelect = (category: string) => {
+    if (selectedCategories.includes(category)) {
+      // Remove if already selected
+      setSelectedCategories(selectedCategories.filter(c => c !== category));
+    } else {
+      // Add if not selected
+      setSelectedCategories([...selectedCategories, category]);
+    }
+  };
+
+  // Handle talent card press (for list view)
+  const handleTalentPress = (talentId: number) => {
+    // Navigate to talent profile or show details
+    console.log('Talent pressed:', talentId);
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -295,40 +476,178 @@ export default function ExploreMapScreen() {
           <Ionicons name="search" size={18} color="#999" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search location..."
-            value={searchLocation}
-            onChangeText={setSearchLocation}
+            placeholder="Zoek plaats of skill (bv. Amsterdam, Java)"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
           />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => { setSearchQuery(''); setSkillSearch(''); }} style={styles.searchButton}>
+              <Ionicons name="close" size={18} color="#7c3aed" />
+            </TouchableOpacity>
+          )}
+          {!isSearching && (
+            <TouchableOpacity onPress={handleSearch} style={styles.searchButton}>
+              <Ionicons name="arrow-forward" size={18} color="#7c3aed" />
+            </TouchableOpacity>
+          )}
+          {isSearching && (
+            <View style={styles.searchButton}>
+              <Text style={{ color: '#7c3aed' }}>...</Text>
+            </View>
+          )}
         </View>
       </View>
 
-      {/* Distance Selector */}
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        style={styles.distanceSelector}
-        contentContainerStyle={styles.distanceContent}
-      >
-        {DISTANCE_OPTIONS.map((distance) => (
+      {/* Filter Section */}
+      <View style={styles.filterSection}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterButtonsContainer}>
+          {/* Distance Filter Button */}
           <TouchableOpacity
-            key={distance}
             style={[
-              styles.distanceButton,
-              selectedDistance === distance && styles.distanceButtonActive
+              styles.filterButton,
+              selectedDistance !== null && styles.filterButtonActive
             ]}
-            onPress={() => setSelectedDistance(distance)}
+            onPress={() => setShowDistanceDropdown(!showDistanceDropdown)}
           >
+            <MaterialCommunityIcons name="map-marker-radius" size={16} color={selectedDistance !== null ? '#fff' : '#7c3aed'} />
             <Text
               style={[
-                styles.distanceText,
-                selectedDistance === distance && styles.distanceTextActive
+                styles.filterButtonText,
+                selectedDistance !== null && styles.filterButtonTextActive
               ]}
             >
-              {distance} km
+              {selectedDistance ? `${selectedDistance} km` : 'Afstand'}
             </Text>
+            <Ionicons
+              name={showDistanceDropdown ? 'chevron-up' : 'chevron-down'}
+              size={14}
+              color={selectedDistance !== null ? '#fff' : '#7c3aed'}
+            />
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+
+          {/* Category Filter Button */}
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              selectedCategories.length > 0 && styles.filterButtonActive,
+              { marginLeft: 8 }
+            ]}
+            onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
+          >
+            <MaterialCommunityIcons name="tag" size={16} color={selectedCategories.length > 0 ? '#fff' : '#7c3aed'} />
+            <Text
+              style={[
+                styles.filterButtonText,
+                selectedCategories.length > 0 && styles.filterButtonTextActive
+              ]}
+            >
+              {selectedCategories.length > 0 ? `${selectedCategories.length} cat.` : 'Categorie'}
+            </Text>
+            <Ionicons
+              name={showCategoryDropdown ? 'chevron-up' : 'chevron-down'}
+              size={14}
+              color={selectedCategories.length > 0 ? '#fff' : '#7c3aed'}
+            />
+          </TouchableOpacity>
+        </ScrollView>
+
+        {/* Distance Dropdown */}
+        {showDistanceDropdown && (
+          <View style={[styles.dropdownContainer, { left: 16 }]}>
+            {DISTANCE_OPTIONS.map((distance) => (
+              <TouchableOpacity
+                key={distance}
+                style={[
+                  styles.dropdownOption,
+                  selectedDistance === distance && styles.dropdownOptionActive
+                ]}
+                onPress={() => handleDistanceSelect(distance)}
+              >
+                <Text
+                  style={[
+                    styles.dropdownOptionText,
+                    selectedDistance === distance && styles.dropdownOptionTextActive
+                  ]}
+                >
+                  {`${distance} km`}
+                </Text>
+                {selectedDistance === distance && (
+                  <Ionicons name="checkmark" size={18} color="#7c3aed" />
+                )}
+              </TouchableOpacity>
+            ))}
+            
+            {/* Clear Filter Option */}
+            {selectedDistance !== null && (
+              <TouchableOpacity
+                style={styles.dropdownOption}
+                onPress={() => {
+                  setSelectedDistance(null);
+                  setShowDistanceDropdown(false);
+                }}
+              >
+                <Text style={styles.dropdownOptionText}>Wissen</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* Category Dropdown */}
+        {showCategoryDropdown && (
+          <View style={[styles.dropdownContainer, { maxHeight: 300 }]}>
+            <ScrollView scrollEnabled showsVerticalScrollIndicator={true}>
+              {CATEGORY_OPTIONS.map((category) => (
+                <TouchableOpacity
+                  key={category}
+                  style={[
+                    styles.dropdownOption,
+                    selectedCategories.includes(category) && styles.dropdownOptionActive
+                  ]}
+                  onPress={() => handleCategorySelect(category)}
+                >
+                  <Text
+                    style={[
+                      styles.dropdownOptionText,
+                      selectedCategories.includes(category) && styles.dropdownOptionTextActive
+                    ]}
+                  >
+                    {category}
+                  </Text>
+                  {selectedCategories.includes(category) && (
+                    <Ionicons name="checkmark" size={18} color="#7c3aed" />
+                  )}
+                </TouchableOpacity>
+              ))}
+              
+              {/* Clear Filter Option */}
+              {selectedCategories.length > 0 && (
+                <TouchableOpacity
+                  style={styles.dropdownOption}
+                  onPress={() => {
+                    setSelectedCategories([]);
+                  }}
+                >
+                  <Text style={styles.dropdownOptionText}>Alles wissen</Text>
+                </TouchableOpacity>
+              )}
+            </ScrollView>
+          </View>
+        )}
+      </View>
+
+      {/* Close dropdowns when clicking outside */}
+      {(showDistanceDropdown || showCategoryDropdown) && (
+        <TouchableOpacity
+          style={styles.dropdownOverlay}
+          activeOpacity={1}
+          onPress={() => {
+            setShowDistanceDropdown(false);
+            setShowCategoryDropdown(false);
+          }}
+        />
+      )}
 
       {/* Map or List View */}
       {viewMode === 'map' ? (
@@ -348,7 +667,7 @@ export default function ExploreMapScreen() {
       ) : (
         <ScrollView style={styles.listContainer}>
           {filteredTalents.map((talent) => (
-            <TouchableOpacity key={talent.id} style={styles.talentCard}>
+            <TouchableOpacity key={talent.id} style={styles.talentCard} onPress={() => handleTalentPress(talent.id)}>
               <Image source={{ uri: talent.avatar }} style={styles.talentAvatar} />
               <View style={styles.talentInfo}>
                 <Text style={styles.talentName}>{talent.name}</Text>
@@ -368,7 +687,11 @@ export default function ExploreMapScreen() {
       <View style={styles.resultsContainer}>
         <View style={styles.resultsInfo}>
           <Text style={styles.resultsCount}>{filteredTalents.length} talenten gevonden</Text>
-          <Text style={styles.resultsSubtext}>In een straal van {selectedDistance} km</Text>
+          <Text style={styles.resultsSubtext}>
+            {selectedDistance ? `${selectedDistance} km` : 'Alle afstanden'}
+            {selectedCategories.length > 0 && ` · ${selectedCategories.length} cat.`}
+            {skillSearch && ` · "${skillSearch}"`}
+          </Text>
         </View>
         <TouchableOpacity
           style={styles.toggleButton}
@@ -421,36 +744,93 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#333',
   },
-  distanceSelector: {
+  searchButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 4,
+  },
+  filterSection: {
     backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
-    maxHeight: 40,
   },
-  distanceContent: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    gap: 4,
+  filterButtonsContainer: {
+    flexDirection: 'row',
   },
-  distanceButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#f0f0f0',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#f8f9fa',
+    gap: 6,
+    minWidth: 100,
   },
-  distanceButtonActive: {
+  filterButtonActive: {
     backgroundColor: '#7c3aed',
     borderColor: '#7c3aed',
   },
-  distanceText: {
-    fontSize: 11,
+  filterButtonText: {
+    fontSize: 13,
     fontWeight: '600',
-    color: '#666',
+    color: '#6b7280',
   },
-  distanceTextActive: {
+  filterButtonTextActive: {
     color: '#fff',
+  },
+  dropdownContainer: {
+    position: 'absolute',
+    top: 58,
+    left: 16,
+    right: 16,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    paddingVertical: 6,
+    zIndex: 1000,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  dropdownOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 10,
+    marginHorizontal: 6,
+    marginVertical: 2,
+  },
+  dropdownOptionActive: {
+    backgroundColor: '#f3f0ff',
+  },
+  dropdownOptionText: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  dropdownOptionTextActive: {
+    color: '#7c3aed',
+    fontWeight: '600',
+  },
+  dropdownOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 999,
   },
   mapContainer: {
     flex: 1,
@@ -537,18 +917,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  listViewButton: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    backgroundColor: '#1f2937',
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  listViewButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
   },
 });
