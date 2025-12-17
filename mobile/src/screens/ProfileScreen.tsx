@@ -45,6 +45,10 @@ export default function ProfileScreen() {
             <Ionicons name="laptop-outline" size={16} color="rgba(255,255,255,0.9)" />
             <Text style={styles.reviewsText}>Lid sinds Maart 2024</Text>
           </View>
+
+          <Text style={styles.aboutText}>
+            Gepassioneerd lerares met een liefde voor talen en koken.
+          </Text>
         </View>
       </View>
     </SafeAreaView>
@@ -61,7 +65,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     width: '100%',
-    height: 380,
+    height: 430,
     backgroundColor: '#b832ff',
   },
   content: {
@@ -140,6 +144,14 @@ const styles = StyleSheet.create({
   punt: {
     fontSize: 14,
     color: 'rgba(255,255,255,0.6)',
+  },
+  aboutText: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.9)',
+    textAlign: 'center',
+    marginTop: 16,
+    lineHeight: 20,
+    paddingHorizontal: 20,
   },
 });
 
