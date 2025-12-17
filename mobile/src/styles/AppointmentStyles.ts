@@ -181,6 +181,9 @@ export const appointmentStyles = StyleSheet.create({
     statusPending: {
         backgroundColor: 'rgba(245, 158, 11, 0.15)',
     },
+    statusCompleted: {
+        backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    },
     statusText: {
         fontSize: 12,
         fontWeight: '600',
@@ -190,6 +193,9 @@ export const appointmentStyles = StyleSheet.create({
     },
     statusPendingText: {
         color: WARNING,
+    },
+    statusCompletedText: {
+        color: SUCCESS,
     },
 
     // Card details
@@ -243,5 +249,95 @@ export const appointmentStyles = StyleSheet.create({
         color: TEXT,
         fontWeight: '600',
         fontSize: 14,
+    },
+    reviewButton: {
+        borderWidth: 1,
+        borderColor: BORDER,
+        borderRadius: 12,
+        paddingVertical: 12,
+        alignItems: 'center',
+        backgroundColor: 'transparent',
+    },
+    reviewButtonText: {
+        color: TEXT,
+        fontWeight: '600',
+        fontSize: 14,
+    },
+
+    // Review Modal
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 24,
+        paddingBottom: 40,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    modalBackButton: {
+        marginRight: 12,
+    },
+    modalBackIcon: {
+        fontSize: 20,
+        color: '#1F2937',
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: '#1F2937',
+    },
+    modalSubtitle: {
+        fontSize: 14,
+        color: '#6B7280',
+        marginBottom: 24,
+    },
+    ratingLabel: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#1F2937',
+        marginBottom: 12,
+    },
+    starsContainer: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 24,
+    },
+    star: {
+        fontSize: 32,
+    },
+    reviewLabel: {
+        fontSize: 15,
+        fontWeight: '600',
+        color: '#1F2937',
+        marginBottom: 8,
+    },
+    reviewInput: {
+        backgroundColor: '#F3F4F6',
+        borderRadius: 12,
+        padding: 16,
+        minHeight: 100,
+        fontSize: 15,
+        color: '#1F2937',
+        textAlignVertical: 'top',
+        marginBottom: 24,
+    },
+    submitButton: {
+        backgroundColor: PRIMARY,
+        borderRadius: 12,
+        paddingVertical: 16,
+        alignItems: 'center',
+    },
+    submitButtonText: {
+        color: '#FFFFFF',
+        fontWeight: '600',
+        fontSize: 16,
     },
 });
