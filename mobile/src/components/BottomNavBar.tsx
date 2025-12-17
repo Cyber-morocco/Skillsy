@@ -1,175 +1,150 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile';
 
 interface NavBarItem {
-  name: NavName;
-  label: string;
-  icon: string;
-  type?: 'ionicons' | 'material';
+    name: NavName;
+    icon: string;
+    type: 'ionicons' | 'material';
 }
 
 interface BottomNavBarProps {
-  activeScreen: NavName;
-  onNavigate: (screen: NavName) => void;
-  // Optional dynamic badges you can pass later, e.g. { messages: 3 }
-  badges?: Partial<Record<NavName, number>>;
+    activeScreen: NavName;
+    onNavigate: (screen: NavName) => void;
 }
 
 const NAV_ITEMS: NavBarItem[] = [
-  {
-    name: 'home',
-    label: 'Home',
-    icon: 'home',
-    type: 'ionicons',
-  },
-  {
-    name: 'explore',
-    label: 'Ontdekken',
-    icon: 'map-marker',
-    type: 'material',
-  },
-  {
-    name: 'appointments',
-    label: 'Afspraken',
-    icon: 'calendar',
-    type: 'ionicons',
-  },
-  {
-    name: 'messages',
-    label: 'Berichten',
-    icon: 'chatbubble',
-    type: 'ionicons',
-  },
-  {
-    name: 'profile',
-    label: 'Profiel',
-    icon: 'person',
-    type: 'ionicons',
-  },
+    { name: 'home', icon: 'home', type: 'ionicons' },
+    { name: 'explore', icon: 'map-marker', type: 'material' },
+    { name: 'appointments', icon: 'calendar', type: 'ionicons' },
+    { name: 'messages', icon: 'chatbubble', type: 'ionicons' },
+    { name: 'profile', icon: 'person', type: 'ionicons' },
 ];
 
-export default function BottomNavBar({ activeScreen, onNavigate, badges }: BottomNavBarProps) {
-  return (
-    <View style={styles.container}>
-      <View style={styles.navBar}>
-        {NAV_ITEMS.map((item) => {
-          const isActive = activeScreen === item.name;
-          const badgeCount = badges?.[item.name] ?? 0;
+export default function BottomNavBar({ activeScreen, onNavigate }: BottomNavBarProps) {
+    const renderIcon = (item: NavBarItem, isActive: boolean) => {
+        const color = isActive ? '#fff' : '#64748B';
+        const size = isActive ? 26 : 24;
 
-          return (
-            <TouchableOpacity
-              key={item.name}
-              style={styles.navItem}
-              onPress={() => onNavigate(item.name)}
-              activeOpacity={0.7}
-            >
-              {/* Icon with badge */}
-              <View style={styles.iconContainer}>
-                {item.type === 'material' ? (
-                  <MaterialCommunityIcons
+        if (item.type === 'material') {
+            return (
+                <MaterialCommunityIcons
                     name={item.icon as any}
-                    size={24}
-                    color={isActive ? '#7c3aed' : '#999'}
-                  />
-                ) : (
-                  <Ionicons
-                    name={item.icon as any}
-                    size={24}
-                    color={isActive ? '#7c3aed' : '#999'}
-                  />
-                )}
+                    size={size}
+                    color={color}
+                />
+            );
+        }
+        return (
+            <Ionicons
+                name={item.icon as any}
+                size={size}
+                color={color}
+            />
+        );
+    };
 
-                {/* Badge */}
-                {badgeCount > 0 && (
-                  <View
-                    style={[
-                      styles.badge,
-                      isActive ? styles.badgeActive : styles.badgeInactive,
-                    ]}
-                  >
-                    <Text style={styles.badgeText}>{badgeCount}</Text>
-                  </View>
-                )}
-              </View>
+    return (
+        <View style={styles.container}>
+            <View style={styles.navBar}>
+                {NAV_ITEMS.map((item) => {
+                    const isActive = activeScreen === item.name;
 
-              {/* Label */}
-              <Text
-                style={[
-                  styles.label,
-                  isActive ? styles.labelActive : styles.labelInactive,
-                ]}
-              >
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    </View>
-  );
+                    return (
+                        <TouchableOpacity
+                            key={item.name}
+                            style={styles.navItemWrapper}
+                            onPress={() => onNavigate(item.name)}
+                            activeOpacity={0.8}
+                        >
+                            <View style={[styles.navItem, isActive && styles.navItemActive]}>
+                                {isActive && <View style={styles.glowEffect} />}
+                                <View style={[styles.iconCircle, isActive && styles.iconCircleActive]}>
+                                    {renderIcon(item, isActive)}
+                                </View>
+                            </View>
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
+        </View>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    paddingBottom: 0,
-  },
-  navBar: {
-    flexDirection: 'row',
-    height: 80,
-    justifyContent: 'space-around',
-    alignItems: 'flex-start',
-    paddingTop: 8,
-  },
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingVertical: 8,
-  },
-  iconContainer: {
-    position: 'relative',
-    width: 28,
-    height: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badge: {
-    position: 'absolute',
-    top: -5,
-    right: -8,
-    minWidth: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 6,
-  },
-  badgeActive: {
-    backgroundColor: '#7c3aed',
-  },
-  badgeInactive: {
-    backgroundColor: '#ef4444',
-  },
-  badgeText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  label: {
-    fontSize: 11,
-    marginTop: 6,
-    fontWeight: '500',
-  },
-  labelActive: {
-    color: '#7c3aed',
-  },
-  labelInactive: {
-    color: '#999',
-  },
+    container: {
+        backgroundColor: '#0A0D1A',
+        paddingBottom: Platform.OS === 'ios' ? 20 : 10,
+    },
+    navBar: {
+        flexDirection: 'row',
+        height: 70,
+        alignItems: 'center',
+        justifyContent: 'space-around',
+        backgroundColor: '#0F1629',
+        borderRadius: 20,
+        marginHorizontal: 12,
+        marginBottom: 8,
+        paddingHorizontal: 8,
+    },
+    navItemWrapper: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    navItem: {
+        position: 'relative',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 50,
+    },
+    navItemActive: {
+        marginTop: -30,
+    },
+    glowEffect: {
+        position: 'absolute',
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#7C3AED',
+        opacity: 0.4,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#7C3AED',
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0.8,
+                shadowRadius: 20,
+            },
+            android: {
+                elevation: 15,
+            },
+        }),
+    },
+    iconCircle: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'transparent',
+    },
+    iconCircleActive: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        backgroundColor: '#7C3AED',
+        ...Platform.select({
+            ios: {
+                shadowColor: '#7C3AED',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.5,
+                shadowRadius: 12,
+            },
+            android: {
+                elevation: 10,
+            },
+        }),
+    },
 });

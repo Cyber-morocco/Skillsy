@@ -6,15 +6,14 @@ import AppointmentsScreen from './mobile/src/screens/AppointmentsScreen';
 import ProfileScreen from './mobile/src/screens/ProfileScreen';
 import BottomNavBar from './mobile/src/components/BottomNavBar';
 import ChatStackNavigator from './mobile/src/navigation/ChatStack';
-import Availability from './mobile/src/screens/Availability';
+
+type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile';
 
 export default function App() {
-  const [activeScreen, setActiveScreen] = useState<'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability'>('home');
+  const [activeScreen, setActiveScreen] = useState<NavName>('home');
 
   const renderScreen = () => {
     switch (activeScreen) {
-      case 'availability':
-        return <Availability />;
       case 'home':
         return <HomePage />;
       case 'explore':
@@ -30,8 +29,8 @@ export default function App() {
     }
   };
 
-  const handleNavigate = (screen: string) => {
-    setActiveScreen(screen as 'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability');
+  const handleNavigate = (screen: NavName) => {
+    setActiveScreen(screen);
   };
 
   return (
