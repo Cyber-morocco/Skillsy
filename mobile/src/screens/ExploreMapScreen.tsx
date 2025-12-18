@@ -138,9 +138,15 @@ export default function ExploreMapScreen() {
             talentSkillNames.some((skill: string) => skill.includes(category.toLowerCase()))
           );
           if (!hasMatchingCategory) return false;
+        }
+        // Skill match
+        return talent.skills.some((skill: { name: string }) =>
+          skill.name.toLowerCase().includes(searchTerm)
+        );
+      });
+
       setSkillSearch(q);
       setIsSearching(false);
-      // Update markers to reflect new filtered talents
 
       if (webViewRef.current) {
         // Update markers immediately with matches
