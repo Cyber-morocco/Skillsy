@@ -1,19 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image, SafeAreaView, Dimensions, Modal } from 'react-native';
-import { WebView } from 'react-native-webview';
+import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image, Dimensions, Modal } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as ExpoLocation from 'expo-location';
+import { mockTalents, Talent } from '../mockdummies/markers';
 
 const { width, height } = Dimensions.get('window');
-
-interface Talent {
-  id: number;
-  name: string;
-  lat: number;
-  lng: number;
-  shortBio: string;
-  avatar: string;
-  skills: { name: string }[];
-}
 
 interface Location {
   lat: number;
@@ -75,68 +68,7 @@ export default function ExploreMapScreen() {
   const [isSearching, setIsSearching] = useState(false);
   const webViewRef = useRef<WebView>(null);
   
-  const allTalents: Talent[] = [
-    // Amsterdam Center
-    { id: 1, name: 'John', lat: 52.3676, lng: 4.9041, shortBio: 'Web Developer', avatar: 'https://i.pravatar.cc/150?img=1', skills: [{ name: 'React' }, { name: 'Node.js' }] },
-    { id: 2, name: 'Jane', lat: 52.3750, lng: 4.9050, shortBio: 'UI Designer', avatar: 'https://i.pravatar.cc/150?img=2', skills: [{ name: 'Figma' }, { name: 'CSS' }] },
-    { id: 3, name: 'Bob', lat: 52.3600, lng: 4.8950, shortBio: 'Mobile Dev', avatar: 'https://i.pravatar.cc/150?img=3', skills: [{ name: 'React Native' }, { name: 'Flutter' }] },
-    { id: 4, name: 'Lisa', lat: 52.3700, lng: 4.9100, shortBio: 'Product Manager', avatar: 'https://i.pravatar.cc/150?img=4', skills: [{ name: 'Leadership' }, { name: 'Analytics' }] },
-    
-    // Amsterdam - nearby (1-3 km)
-    { id: 5, name: 'Mark', lat: 52.3710, lng: 4.8980, shortBio: 'DevOps Engineer', avatar: 'https://i.pravatar.cc/150?img=5', skills: [{ name: 'Docker' }, { name: 'Kubernetes' }] },
-    { id: 6, name: 'Sarah', lat: 52.3640, lng: 4.9120, shortBio: 'Data Scientist', avatar: 'https://i.pravatar.cc/150?img=6', skills: [{ name: 'Python' }, { name: 'ML' }] },
-    { id: 7, name: 'Tom', lat: 52.3720, lng: 4.9000, shortBio: 'Backend Developer', avatar: 'https://i.pravatar.cc/150?img=7', skills: [{ name: 'Java' }, { name: 'Spring' }] },
-    { id: 8, name: 'Emma', lat: 52.3650, lng: 4.9080, shortBio: 'UX Researcher', avatar: 'https://i.pravatar.cc/150?img=8', skills: [{ name: 'Research' }, { name: 'Usability' }] },
-    { id: 9, name: 'Lucas', lat: 52.3690, lng: 4.9020, shortBio: 'Full Stack Dev', avatar: 'https://i.pravatar.cc/150?img=9', skills: [{ name: 'Vue.js' }, { name: 'Express' }] },
-    
-    // Amsterdam - slightly further (3-8 km)
-    { id: 10, name: 'Sophie', lat: 52.3800, lng: 4.9200, shortBio: 'QA Engineer', avatar: 'https://i.pravatar.cc/150?img=10', skills: [{ name: 'Testing' }, { name: 'Automation' }] },
-    { id: 11, name: 'Alex', lat: 52.3500, lng: 4.8850, shortBio: 'Security Expert', avatar: 'https://i.pravatar.cc/150?img=11', skills: [{ name: 'Cybersecurity' }, { name: 'Pentesting' }] },
-    { id: 12, name: 'Nina', lat: 52.3820, lng: 4.9150, shortBio: 'Scrum Master', avatar: 'https://i.pravatar.cc/150?img=12', skills: [{ name: 'Agile' }, { name: 'Coaching' }] },
-    { id: 13, name: 'Daniel', lat: 52.3550, lng: 4.8900, shortBio: 'Cloud Architect', avatar: 'https://i.pravatar.cc/150?img=13', skills: [{ name: 'AWS' }, { name: 'Azure' }] },
-    { id: 14, name: 'Laura', lat: 52.3900, lng: 4.9100, shortBio: 'Content Strategist', avatar: 'https://i.pravatar.cc/150?img=14', skills: [{ name: 'SEO' }, { name: 'Copywriting' }] },
-    
-    // Rotterdam (60 km from Amsterdam)
-    { id: 15, name: 'Peter', lat: 51.9225, lng: 4.4792, shortBio: 'Blockchain Dev', avatar: 'https://i.pravatar.cc/150?img=15', skills: [{ name: 'Solidity' }, { name: 'Web3' }] },
-    { id: 16, name: 'Maria', lat: 51.9244, lng: 4.4777, shortBio: 'Brand Designer', avatar: 'https://i.pravatar.cc/150?img=16', skills: [{ name: 'Branding' }, { name: 'Illustration' }] },
-    { id: 17, name: 'Kevin', lat: 51.9200, lng: 4.4800, shortBio: 'iOS Developer', avatar: 'https://i.pravatar.cc/150?img=17', skills: [{ name: 'Swift' }, { name: 'SwiftUI' }] },
-    
-    // The Hague (50 km from Amsterdam)
-    { id: 18, name: 'Julia', lat: 52.0705, lng: 4.3007, shortBio: 'Game Developer', avatar: 'https://i.pravatar.cc/150?img=18', skills: [{ name: 'Unity' }, { name: 'C#' }] },
-    { id: 19, name: 'Mike', lat: 52.0800, lng: 4.3100, shortBio: 'AI Specialist', avatar: 'https://i.pravatar.cc/150?img=19', skills: [{ name: 'TensorFlow' }, { name: 'Deep Learning' }] },
-    
-    // Utrecht (35 km from Amsterdam)
-    { id: 20, name: 'Anna', lat: 52.0907, lng: 5.1214, shortBio: 'Frontend Lead', avatar: 'https://i.pravatar.cc/150?img=20', skills: [{ name: 'TypeScript' }, { name: 'Angular' }] },
-    { id: 21, name: 'Chris', lat: 52.0850, lng: 5.1150, shortBio: 'Systems Engineer', avatar: 'https://i.pravatar.cc/150?img=21', skills: [{ name: 'Linux' }, { name: 'Networking' }] },
-    { id: 22, name: 'Eva', lat: 52.0950, lng: 5.1300, shortBio: 'Video Editor', avatar: 'https://i.pravatar.cc/150?img=22', skills: [{ name: 'Premiere' }, { name: 'After Effects' }] },
-    
-    // Berlin, Germany
-    { id: 23, name: 'Hans', lat: 52.5200, lng: 13.4050, shortBio: 'Hardware Engineer', avatar: 'https://i.pravatar.cc/150?img=23', skills: [{ name: 'IoT' }, { name: 'Embedded' }] },
-    { id: 24, name: 'Ingrid', lat: 52.5150, lng: 13.3900, shortBio: 'Tech Writer', avatar: 'https://i.pravatar.cc/150?img=24', skills: [{ name: 'Documentation' }, { name: 'API Docs' }] },
-    { id: 25, name: 'Franz', lat: 52.5300, lng: 13.4100, shortBio: 'AR/VR Developer', avatar: 'https://i.pravatar.cc/150?img=25', skills: [{ name: 'Unity' }, { name: 'AR Kit' }] },
-    
-    // Paris, France
-    { id: 26, name: 'Pierre', lat: 48.8566, lng: 2.3522, shortBio: 'Fashion Tech', avatar: 'https://i.pravatar.cc/150?img=26', skills: [{ name: '3D Modeling' }, { name: 'Blender' }] },
-    { id: 27, name: 'Camille', lat: 48.8600, lng: 2.3500, shortBio: 'Growth Hacker', avatar: 'https://i.pravatar.cc/150?img=27', skills: [{ name: 'Marketing' }, { name: 'Analytics' }] },
-    
-    // London, UK
-    { id: 28, name: 'James', lat: 51.5074, lng: -0.1278, shortBio: 'FinTech Developer', avatar: 'https://i.pravatar.cc/150?img=28', skills: [{ name: 'Rust' }, { name: 'Trading Systems' }] },
-    { id: 29, name: 'Emily', lat: 51.5100, lng: -0.1200, shortBio: 'Voice UI Designer', avatar: 'https://i.pravatar.cc/150?img=29', skills: [{ name: 'Alexa' }, { name: 'Voice Design' }] },
-    { id: 30, name: 'Oliver', lat: 51.5050, lng: -0.1300, shortBio: 'Crypto Analyst', avatar: 'https://i.pravatar.cc/150?img=30', skills: [{ name: 'DeFi' }, { name: 'Research' }] },
-    
-    // Barcelona, Spain
-    { id: 31, name: 'Carlos', lat: 41.3851, lng: 2.1734, shortBio: 'Motion Designer', avatar: 'https://i.pravatar.cc/150?img=31', skills: [{ name: 'Animation' }, { name: 'Cinema 4D' }] },
-    { id: 32, name: 'Isabella', lat: 41.3900, lng: 2.1700, shortBio: 'Startup Advisor', avatar: 'https://i.pravatar.cc/150?img=32', skills: [{ name: 'Strategy' }, { name: 'Fundraising' }] },
-    
-    // Copenhagen, Denmark
-    { id: 33, name: 'Lars', lat: 55.6761, lng: 12.5683, shortBio: 'Green Tech Dev', avatar: 'https://i.pravatar.cc/150?img=33', skills: [{ name: 'Sustainability' }, { name: 'Clean Tech' }] },
-    
-    // Stockholm, Sweden
-    { id: 34, name: 'Astrid', lat: 59.3293, lng: 18.0686, shortBio: 'EdTech Designer', avatar: 'https://i.pravatar.cc/150?img=34', skills: [{ name: 'E-learning' }, { name: 'Instructional Design' }] },
-    
-    // Brussels, Belgium
-    { id: 35, name: 'Maxime', lat: 50.8503, lng: 4.3517, shortBio: 'Legal Tech', avatar: 'https://i.pravatar.cc/150?img=35', skills: [{ name: 'Legal Tech' }, { name: 'Compliance' }] },
-  ];
+  const allTalents = mockTalents;
 
   // Geocode address to coordinates
   const geocodeAddress = async (address: string): Promise<Location | null> => {
@@ -201,7 +133,7 @@ export default function ExploreMapScreen() {
   };
 
   // Filter talents based on all filters (distance, categories, and skill search)
-  const filteredTalents = allTalents.filter((talent) => {
+  const filteredTalents = allTalents.filter((talent: Talent) => {
     // Distance filter
     if (selectedDistance !== null) {
       const distance = calculateDistance(
@@ -215,9 +147,9 @@ export default function ExploreMapScreen() {
     
     // Category filter (any selected category must match)
     if (selectedCategories.length > 0) {
-      const talentSkillNames = talent.skills.map(s => s.name.toLowerCase());
+      const talentSkillNames = talent.skills.map((s: { name: string }) => s.name.toLowerCase());
       const hasMatchingCategory = selectedCategories.some(category => 
-        talentSkillNames.some(skill => skill.includes(category.toLowerCase()))
+        talentSkillNames.some((skill: string) => skill.includes(category.toLowerCase()))
       );
       if (!hasMatchingCategory) return false;
     }
@@ -225,7 +157,7 @@ export default function ExploreMapScreen() {
     // Skill search filter
     if (skillSearch.trim()) {
       const searchTerm = skillSearch.toLowerCase().trim();
-      const hasMatchingSkill = talent.skills.some(skill => 
+      const hasMatchingSkill = talent.skills.some((skill: { name: string }) => 
         skill.name.toLowerCase().includes(searchTerm)
       );
       if (!hasMatchingSkill) return false;
@@ -502,7 +434,7 @@ export default function ExploreMapScreen() {
 
       {/* Filter Section */}
       <View style={styles.filterSection}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterButtonsContainer}>
+        <View style={styles.filterButtonsContainer}>
           {/* Distance Filter Button */}
           <TouchableOpacity
             style={[
@@ -551,7 +483,22 @@ export default function ExploreMapScreen() {
               color={selectedCategories.length > 0 ? '#fff' : '#7c3aed'}
             />
           </TouchableOpacity>
-        </ScrollView>
+
+          {/* Map/List Toggle Button */}
+          <TouchableOpacity
+            style={[styles.filterButton, { marginLeft: 8 }]}
+            onPress={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
+          >
+            <MaterialCommunityIcons
+              name={viewMode === 'map' ? 'format-list-bulleted' : 'map'}
+              size={16}
+              color="#7c3aed"
+            />
+            <Text style={styles.filterButtonText}>
+              {viewMode === 'map' ? 'Lijst' : 'Kaart'}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Distance Dropdown */}
         {showDistanceDropdown && (
@@ -596,7 +543,7 @@ export default function ExploreMapScreen() {
 
         {/* Category Dropdown */}
         {showCategoryDropdown && (
-          <View style={[styles.dropdownContainer, { maxHeight: 300 }]}>
+          <View style={[styles.dropdownContainer, { maxHeight: 300, left: '35%' }]}>
             <ScrollView scrollEnabled showsVerticalScrollIndicator={true}>
               {CATEGORY_OPTIONS.map((category) => (
                 <TouchableOpacity
@@ -666,14 +613,14 @@ export default function ExploreMapScreen() {
         </View>
       ) : (
         <ScrollView style={styles.listContainer}>
-          {filteredTalents.map((talent) => (
+          {filteredTalents.map((talent: Talent) => (
             <TouchableOpacity key={talent.id} style={styles.talentCard} onPress={() => handleTalentPress(talent.id)}>
               <Image source={{ uri: talent.avatar }} style={styles.talentAvatar} />
               <View style={styles.talentInfo}>
                 <Text style={styles.talentName}>{talent.name}</Text>
                 <Text style={styles.talentBio}>{talent.shortBio}</Text>
                 <View style={styles.skillsContainer}>
-                  {talent.skills.map((skill, index) => (
+                  {talent.skills.map((skill: { name: string }, index: number) => (
                     <Text key={index} style={styles.skillTag}>{skill.name}</Text>
                   ))}
                 </View>
@@ -685,24 +632,12 @@ export default function ExploreMapScreen() {
 
       {/* Results Info */}
       <View style={styles.resultsContainer}>
-        <View style={styles.resultsInfo}>
-          <Text style={styles.resultsCount}>{filteredTalents.length} talenten gevonden</Text>
-          <Text style={styles.resultsSubtext}>
-            {selectedDistance ? `${selectedDistance} km` : 'Alle afstanden'}
-            {selectedCategories.length > 0 && ` · ${selectedCategories.length} cat.`}
-            {skillSearch && ` · "${skillSearch}"`}
-          </Text>
-        </View>
-        <TouchableOpacity
-          style={styles.toggleButton}
-          onPress={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
-        >
-          <MaterialCommunityIcons
-            name={viewMode === 'map' ? 'format-list-bulleted' : 'map'}
-            size={20}
-            color="#7c3aed"
-          />
-        </TouchableOpacity>
+        <Text style={styles.resultsCount}>{filteredTalents.length} talenten</Text>
+        <Text style={styles.resultsSubtext}>
+          {selectedDistance ? `${selectedDistance} km` : 'Alle'}
+          {selectedCategories.length > 0 && ` · ${selectedCategories.length} cat.`}
+          {skillSearch && ` · "${skillSearch}"`}
+        </Text>
       </View>
     </SafeAreaView>
   );
@@ -753,32 +688,35 @@ const styles = StyleSheet.create({
   },
   filterSection: {
     backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
   filterButtonsContainer: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 6,
   },
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1.5,
     borderColor: '#e5e7eb',
     backgroundColor: '#f8f9fa',
-    gap: 6,
-    minWidth: 100,
+    gap: 4,
+    flex: 1,
+    justifyContent: 'center',
   },
   filterButtonActive: {
     backgroundColor: '#7c3aed',
     borderColor: '#7c3aed',
   },
   filterButtonText: {
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '600',
     color: '#6b7280',
   },
@@ -789,7 +727,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 58,
     left: 16,
-    right: 16,
+    minWidth: 150,
+    maxWidth: 250,
     backgroundColor: '#fff',
     borderRadius: 14,
     borderWidth: 1,
@@ -892,30 +831,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
   },
-  resultsInfo: {
-    flex: 1,
-  },
   resultsCount: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: '#1f2937',
   },
   resultsSubtext: {
     fontSize: 12,
     color: '#999',
-    marginTop: 2,
-  },
-  toggleButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });
