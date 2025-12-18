@@ -7,10 +7,17 @@ import {
   View,
   StyleSheet,
   Platform,
+  Modal,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const purple = '#A020F0';
+
+const TIMES = [
+  '08:00','09:00','10:00','11:00','12:00',
+  '13:00','14:00','15:00','16:00','17:00',
+  '18:00','19:00','20:00','21:00','22:00',
+];
 
 type Props = {
   navigation: any;
@@ -26,6 +33,16 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
   const [dates, setDates] = useState<SpecificDate[]>([]);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
+
+  const [timePicker, setTimePicker] = useState<{
+    visible: boolean;
+    index: number;
+    field: 'start' | 'end';
+  }>({
+    visible: false,
+    index: 0,
+    field: 'start',
+  });
 
   const addDate = () => {
     setDates([
@@ -84,18 +101,28 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
               >
                 <Text style={styles.remove}>× Verwijder</Text>
               </TouchableOpacity>
-              
             </View>
+
             <View style={styles.timeRow}>
-              <View style={styles.timeBox}>
+              <TouchableOpacity
+                style={styles.timeBox}
+                onPress={() =>
+                  setTimePicker({ visible: true, index: i, field: 'start' })
+                }
+              >
                 <Text style={styles.timeLabel}>Start</Text>
                 <Text style={styles.timeValue}>{item.start}</Text>
-              </View>
+              </TouchableOpacity>
 
-              <View style={styles.timeBox}>
+              <TouchableOpacity
+                style={styles.timeBox}
+                onPress={() =>
+                  setTimePicker({ visible: true, index: i, field: 'end' })
+                }
+              >
                 <Text style={styles.timeLabel}>Einde</Text>
                 <Text style={styles.timeValue}>{item.end}</Text>
-              </View>
+              </TouchableOpacity>
             </View>
           </View>
         ))}
@@ -115,6 +142,25 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
           }}
         />
       )}
+      <Modal visible={timePicker.visible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {TIMES.map(t => (
+              <TouchableOpacity
+                key={t}
+                onPress={() => {
+                  const copy = [...dates];
+                  copy[timePicker.index][timePicker.field] = t;
+                  setDates(copy);
+                  setTimePicker({ ...timePicker, visible: false });
+                }}
+              >
+                <Text style={styles.modalOption}>{t}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -177,12 +223,25 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 10,
   },
-  timeLabel: {
-    fontSize: 13,
-    color: '#777',
+  timeLabel: { fontSize: 13, color: '#777' },
+  timeValue: { fontSize: 16, fontWeight: '700' },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  timeValue: {
-    fontSize: 16,
-    fontWeight: '700',
+  modalContent: {
+    width: '70%',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+  },
+  modalOption: {
+    fontSize: 18,
+    paddingVertical: 10,
+    textAlign: 'center',
+    color: purple,
   },
 });
