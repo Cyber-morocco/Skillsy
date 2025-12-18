@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image,
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import * as ExpoLocation from 'expo-location';
 import { mockTalents, Talent } from '../mockdummies/markers';
 
 const { width, height } = Dimensions.get('window');
@@ -66,6 +65,7 @@ export default function ExploreMapScreen() {
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [userLocation, setUserLocation] = useState<Location>({ lat: 52.3676, lng: 4.9041 });
   const [isSearching, setIsSearching] = useState(false);
+  const [searchType, setSearchType] = useState<'skill' | 'address'>('skill');
   const webViewRef = useRef<WebView>(null);
   
   const allTalents = mockTalents;
@@ -98,27 +98,30 @@ export default function ExploreMapScreen() {
     if (!q) return;
 
     setIsSearching(true);
-    const result = await geocodeAddress(q);
-    setIsSearching(false);
+    
+    if (searchType === 'address') {
+      const result = await geocodeAddress(q);
+      setIsSearching(false);
 
-    if (result) {
-      // It's a location search
-      setUserLocation(result);
-      // Clear skill search since location changed
-      // Keep the query visible in the input
-      if (webViewRef.current) {
-        webViewRef.current.postMessage(
-          JSON.stringify({
-            type: 'updateLocation',
-            location: result,
-            radiusKm: selectedDistance,
-            talents: filteredTalents
-          })
-        );
+      if (result) {
+        // It's a location search
+        setUserLocation(result);
+        // Keep the query visible in the input
+        if (webViewRef.current) {
+          webViewRef.current.postMessage(
+            JSON.stringify({
+              type: 'updateLocation',
+              location: result,
+              radiusKm: selectedDistance,
+              talents: filteredTalents
+            })
+          );
+        }
       }
     } else {
       // Treat as skill search term
       setSkillSearch(q);
+      setIsSearching(false);
       // Update markers to reflect new filtered talents
       if (webViewRef.current) {
         webViewRef.current.postMessage(
@@ -401,14 +404,22 @@ export default function ExploreMapScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color="#7c3aed" />
+        {/* Skill/Address Toggle Button */}
+        <TouchableOpacity
+          style={styles.searchTypeToggleButton}
+          onPress={() => setSearchType(searchType === 'skill' ? 'address' : 'skill')}
+        >
+          <MaterialCommunityIcons 
+            name={searchType === 'skill' ? 'lightbulb' : 'map-marker'} 
+            size={20} 
+            color="#fff" 
+          />
         </TouchableOpacity>
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={18} color="#999" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Zoek plaats of skill (bv. Amsterdam, Java)"
+            placeholder={searchType === 'skill' ? 'Zoek skill (bv. Java)' : 'Zoek plaats (bv. Amsterdam)'}
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={handleSearch}
@@ -486,17 +497,14 @@ export default function ExploreMapScreen() {
 
           {/* Map/List Toggle Button */}
           <TouchableOpacity
-            style={[styles.filterButton, { marginLeft: 8 }]}
+            style={styles.viewModeToggleButton}
             onPress={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
           >
             <MaterialCommunityIcons
               name={viewMode === 'map' ? 'format-list-bulleted' : 'map'}
-              size={16}
+              size={18}
               color="#7c3aed"
             />
-            <Text style={styles.filterButtonText}>
-              {viewMode === 'map' ? 'Lijst' : 'Kaart'}
-            </Text>
           </TouchableOpacity>
         </View>
 
@@ -525,25 +533,12 @@ export default function ExploreMapScreen() {
                 )}
               </TouchableOpacity>
             ))}
-            
-            {/* Clear Filter Option */}
-            {selectedDistance !== null && (
-              <TouchableOpacity
-                style={styles.dropdownOption}
-                onPress={() => {
-                  setSelectedDistance(null);
-                  setShowDistanceDropdown(false);
-                }}
-              >
-                <Text style={styles.dropdownOptionText}>Wissen</Text>
-              </TouchableOpacity>
-            )}
           </View>
         )}
 
         {/* Category Dropdown */}
         {showCategoryDropdown && (
-          <View style={[styles.dropdownContainer, { maxHeight: 300, left: '35%' }]}>
+          <View style={[styles.dropdownContainer, { maxHeight: 300 }]}>
             <ScrollView scrollEnabled showsVerticalScrollIndicator={true}>
               {CATEGORY_OPTIONS.map((category) => (
                 <TouchableOpacity
@@ -651,27 +646,34 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    paddingTop: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    paddingTop: 16,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
+    gap: 8,
   },
-  backButton: {
+  searchTypeToggleButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 12,
+    backgroundColor: '#7c3aed',
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   searchContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f0f0f0',
-    borderRadius: 24,
-    paddingHorizontal: 14,
-    marginLeft: 8,
+    borderRadius: 20,
+    paddingHorizontal: 12,
   },
   searchInput: {
     flex: 1,
@@ -688,37 +690,49 @@ const styles = StyleSheet.create({
   },
   filterSection: {
     backgroundColor: '#fff',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
   filterButtonsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flex: 1,
+    alignItems: 'center',
     gap: 6,
   },
   filterButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
+    justifyContent: 'center',
+    paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1.5,
     borderColor: '#e5e7eb',
     backgroundColor: '#f8f9fa',
     gap: 4,
-    flex: 1,
-    justifyContent: 'center',
+    minHeight: 36,
   },
   filterButtonActive: {
     backgroundColor: '#7c3aed',
     borderColor: '#7c3aed',
   },
   filterButtonText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: '#6b7280',
+  },
+  viewModeToggleButton: {
+    width: 40,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#f8f9fa',
   },
   filterButtonTextActive: {
     color: '#fff',
@@ -727,8 +741,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 58,
     left: 16,
-    minWidth: 150,
-    maxWidth: 250,
+    right: 16,
     backgroundColor: '#fff',
     borderRadius: 14,
     borderWidth: 1,
