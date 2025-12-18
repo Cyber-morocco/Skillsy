@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image, Dimensions, Modal } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image, Dimensions, Modal, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -456,6 +456,7 @@ export default function ExploreMapScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
       {/* Header */}
       <View style={styles.header}>
         {/* Skill/Address Toggle Button */}
@@ -470,10 +471,11 @@ export default function ExploreMapScreen() {
           />
         </TouchableOpacity>
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={18} color="#999" />
+          <Ionicons name="search" size={18} color="#94A3B8" />
           <TextInput
             style={styles.searchInput}
             placeholder={searchType === 'skill' ? 'Zoek skill (bv. Java)' : 'Zoek plaats (bv. Amsterdam)'}
+            placeholderTextColor="#94A3B8"
             value={searchQuery}
             onChangeText={setSearchQuery}
             onSubmitEditing={handleSearch}
@@ -694,17 +696,14 @@ export default function ExploreMapScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9ff',
+    backgroundColor: '#050816',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 12,
-    paddingTop: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    backgroundColor: '#050816',
     gap: 8,
   },
   searchTypeToggleButton: {
@@ -724,15 +723,17 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#101936',
     borderRadius: 20,
     paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.25)',
   },
   searchInput: {
     flex: 1,
     marginLeft: 8,
     fontSize: 14,
-    color: '#333',
+    color: '#F8FAFC',
   },
   searchButton: {
     width: 32,
@@ -742,7 +743,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   filterSection: {
-    backgroundColor: '#fff',
+    backgroundColor: '#050816',
     paddingHorizontal: 16,
     paddingVertical: 12,
     marginBottom: 0,
@@ -761,8 +762,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: '#e5e7eb',
-    backgroundColor: '#f8f9fa',
+    borderColor: 'rgba(148, 163, 184, 0.25)',
+    backgroundColor: '#101936',
     gap: 4,
     minHeight: 36,
   },
@@ -773,7 +774,7 @@ const styles = StyleSheet.create({
   filterButtonText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#6b7280',
+    color: '#94A3B8',
   },
   viewModeToggleButton: {
     width: 40,
@@ -782,21 +783,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: '#e5e7eb',
-    backgroundColor: '#f8f9fa',
+    borderColor: 'rgba(148, 163, 184, 0.25)',
+    backgroundColor: '#101936',
   },
   filterButtonTextActive: {
-    color: '#fff',
+    color: '#F8FAFC',
   },
   dropdownContainer: {
     position: 'absolute',
     top: 58,
     left: 16,
     right: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#101936',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
+    borderColor: 'rgba(148, 163, 184, 0.25)',
     paddingVertical: 6,
     zIndex: 1000,
     shadowColor: '#000',
@@ -816,11 +817,11 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   dropdownOptionActive: {
-    backgroundColor: '#f3f0ff',
+    backgroundColor: 'rgba(124, 58, 237, 0.1)',
   },
   dropdownOptionText: {
     fontSize: 14,
-    color: '#374151',
+    color: '#94A3B8',
     fontWeight: '500',
   },
   dropdownOptionTextActive: {
@@ -844,18 +845,18 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     flex: 1,
-    backgroundColor: '#f8f9ff',
+    backgroundColor: '#050816',
     paddingHorizontal: 12,
     paddingVertical: 12,
   },
   talentCard: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    backgroundColor: '#101936',
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#f0f0f0',
+    borderColor: 'rgba(148, 163, 184, 0.25)',
   },
   talentAvatar: {
     width: 60,
@@ -869,11 +870,11 @@ const styles = StyleSheet.create({
   talentName: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#1f2937',
+    color: '#F8FAFC',
   },
   talentBio: {
     fontSize: 12,
-    color: '#666',
+    color: '#94A3B8',
     marginTop: 4,
   },
   skillsContainer: {
@@ -884,7 +885,7 @@ const styles = StyleSheet.create({
   },
   skillTag: {
     fontSize: 11,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: 'rgba(124, 58, 237, 0.1)',
     color: '#7c3aed',
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -896,17 +897,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#fff',
+    backgroundColor: '#050816',
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: 'rgba(148, 163, 184, 0.25)',
   },
   resultsCount: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1f2937',
+    color: '#F8FAFC',
   },
   resultsSubtext: {
     fontSize: 12,
-    color: '#999',
+    color: '#94A3B8',
   },
 });
