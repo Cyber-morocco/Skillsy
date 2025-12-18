@@ -98,7 +98,6 @@ export default function ExploreMapScreen() {
     if (!q) return;
 
     setIsSearching(true);
-    
     if (searchType === 'address') {
       const result = await geocodeAddress(q);
       setIsSearching(false);
@@ -119,18 +118,60 @@ export default function ExploreMapScreen() {
         }
       }
     } else {
-      // Treat as skill search term
+      // Treat as skill search term: filter and focus on nearest matching talent
+      const searchTerm = q.toLowerCase().trim();
+      const matches = allTalents.filter((talent: Talent) => {
+        // Distance filter
+        if (selectedDistance !== null) {
+          const distance = calculateDistance(
+            userLocation.lat,
+            userLocation.lng,
+            talent.lat,
+            talent.lng
+          );
+          if (distance > selectedDistance) return false;
+        }
+        // Category filter
+        if (selectedCategories.length > 0) {
+          const talentSkillNames = talent.skills.map((s: { name: string }) => s.name.toLowerCase());
+          const hasMatchingCategory = selectedCategories.some(category =>
+            talentSkillNames.some((skill: string) => skill.includes(category.toLowerCase()))
+          );
+          if (!hasMatchingCategory) return false;
       setSkillSearch(q);
       setIsSearching(false);
       // Update markers to reflect new filtered talents
+
       if (webViewRef.current) {
+        // Update markers immediately with matches
         webViewRef.current.postMessage(
           JSON.stringify({
             type: 'updateRadius',
             radiusKm: selectedDistance,
-            talents: filteredTalents
+            talents: matches
           })
         );
+
+        // Focus map on nearest matching talent
+        if (matches.length > 0) {
+          let nearest = matches[0];
+          let minDist = calculateDistance(userLocation.lat, userLocation.lng, nearest.lat, nearest.lng);
+          for (let i = 1; i < matches.length; i++) {
+            const d = calculateDistance(userLocation.lat, userLocation.lng, matches[i].lat, matches[i].lng);
+            if (d < minDist) {
+              minDist = d;
+              nearest = matches[i];
+            }
+          }
+          webViewRef.current.postMessage(
+            JSON.stringify({
+              type: 'focusTalent',
+              talentId: nearest.id,
+              lat: nearest.lat,
+              lng: nearest.lng
+            })
+          );
+        }
       }
     }
   };
@@ -228,8 +269,8 @@ export default function ExploreMapScreen() {
         <div id="map"></div>
         <script>
           try {
-            const centerLat = ${userLocation.lat};
-            const centerLng = ${userLocation.lng};
+            let centerLat = ${userLocation.lat};
+            let centerLng = ${userLocation.lng};
             let radiusKm = 5;
             let radiusCircle = null;
             let talentMarkers = {};
@@ -348,6 +389,13 @@ export default function ExploreMapScreen() {
                     addTalentMarkers(talents);
                   }
                 }
+                if (data.type === 'focusTalent') {
+                  const { talentId, lat, lng } = data;
+                  map.setView([lat, lng], 14);
+                  if (talentMarkers[talentId]) {
+                    talentMarkers[talentId].openPopup();
+                  }
+                }
               } catch (e) {
                 console.error('Error handling message:', e);
               }
@@ -410,7 +458,7 @@ export default function ExploreMapScreen() {
           onPress={() => setSearchType(searchType === 'skill' ? 'address' : 'skill')}
         >
           <MaterialCommunityIcons 
-            name={searchType === 'skill' ? 'lightbulb' : 'map-marker'} 
+            name={searchType === 'skill' ? 'star-outline' : 'map-marker'} 
             size={20} 
             color="#fff" 
           />
