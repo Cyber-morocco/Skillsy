@@ -38,17 +38,10 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
     visible: boolean;
     index: number;
     field: 'start' | 'end';
-  }>({
-    visible: false,
-    index: 0,
-    field: 'start',
-  });
+  }>({ visible: false, index: 0, field: 'start' });
 
   const addDate = () => {
-    setDates([
-      ...dates,
-      { date: new Date(), start: '08:00', end: '22:00' },
-    ]);
+    setDates([...dates, { date: new Date(), start: '08:00', end: '22:00' }]);
   };
 
   return (
@@ -106,9 +99,7 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
             <View style={styles.timeRow}>
               <TouchableOpacity
                 style={styles.timeBox}
-                onPress={() =>
-                  setTimePicker({ visible: true, index: i, field: 'start' })
-                }
+                onPress={() => setTimePicker({ visible: true, index: i, field: 'start' })}
               >
                 <Text style={styles.timeLabel}>Start</Text>
                 <Text style={styles.timeValue}>{item.start}</Text>
@@ -116,9 +107,7 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
 
               <TouchableOpacity
                 style={styles.timeBox}
-                onPress={() =>
-                  setTimePicker({ visible: true, index: i, field: 'end' })
-                }
+                onPress={() => setTimePicker({ visible: true, index: i, field: 'end' })}
               >
                 <Text style={styles.timeLabel}>Einde</Text>
                 <Text style={styles.timeValue}>{item.end}</Text>
@@ -142,10 +131,11 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
           }}
         />
       )}
+
       <Modal visible={timePicker.visible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {TIMES.map(t => (
+            {TIMES.map((t) => (
               <TouchableOpacity
                 key={t}
                 onPress={() => {
@@ -158,6 +148,13 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
                 <Text style={styles.modalOption}>{t}</Text>
               </TouchableOpacity>
             ))}
+
+            <TouchableOpacity
+              style={styles.modalClose}
+              onPress={() => setTimePicker({ ...timePicker, visible: false })}
+            >
+              <Text style={styles.modalCloseText}>Annuleer</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -208,21 +205,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#eee',
   },
-  dateHeader: { flexDirection: 'row', justifyContent: 'space-between' },
+  dateHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   dateText: { fontWeight: '600' },
-  remove: { color: 'red' },
+  remove: { color: 'red', fontWeight: '600' },
 
-  timeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-  },
-  timeBox: {
-    width: '48%',
-    backgroundColor: '#f2f2f2',
-    padding: 12,
-    borderRadius: 10,
-  },
+  timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
+  timeBox: { width: '48%', backgroundColor: '#f2f2f2', padding: 12, borderRadius: 10 },
   timeLabel: { fontSize: 13, color: '#777' },
   timeValue: { fontSize: 16, fontWeight: '700' },
 
@@ -233,15 +221,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    width: '70%',
+    width: '75%',
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 20,
+    padding: 18,
   },
   modalOption: {
     fontSize: 18,
     paddingVertical: 10,
     textAlign: 'center',
     color: purple,
+    fontWeight: '700',
   },
+  modalClose: {
+    marginTop: 10,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: purple,
+  },
+  modalCloseText: { textAlign: 'center', color: '#fff', fontWeight: '700' },
 });
