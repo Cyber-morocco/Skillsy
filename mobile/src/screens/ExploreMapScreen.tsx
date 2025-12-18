@@ -528,8 +528,7 @@ export default function ExploreMapScreen() {
           <TouchableOpacity
             style={[
               styles.filterButton,
-              selectedCategories.length > 0 && styles.filterButtonActive,
-              { marginLeft: 8 }
+              selectedCategories.length > 0 && styles.filterButtonActive
             ]}
             onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
           >
@@ -746,12 +745,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    marginBottom: 0,
   },
   filterButtonsContainer: {
     flexDirection: 'row',
-    flex: 1,
     alignItems: 'center',
     gap: 6,
   },
