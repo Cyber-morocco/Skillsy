@@ -66,6 +66,8 @@ export default function ExploreMapScreen() {
   const [userLocation, setUserLocation] = useState<Location>({ lat: 52.3676, lng: 4.9041 });
   const [isSearching, setIsSearching] = useState(false);
   const [searchType, setSearchType] = useState<'skill' | 'address'>('skill');
+  const [distanceLayout, setDistanceLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  const [categoryLayout, setCategoryLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const webViewRef = useRef<WebView>(null);
   
   const allTalents = mockTalents;
@@ -509,6 +511,7 @@ export default function ExploreMapScreen() {
               selectedDistance !== null && styles.filterButtonActive
             ]}
             onPress={() => setShowDistanceDropdown(!showDistanceDropdown)}
+            onLayout={(e) => setDistanceLayout(e.nativeEvent.layout)}
           >
             <MaterialCommunityIcons name="map-marker-radius" size={16} color={selectedDistance !== null ? '#fff' : '#7c3aed'} />
             <Text
@@ -533,6 +536,7 @@ export default function ExploreMapScreen() {
               selectedCategories.length > 0 && styles.filterButtonActive
             ]}
             onPress={() => setShowCategoryDropdown(!showCategoryDropdown)}
+            onLayout={(e) => setCategoryLayout(e.nativeEvent.layout)}
           >
             <MaterialCommunityIcons name="tag" size={16} color={selectedCategories.length > 0 ? '#fff' : '#7c3aed'} />
             <Text
@@ -565,7 +569,17 @@ export default function ExploreMapScreen() {
 
         {/* Distance Dropdown */}
         {showDistanceDropdown && (
-          <View style={[styles.dropdownContainer, { left: 16 }]}>
+          <View
+            style={[
+              styles.dropdownContainer,
+              {
+                top: distanceLayout.y + distanceLayout.height + 6,
+                left: distanceLayout.x + 16,
+                minWidth: Math.max(distanceLayout.width, 120),
+                maxWidth: Math.max(distanceLayout.width, 180),
+              },
+            ]}
+          >
             {DISTANCE_OPTIONS.map((distance) => (
               <TouchableOpacity
                 key={distance}
@@ -593,7 +607,18 @@ export default function ExploreMapScreen() {
 
         {/* Category Dropdown */}
         {showCategoryDropdown && (
-          <View style={[styles.dropdownContainer, { maxHeight: 300 }]}>
+          <View
+            style={[
+              styles.dropdownContainer,
+              {
+                top: categoryLayout.y + categoryLayout.height + 6,
+                left: categoryLayout.x + 16,
+                minWidth: Math.max(categoryLayout.width, 160),
+                maxWidth: Math.max(categoryLayout.width, 200),
+                maxHeight: 300,
+              },
+            ]}
+          >
             <ScrollView scrollEnabled showsVerticalScrollIndicator={true}>
               {CATEGORY_OPTIONS.map((category) => (
                 <TouchableOpacity
@@ -791,9 +816,6 @@ const styles = StyleSheet.create({
   },
   dropdownContainer: {
     position: 'absolute',
-    top: 58,
-    left: 16,
-    right: 16,
     backgroundColor: '#101936',
     borderRadius: 14,
     borderWidth: 1,
@@ -810,11 +832,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderRadius: 10,
-    marginHorizontal: 6,
-    marginVertical: 2,
+    marginHorizontal: 4,
+    marginVertical: 1,
   },
   dropdownOptionActive: {
     backgroundColor: 'rgba(124, 58, 237, 0.1)',
