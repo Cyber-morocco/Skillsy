@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -13,11 +13,37 @@ interface Skill {
 
 export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState<'skills' | 'wilLeren' | 'reviews'>('skills');
-  const [skills] = useState<Skill[]>([
+  const [skills, setSkills] = useState<Skill[]>([
     { id: '1', subject: 'Frans', level: 'Expert', price: '€25/uur' },
     { id: '2', subject: 'Koken', level: 'Gevorderd', price: '€20/uur' },
     { id: '3', subject: 'Yoga', level: 'Beginner', price: '€15/uur' },
   ]);
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newSubject, setNewSubject] = useState('');
+  const [newPrice, setNewPrice] = useState('');
+  const [newLevel, setNewLevel] = useState<SkillLevel>('Beginner');
+
+  const AddSkill = () => {
+    setModalVisible(true);
+  };
+
+  const SaveSkill = () => {
+    if (!newSubject || !newPrice) return;
+
+    const newSkill: Skill = {
+      id: Date.now().toString(),
+      subject: newSubject,
+      level: newLevel,
+      price: `€${newPrice}/uur`,
+    };
+    setSkills([...skills, newSkill]);
+    setModalVisible(false);
+
+    setNewSubject('');
+    setNewPrice('');
+    setNewLevel('Beginner');
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -97,7 +123,9 @@ export default function ProfileScreen() {
           <View style={styles.sectionContainer}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Wat ik kan aanleren</Text>
-
+              <TouchableOpacity onPress={AddSkill} style={styles.plusButton}>
+                <Ionicons name="add" size={20} color="#24253d" />
+              </TouchableOpacity>
             </View>
 
             {skills.map((skill) => (
@@ -115,8 +143,65 @@ export default function ProfileScreen() {
             ))}
           </View>
         )}
+
+
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Nieuwe Vaardigheid</Text>
+
+                <Text style={styles.inputLabel}>Onderwerp</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Bijv. Wiskunde"
+                  value={newSubject}
+                  onChangeText={setNewSubject}
+                />
+
+                <Text style={styles.inputLabel}>Prijs (per uur)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Bijv. 25"
+                  value={newPrice}
+                  onChangeText={setNewPrice}
+                  keyboardType="numeric"
+                />
+
+                <Text style={styles.inputLabel}>Niveau</Text>
+                <View style={styles.levelSelector}>
+                  {(['Beginner', 'Gevorderd', 'Expert'] as SkillLevel[]).map((lvl) => (
+                    <TouchableOpacity
+                      key={lvl}
+                      style={[styles.levelOption, newLevel === lvl && styles.levelOptionActive]}
+                      onPress={() => setNewLevel(lvl)}
+                    >
+                      <Text style={[styles.levelOptionText, newLevel === lvl && styles.levelOptionTextActive]}>
+                        {lvl}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.cancelButton}>
+                    <Text style={styles.cancelButtonText}>Annuleren</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={SaveSkill} style={styles.saveButton}>
+                    <Text style={styles.saveButtonText}>Toevoegen</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
       </ScrollView>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 }
 
@@ -271,6 +356,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#24253d',
   },
+  plusButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   skillCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -309,5 +402,90 @@ const styles = StyleSheet.create({
   priceText: {
     fontSize: 14,
     color: '#888',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 20,
+    textAlign: 'center',
+    color: '#24253d',
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#24253d',
+  },
+  input: {
+    backgroundColor: '#f6f6f9',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  levelSelector: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 24,
+  },
+  levelOption: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e1e1e1',
+    alignItems: 'center',
+  },
+  levelOptionActive: {
+    backgroundColor: '#b832ff',
+    borderColor: '#b832ff',
+  },
+  levelOptionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  levelOptionTextActive: {
+    color: '#fff',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cancelButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: '#f6f6f9',
+    alignItems: 'center',
+  },
+  saveButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: '#b832ff',
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
 });
