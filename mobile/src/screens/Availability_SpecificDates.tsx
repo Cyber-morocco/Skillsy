@@ -28,17 +28,20 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
   const [datePickerVisible, setDatePickerVisible] = useState(false);
 
   const addDate = () => {
-    setDates([...dates, { date: new Date(), start: '08:00', end: '22:00' }]);
+    setDates([
+      ...dates,
+      { date: new Date(), start: '08:00', end: '22:00' },
+    ]);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-
         <Text style={styles.headerTitle}>Beschikbaarheid</Text>
         <Text style={styles.headerSub}>
           Kies specifieke datums met eigen tijdschema
         </Text>
+
         <View style={styles.tabs}>
           <TouchableOpacity style={styles.tab} onPress={() => navigation.goBack()}>
             <Text style={styles.tabText}>Per week</Text>
@@ -57,6 +60,7 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
             <Text style={styles.addAction}>+ Voeg toe</Text>
           </TouchableOpacity>
         </View>
+
         {dates.map((item, i) => (
           <View key={i} style={styles.dateCard}>
             <View style={styles.dateHeader}>
@@ -80,10 +84,21 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
               >
                 <Text style={styles.remove}>× Verwijder</Text>
               </TouchableOpacity>
+              
+            </View>
+            <View style={styles.timeRow}>
+              <View style={styles.timeBox}>
+                <Text style={styles.timeLabel}>Start</Text>
+                <Text style={styles.timeValue}>{item.start}</Text>
+              </View>
+
+              <View style={styles.timeBox}>
+                <Text style={styles.timeLabel}>Einde</Text>
+                <Text style={styles.timeValue}>{item.end}</Text>
+              </View>
             </View>
           </View>
         ))}
-
       </ScrollView>
 
       {datePickerVisible && activeIndex !== null && (
@@ -150,4 +165,24 @@ const styles = StyleSheet.create({
   dateHeader: { flexDirection: 'row', justifyContent: 'space-between' },
   dateText: { fontWeight: '600' },
   remove: { color: 'red' },
+
+  timeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  timeBox: {
+    width: '48%',
+    backgroundColor: '#f2f2f2',
+    padding: 12,
+    borderRadius: 10,
+  },
+  timeLabel: {
+    fontSize: 13,
+    color: '#777',
+  },
+  timeValue: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
 });
