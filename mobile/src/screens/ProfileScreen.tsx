@@ -1,17 +1,29 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
+type SkillLevel = 'Beginner' | 'Gevorderd' | 'Expert';
+interface Skill {
+  id: string;
+  subject: string;
+  level: SkillLevel;
+  price: string;
+}
+
 export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState<'skills' | 'wilLeren' | 'reviews'>('skills');
+  const [skills] = useState<Skill[]>([
+    { id: '1', subject: 'Frans', level: 'Expert', price: '€25/uur' },
+    { id: '2', subject: 'Koken', level: 'Gevorderd', price: '€20/uur' },
+    { id: '3', subject: 'Yoga', level: 'Beginner', price: '€15/uur' },
+  ]);
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.headerBackground} />
 
       <View style={styles.content}>
-
         <View style={styles.topRow}>
           <TouchableOpacity style={styles.squareButton}>
             <Ionicons name="arrow-back" size={20} color="#24253d" />
@@ -27,8 +39,6 @@ export default function ProfileScreen() {
             <Text style={styles.squareButtonText}>Edit</Text>
           </TouchableOpacity>
         </View>
-
-
 
         <View style={styles.profileInfo}>
           <View style={styles.profileImage} />
@@ -76,6 +86,36 @@ export default function ProfileScreen() {
           </View>
         </View>
       </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+
+        {activeTab === 'skills' && (
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Wat ik kan aanleren</Text>
+
+            </View>
+
+            {skills.map((skill) => (
+              <TouchableOpacity key={skill.id} style={styles.skillCard} activeOpacity={0.7}>
+                <View style={styles.skillInfo}>
+                  <View style={styles.skillHeader}>
+                    <Text style={styles.skillSubject}>{skill.subject}</Text>
+                    <View style={styles.levelBadge}>
+                      <Text style={styles.levelText}>{skill.level}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.priceText}>{skill.price}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -86,6 +126,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f6f6f9',
   },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
   headerBackground: {
     position: 'absolute',
     top: 0,
@@ -94,7 +140,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#b832ff',
   },
   content: {
-    flex: 1,
+
     paddingHorizontal: 20,
     paddingTop: 20,
   },
@@ -208,5 +254,60 @@ const styles = StyleSheet.create({
     backgroundColor: '#b832ff',
     borderRadius: 1.5,
   },
+  sectionContainer: {
+    paddingTop: 24,
+    paddingBottom: 40,
+    width: '100%',
+    paddingHorizontal: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#24253d',
+  },
+  skillCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  skillInfo: {
+    flex: 1,
+  },
+  skillHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 4,
+  },
+  skillSubject: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#24253d',
+  },
+  levelBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#f0f0f5',
+    borderRadius: 6,
+  },
+  levelText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#666',
+  },
+  priceText: {
+    fontSize: 14,
+    color: '#888',
+  },
 });
-
