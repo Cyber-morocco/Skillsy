@@ -45,7 +45,14 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
   });
 
   const addDate = () => {
-    setDates([...dates, { date: new Date(), start: '08:00', end: '22:00' }]);
+    setDates([
+      ...dates,
+      { date: new Date(), start: '08:00', end: '22:00' },
+    ]);
+  };
+
+  const handleSave = () => {
+    console.log('Specifieke datums:', dates);
   };
 
   return (
