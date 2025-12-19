@@ -11,6 +11,11 @@ interface Skill {
   price: string;
 }
 
+interface LearnSkill {
+  id: string;
+  subject: string;
+}
+
 export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState<'skills' | 'wilLeren' | 'reviews'>('skills');
   const [skills, setSkills] = useState<Skill[]>([
@@ -23,6 +28,12 @@ export default function ProfileScreen() {
   const [newSubject, setNewSubject] = useState('');
   const [newPrice, setNewPrice] = useState('');
   const [newLevel, setNewLevel] = useState<SkillLevel>('Beginner');
+
+  const [learnSkills, setLearnSkills] = useState<LearnSkill[]>([
+    { id: '1', subject: 'Piano' },
+    { id: '2', subject: 'Spaans' },
+  ]);
+
 
   const AddSkill = () => {
     setModalVisible(true);
@@ -142,6 +153,22 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             ))}
           </View>
+
+        )}
+        {activeTab === 'wilLeren' && (
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Wat ik wil leren</Text>
+            </View>
+
+            {learnSkills.map((skill) => (
+              <TouchableOpacity key={skill.id} style={styles.skillCard} activeOpacity={0.7}>
+                <View style={styles.skillInfo}>
+                  <Text style={styles.skillSubject}>{skill.subject}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         )}
 
 
@@ -167,7 +194,7 @@ export default function ProfileScreen() {
                 <Text style={styles.inputLabel}>Prijs (per uur)</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Bijv. 25"
+                  placeholder="Bijv. €25"
                   value={newPrice}
                   onChangeText={setNewPrice}
                   keyboardType="numeric"
@@ -200,7 +227,7 @@ export default function ProfileScreen() {
             </View>
           </TouchableWithoutFeedback>
         </Modal>
-      </ScrollView>
+      </ScrollView >
     </SafeAreaView >
   );
 }
