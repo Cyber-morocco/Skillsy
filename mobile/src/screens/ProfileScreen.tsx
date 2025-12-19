@@ -33,6 +33,9 @@ export default function ProfileScreen() {
     { id: '1', subject: 'Piano' },
     { id: '2', subject: 'Spaans' },
   ]);
+  const [learnModalVisible, setLearnModalVisible] = useState(false);
+  const [newLearnSubject, setNewLearnSubject] = useState('');
+
 
 
   const AddSkill = () => {
@@ -54,6 +57,22 @@ export default function ProfileScreen() {
     setNewSubject('');
     setNewPrice('');
     setNewLevel('Beginner');
+  };
+
+  const AddLearnSkill = () => {
+    setLearnModalVisible(true);
+  };
+
+  const SaveLearnSkill = () => {
+    if (!newLearnSubject) return;
+
+    const newLearnSkill: LearnSkill = {
+      id: Date.now().toString(),
+      subject: newLearnSubject,
+    };
+    setLearnSkills([...learnSkills, newLearnSkill]);
+    setLearnModalVisible(false);
+    setNewLearnSubject('');
   };
 
   return (
@@ -159,8 +178,11 @@ export default function ProfileScreen() {
           <View style={styles.sectionContainer}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Wat ik wil leren</Text>
-            </View>
 
+              <TouchableOpacity onPress={AddLearnSkill} style={styles.plusButton}>
+                <Ionicons name="add" size={20} color="#24253d" />
+              </TouchableOpacity>
+            </View>
             {learnSkills.map((skill) => (
               <TouchableOpacity key={skill.id} style={styles.skillCard} activeOpacity={0.7}>
                 <View style={styles.skillInfo}>
@@ -171,6 +193,37 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={learnModalVisible}
+          onRequestClose={() => setLearnModalVisible(false)}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Nieuwe Interesse</Text>
+
+                <Text style={styles.inputLabel}>Onderwerp</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Bijv. Piano"
+                  value={newLearnSubject}
+                  onChangeText={setNewLearnSubject}
+                />
+
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity onPress={() => setLearnModalVisible(false)} style={styles.cancelButton}>
+                    <Text style={styles.cancelButtonText}>Annuleren</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={SaveLearnSkill} style={styles.saveButton}>
+                    <Text style={styles.saveButtonText}>Toevoegen</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
 
         <Modal
           animationType="slide"
