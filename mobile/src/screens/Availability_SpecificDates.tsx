@@ -38,7 +38,11 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
     visible: boolean;
     index: number;
     field: 'start' | 'end';
-  }>({ visible: false, index: 0, field: 'start' });
+  }>({
+    visible: false,
+    index: 0,
+    field: 'start',
+  });
 
   const addDate = () => {
     setDates([...dates, { date: new Date(), start: '08:00', end: '22:00' }]);
@@ -99,7 +103,9 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
             <View style={styles.timeRow}>
               <TouchableOpacity
                 style={styles.timeBox}
-                onPress={() => setTimePicker({ visible: true, index: i, field: 'start' })}
+                onPress={() =>
+                  setTimePicker({ visible: true, index: i, field: 'start' })
+                }
               >
                 <Text style={styles.timeLabel}>Start</Text>
                 <Text style={styles.timeValue}>{item.start}</Text>
@@ -107,7 +113,9 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
 
               <TouchableOpacity
                 style={styles.timeBox}
-                onPress={() => setTimePicker({ visible: true, index: i, field: 'end' })}
+                onPress={() =>
+                  setTimePicker({ visible: true, index: i, field: 'end' })
+                }
               >
                 <Text style={styles.timeLabel}>Einde</Text>
                 <Text style={styles.timeValue}>{item.end}</Text>
@@ -115,6 +123,9 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
             </View>
           </View>
         ))}
+        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+          <Text style={styles.saveButtonText}>Opslaan</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {datePickerVisible && activeIndex !== null && (
@@ -131,11 +142,10 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
           }}
         />
       )}
-
       <Modal visible={timePicker.visible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {TIMES.map((t) => (
+            {TIMES.map(t => (
               <TouchableOpacity
                 key={t}
                 onPress={() => {
@@ -213,6 +223,20 @@ const styles = StyleSheet.create({
   timeBox: { width: '48%', backgroundColor: '#f2f2f2', padding: 12, borderRadius: 10 },
   timeLabel: { fontSize: 13, color: '#777' },
   timeValue: { fontSize: 16, fontWeight: '700' },
+
+  saveButton: {
+    marginHorizontal: 20,
+    marginTop: 30,
+    backgroundColor: purple,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
 
   modalOverlay: {
     flex: 1,
