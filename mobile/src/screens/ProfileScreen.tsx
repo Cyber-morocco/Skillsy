@@ -16,7 +16,11 @@ interface LearnSkill {
   subject: string;
 }
 
-export default function ProfileScreen() {
+interface ProfileScreenProps {
+  onNavigate?: (screen: 'availability') => void;
+}
+
+export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [activeTab, setActiveTab] = useState<'skills' | 'wilLeren' | 'reviews'>('skills');
   const [skills, setSkills] = useState<Skill[]>([
     { id: '1', subject: 'Frans', level: 'Expert', price: '€25/uur' },
@@ -85,7 +89,7 @@ export default function ProfileScreen() {
             <Ionicons name="arrow-back" size={20} color="#24253d" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.squareButtonWide}>
+          <TouchableOpacity style={styles.squareButtonWide} onPress={() => onNavigate?.('availability')}>
             <Ionicons name="calendar-outline" size={18} color="#24253d" />
             <Text style={styles.squareButtonText}>Beschikbaarheid</Text>
           </TouchableOpacity>

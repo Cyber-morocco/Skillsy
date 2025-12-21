@@ -24,7 +24,7 @@ export default function App() {
       case 'messages':
         return <ChatStackNavigator />;
       case 'profile':
-        return <ProfileScreen />;
+        return <ProfileScreen onNavigate={handleNavigate} />;
       default:
         return <HomePage />;
     }
