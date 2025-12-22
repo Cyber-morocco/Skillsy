@@ -8,6 +8,8 @@ import BottomNavBar from './mobile/src/components/BottomNavBar';
 import ChatStackNavigator from './mobile/src/navigation/ChatStack';
 import Availability from './mobile/src/screens/Availability';
 
+type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile';
+
 export default function App() {
   const [activeScreen, setActiveScreen] = useState<'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability'>('home');
 
