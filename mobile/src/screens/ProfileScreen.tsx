@@ -63,6 +63,10 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
     setNewLevel('Beginner');
   };
 
+  const handleDeleteSkill = (id: string) => {
+    setSkills(skills.filter(s => s.id !== id));
+  };
+
   const AddLearnSkill = () => {
     setLearnModalVisible(true);
   };
@@ -77,6 +81,10 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
     setLearnSkills([...learnSkills, newLearnSkill]);
     setLearnModalVisible(false);
     setNewLearnSubject('');
+  };
+
+  const handleDeleteLearnSkill = (id: string) => {
+    setLearnSkills(learnSkills.filter(s => s.id !== id));
   };
 
   return (
@@ -173,6 +181,9 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                   </View>
                   <Text style={styles.priceText}>{skill.price}</Text>
                 </View>
+                <TouchableOpacity onPress={() => handleDeleteSkill(skill.id)}>
+                  <Ionicons name="trash-outline" size={20} color="#ff4444" />
+                </TouchableOpacity>
               </TouchableOpacity>
             ))}
           </View>
@@ -192,6 +203,9 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 <View style={styles.skillInfo}>
                   <Text style={styles.skillSubject}>{skill.subject}</Text>
                 </View>
+                <TouchableOpacity onPress={() => handleDeleteLearnSkill(skill.id)}>
+                  <Ionicons name="trash-outline" size={20} color="#ff4444" />
+                </TouchableOpacity>
               </TouchableOpacity>
             ))}
           </View>
