@@ -62,6 +62,22 @@ export const conversationStyles = StyleSheet.create({
         color: '#22C55E',
         fontSize: 12,
     },
+    appointmentButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: 'rgba(148, 163, 184, 0.3)',
+        borderRadius: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+    },
+    appointmentButtonText: {
+        color: TEXT,
+        fontSize: 13,
+        fontWeight: '500',
+        marginLeft: 6,
+    },
     messagesList: {
         padding: 16,
         paddingBottom: 100,

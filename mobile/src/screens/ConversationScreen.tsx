@@ -9,7 +9,9 @@ import {
     KeyboardAvoidingView,
     Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { conversationStyles as styles, conversationColors } from '../styles/ConversationStyle';
+import ScheduleMatchScreen from './ScheduleMatchScreen';
 
 type Message = {
     id: string;
@@ -24,6 +26,7 @@ type ConversationProps = {
             contactName: string;
             contactInitials: string;
             contactColor: string;
+            contactSubtitle?: string;
         };
     };
     navigation?: {
@@ -35,8 +38,10 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
     const contactName = route?.params?.contactName || 'Contact';
     const contactInitials = route?.params?.contactInitials || 'C';
     const contactColor = route?.params?.contactColor || '#7C3AED';
+    const contactSubtitle = route?.params?.contactSubtitle || '';
 
     const [messageText, setMessageText] = useState('');
+    const [showScheduleMatch, setShowScheduleMatch] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
         { id: '1', text: 'Hallo! Hoe gaat het?', sender: 'other', time: '10:30' },
         { id: '2', text: 'Goed! En met jou?', sender: 'me', time: '10:32' },
@@ -55,6 +60,23 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
             setMessageText('');
         }
     };
+
+    const handleAppointmentPress = () => {
+        setShowScheduleMatch(true);
+    };
+
+    // Show ScheduleMatchScreen when button is pressed
+    if (showScheduleMatch) {
+        return (
+            <ScheduleMatchScreen
+                contactName={contactName}
+                contactInitials={contactInitials}
+                contactColor={contactColor}
+                contactSubtitle={contactSubtitle}
+                onBack={() => setShowScheduleMatch(false)}
+            />
+        );
+    }
 
     const renderMessage = ({ item }: { item: Message }) => (
         <View style={[
@@ -79,15 +101,19 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
             <StatusBar barStyle="light-content" />
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation?.goBack()} style={styles.backButton}>
-                    <Text style={styles.backIcon}>←</Text>
+                    <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
                 </TouchableOpacity>
                 <View style={[styles.contactAvatar, { backgroundColor: contactColor }]}>
                     <Text style={styles.contactInitials}>{contactInitials}</Text>
                 </View>
                 <View style={styles.headerInfo}>
                     <Text style={styles.contactName}>{contactName}</Text>
-                    <Text style={styles.contactStatus}>Online</Text>
+                    <Text style={styles.contactStatus}>{contactSubtitle || 'Online'}</Text>
                 </View>
+                <TouchableOpacity style={styles.appointmentButton} onPress={handleAppointmentPress}>
+                    <Ionicons name="calendar-outline" size={16} color="#F8FAFC" />
+                    <Text style={styles.appointmentButtonText}>Afspraak</Text>
+                </TouchableOpacity>
             </View>
             <FlatList
                 data={messages}
@@ -106,7 +132,7 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                     multiline
                 />
                 <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-                    <Text style={styles.sendIcon}></Text>
+                    <Ionicons name="send" size={18} color="#F8FAFC" />
                 </TouchableOpacity>
             </View>
         </KeyboardAvoidingView>

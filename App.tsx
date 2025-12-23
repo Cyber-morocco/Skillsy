@@ -7,6 +7,8 @@ import AvailabilitySpecificDates from './mobile/src/screens/Availability_Specifi
 
 const Stack = createNativeStackNavigator();
 
+type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile';
+
 export default function App() {
   return (
     <NavigationContainer>
