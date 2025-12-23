@@ -1,76 +1,116 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform, Text } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile';
+type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability';
 
 interface NavBarItem {
-    name: NavName;
-    icon: string;
-    type: 'ionicons' | 'material';
+  name: NavName;
+  label: string;
+  icon: string;
+  type?: 'ionicons' | 'material';
 }
 
 interface BottomNavBarProps {
-    activeScreen: NavName;
-    onNavigate: (screen: NavName) => void;
+  activeScreen: NavName;
+  onNavigate: (screen: NavName) => void;
+  // Optional dynamic badges you can pass later, e.g. { messages: 3 }
+  badges?: Partial<Record<NavName, number>>;
 }
 
 const NAV_ITEMS: NavBarItem[] = [
-    { name: 'home', icon: 'home', type: 'ionicons' },
-    { name: 'explore', icon: 'search', type: 'ionicons' },
-    { name: 'appointments', icon: 'calendar', type: 'ionicons' },
-    { name: 'messages', icon: 'chatbubble', type: 'ionicons' },
-    { name: 'profile', icon: 'person', type: 'ionicons' },
+  {
+    name: 'home',
+    label: 'Home',
+    icon: 'home',
+    type: 'ionicons',
+  },
+  {
+    name: 'explore',
+    label: 'Ontdekken',
+    icon: 'map-marker',
+    type: 'material',
+  },
+  {
+    name: 'appointments',
+    label: 'Afspraken',
+    icon: 'calendar',
+    type: 'ionicons',
+  },
+  {
+    name: 'messages',
+    label: 'Berichten',
+    icon: 'chatbubble',
+    type: 'ionicons',
+  },
+  {
+    name: 'profile',
+    label: 'Profiel',
+    icon: 'person',
+    type: 'ionicons',
+  },
 ];
 
-export default function BottomNavBar({ activeScreen, onNavigate }: BottomNavBarProps) {
-    const renderIcon = (item: NavBarItem, isActive: boolean) => {
-        const color = isActive ? '#fff' : '#64748B';
-        const size = isActive ? 26 : 24;
+export default function BottomNavBar({ activeScreen, onNavigate, badges }: BottomNavBarProps) {
+  const renderIcon = (item: NavBarItem, isActive: boolean) => {
+    const size = isActive ? 30 : 24;
+    const color = isActive ? '#FFFFFF' : '#9CA3AF';
 
-        if (item.type === 'material') {
-            return (
-                <MaterialCommunityIcons
-                    name={item.icon as any}
-                    size={size}
-                    color={color}
-                />
-            );
-        }
-        return (
-            <Ionicons
-                name={item.icon as any}
-                size={size}
-                color={color}
-            />
-        );
-    };
-
+    if (item.type === 'material') {
+      return (
+        <MaterialCommunityIcons
+          name={item.icon as any}
+          size={size}
+          color={color}
+        />
+      );
+    }
     return (
-        <View style={styles.container}>
-            <View style={styles.navBar}>
-                {NAV_ITEMS.map((item) => {
-                    const isActive = activeScreen === item.name;
-
-                    return (
-                        <TouchableOpacity
-                            key={item.name}
-                            style={styles.navItemWrapper}
-                            onPress={() => onNavigate(item.name)}
-                            activeOpacity={0.8}
-                        >
-                            <View style={[styles.navItem, isActive && styles.navItemActive]}>
-                                {isActive && <View style={styles.glowEffect} />}
-                                <View style={[styles.iconCircle, isActive && styles.iconCircleActive]}>
-                                    {renderIcon(item, isActive)}
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-                    );
-                })}
-            </View>
-        </View>
+      <Ionicons
+        name={item.icon as any}
+        size={size}
+        color={color}
+      />
     );
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.navBar}>
+        {NAV_ITEMS.map((item) => {
+          const isActive = activeScreen === item.name;
+          const badgeCount = badges?.[item.name] ?? 0;
+
+          return (
+            <TouchableOpacity
+              key={item.name}
+              style={styles.navItemWrapper}
+              onPress={() => onNavigate(item.name)}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.navItem, isActive && styles.navItemActive]}>
+                {isActive && <View style={styles.glowEffect} />}
+                <View style={[styles.iconCircle, isActive && styles.iconCircleActive]}>
+                  {renderIcon(item, isActive)}
+                </View>
+                {/* Badge */}
+                {badgeCount > 0 && (
+                  <View
+                    style={[
+                      styles.badge,
+                      isActive ? styles.badgeActive : styles.badgeInactive,
+                    ]}
+                  >
+                    <Text style={styles.badgeText}>{badgeCount}</Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -146,5 +186,27 @@ const styles = StyleSheet.create({
                 elevation: 10,
             },
         }),
+    },
+    badge: {
+        position: 'absolute',
+        top: -4,
+        right: -4,
+        minWidth: 18,
+        height: 18,
+        borderRadius: 9,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 4,
+    },
+    badgeActive: {
+        backgroundColor: '#EF4444',
+    },
+    badgeInactive: {
+        backgroundColor: '#EF4444',
+    },
+    badgeText: {
+        color: '#FFFFFF',
+        fontSize: 10,
+        fontWeight: 'bold',
     },
 });
