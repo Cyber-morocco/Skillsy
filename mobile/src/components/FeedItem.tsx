@@ -18,33 +18,34 @@ interface FeedItemProps {
         likes: number;
         comments: number;
     };
+    onUserPress?: () => void;
 }
 
 const getTypeColor = (type: PostType) => {
     switch (type) {
         case 'Vraag':
-            return '#3B82F6'; 
+            return '#3B82F6';
         case 'Succes':
-            return '#10B981'; 
+            return '#10B981';
         case 'Materiaal':
-            return '#F59E0B'; 
+            return '#F59E0B';
         default:
             return authColors.accent;
     }
 };
 
-const FeedItem: React.FC<FeedItemProps> = ({ post }) => {
+const FeedItem: React.FC<FeedItemProps> = ({ post, onUserPress }) => {
     return (
         <View style={styles.container}>
-            
+
             <View style={styles.header}>
-                <View style={styles.userInfo}>
+                <TouchableOpacity style={styles.userInfo} onPress={onUserPress}>
                     <Image source={{ uri: post.user.avatar }} style={styles.avatar} />
                     <View>
                         <Text style={styles.userName}>{post.user.name}</Text>
                         <Text style={styles.date}>{post.date}</Text>
                     </View>
-                </View>
+                </TouchableOpacity>
                 <View style={[styles.badge, { borderColor: getTypeColor(post.type) }]}>
                     <Text style={[styles.badgeText, { color: getTypeColor(post.type) }]}>
                         {post.type}
@@ -52,7 +53,7 @@ const FeedItem: React.FC<FeedItemProps> = ({ post }) => {
                 </View>
             </View>
 
-           
+
             <Text style={styles.content}>{post.content}</Text>
 
             <View style={styles.footer}>

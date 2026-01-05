@@ -5,26 +5,41 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const ExploreProfileScreen: React.FC = () => {
+interface ExploreProfileScreenProps {
+  user?: {
+    name: string;
+    avatar: string;
+    
+  };
+  onBack?: () => void;
+}
+
+const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, onBack }) => {
   const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews'>(
     'vaardigheden',
   );
   const [liked, setLiked] = useState(false);
 
+  const displayUser = user || {
+    name: 'Thomas Berg',
+    avatar: '', 
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
 
-      {/* Bovenste gekleurde balk */}
+      
       <View style={styles.headerBackground} />
 
       <View style={styles.content}>
-        {/* Navigatie-icoontjes */}
+        
         <View style={styles.topRow}>
-          <TouchableOpacity activeOpacity={0.8} style={styles.roundIconButton}>
+          <TouchableOpacity activeOpacity={0.8} style={styles.roundIconButton} onPress={onBack}>
             <Text style={styles.roundIconText}>←</Text>
           </TouchableOpacity>
 
@@ -49,13 +64,16 @@ const ExploreProfileScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Profielfoto + naam + locatie + rating */}
         <View style={styles.profileHeader}>
           <View style={styles.avatarWrapper}>
-            <View style={styles.avatarCircle} />
+            {displayUser.avatar ? (
+              <Image source={{ uri: displayUser.avatar }} style={styles.avatarCircle} />
+            ) : (
+              <View style={styles.avatarCircle} />
+            )}
           </View>
 
-          <Text style={styles.nameText}>Thomas Berg</Text>
+          <Text style={styles.nameText}>{displayUser.name}</Text>
 
           <View style={styles.locationRow}>
             <Text style={styles.locationIcon}>📍</Text>
@@ -71,7 +89,6 @@ const ExploreProfileScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Afspraakknop + bericht */}
         <View style={styles.actionRow}>
           <TouchableOpacity activeOpacity={0.9} style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>Afspraak maken</Text>
@@ -82,7 +99,6 @@ const ExploreProfileScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Over Thomas */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Over Thomas</Text>
           <Text style={styles.cardBody}>
@@ -90,7 +106,6 @@ const ExploreProfileScreen: React.FC = () => {
           </Text>
         </View>
 
-        {/* Tabs: vaardigheden + reviews */}
         <View style={styles.tabRow}>
           <TouchableOpacity
             activeOpacity={0.9}

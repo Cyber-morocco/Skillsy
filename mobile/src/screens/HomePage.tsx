@@ -45,7 +45,11 @@ const INITIAL_POSTS = [
   },
 ];
 
-export default function HomePage() {
+interface HomePageProps {
+  onViewProfile?: (user: any) => void;
+}
+
+export default function HomePage({ onViewProfile }: HomePageProps) {
   const [activeTab, setActiveTab] = useState('Alle');
   const [posts, setPosts] = useState(INITIAL_POSTS);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -55,7 +59,7 @@ export default function HomePage() {
     const post = {
       id: Date.now().toString(),
       user: {
-        name: 'Jij', 
+        name: 'Jij',
         avatar: 'https://i.pravatar.cc/150?img=8',
       },
       date: 'Zojuist',
@@ -119,7 +123,12 @@ export default function HomePage() {
     <SafeAreaView style={styles.container}>
       <FlatList
         data={filteredPosts}
-        renderItem={({ item }) => <FeedItem post={item} />}
+        renderItem={({ item }) => (
+          <FeedItem
+            post={item}
+            onUserPress={() => onViewProfile && onViewProfile(item.user)}
+          />
+        )}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
         contentContainerStyle={styles.listContent}
