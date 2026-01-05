@@ -160,9 +160,10 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                                                     lat: coords?.lat || 50.8503,
                                                     lng: coords?.lng || 4.3517,
                                                 },
-                                                profileComplete: true,
                                                 updatedAt: serverTimestamp(),
                                             });
+
+                                            navigation.navigate('ProfileCreationStep2');
                                         } catch (error: any) {
                                             Alert.alert('Erreur', error.message || 'Impossible de sauvegarder le profil');
                                         } finally {

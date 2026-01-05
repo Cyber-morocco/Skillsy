@@ -12,12 +12,16 @@ import {
   LoginScreen,
   SignupScreen,
   ProfileCreationStep1,
+  ProfileCreationStep2,
+  ProfileCreationStep3,
 } from '../screens';
 
 export type AuthStackParamList = {
   Login: undefined;
   Signup: undefined;
   ProfileCreationStep1: undefined;
+  ProfileCreationStep2: undefined;
+  ProfileCreationStep3: undefined;
 };
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -36,6 +40,8 @@ const AuthStackNavigator = () => {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Signup" component={SignupScreen} />
         <Stack.Screen name="ProfileCreationStep1" component={ProfileCreationStep1} />
+        <Stack.Screen name="ProfileCreationStep2" component={ProfileCreationStep2} />
+        <Stack.Screen name="ProfileCreationStep3" component={ProfileCreationStep3} />
       </Stack.Navigator>
     </NavigationContainer>
   );

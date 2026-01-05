@@ -1,6 +1,8 @@
 export { default as LoginScreen } from './LoginScreen';
 export { default as SignupScreen } from './SignupScreen';
 export { default as ProfileCreationStep1 } from './ProfileCreationStep1';
+export { default as ProfileCreationStep2 } from './ProfileCreationStep2';
+export { default as ProfileCreationStep3 } from './ProfileCreationStep3';
 export { default as HomePage } from './HomePage';
 export { default as ExploreMapScreen } from './ExploreMapScreen';
 export { default as ExploreProfileScreen } from './ExploreProfileScreen';
