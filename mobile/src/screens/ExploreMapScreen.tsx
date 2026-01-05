@@ -36,13 +36,14 @@ export default function ExploreMapScreen() {
   } = useExploreMap();
 
   const handleTalentPress = (talentId: number) => {
+
     console.log('Talent pressed:', talentId);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-
+      
       <ExploreSearchBar
         searchQuery={searchQuery}
         searchType={searchType}
@@ -105,4 +106,5 @@ export default function ExploreMapScreen() {
       </View>
     </SafeAreaView>
   );
+
 }

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -12,6 +14,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authColors, authStyles as styles } from '../styles/authStyles';
 import { AppInput } from '../components/AppInput';
+import { auth } from '../config/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 type AuthScreenProps = {
   navigation?: {
@@ -23,9 +27,41 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    console.log('Logging in with:', { email, password });
+  const handleLogin = async () => {
+    if (!email.trim() || !password) {
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email.toLowerCase().trim(), password);
+    } catch (error: any) {
+      let errorMessage = 'Une erreur est survenue';
+
+      switch (error.code) {
+        case 'auth/invalid-email':
+          errorMessage = 'Adresse email invalide';
+          break;
+        case 'auth/user-not-found':
+          errorMessage = 'Aucun compte trouvé met dit email';
+          break;
+        case 'auth/wrong-password':
+          errorMessage = 'Onjuist wachtwoord';
+          break;
+        case 'auth/invalid-credential':
+          errorMessage = 'Email of wachtwoord onjuist';
+          break;
+        default:
+          errorMessage = error.message;
+      }
+
+      Alert.alert('Inlogfout', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -109,10 +145,15 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 
             <TouchableOpacity
               activeOpacity={0.85}
-              style={styles.primaryButton}
+              style={[styles.primaryButton, loading && { opacity: 0.7 }]}
               onPress={handleLogin}
+              disabled={loading}
             >
-              <Text style={styles.primaryButtonText}>Inloggen</Text>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Inloggen</Text>
+              )}
             </TouchableOpacity>
 
             <Text style={styles.mutedInfo}>

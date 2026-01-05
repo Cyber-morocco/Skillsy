@@ -35,11 +35,9 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, onBac
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
 
-
       <View style={styles.headerBackground} />
 
       <View style={styles.content}>
-
         <View style={styles.topRow}>
           <TouchableOpacity activeOpacity={0.8} style={styles.roundIconButton} onPress={onBack}>
             <Text style={styles.roundIconText}>←</Text>
@@ -377,5 +375,3 @@ const styles = StyleSheet.create({
 });
 
 export default ExploreProfileScreen;
-
-

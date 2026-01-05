@@ -5,18 +5,23 @@ import {
   createNativeStackNavigator,
 } from '@react-navigation/native-stack';
 import { authColors } from '../styles/authStyles';
+import { auth } from '../config/firebase';
 
 
 import {
   LoginScreen,
   SignupScreen,
   ProfileCreationStep1,
+  ProfileCreationStep2,
+  ProfileCreationStep3,
 } from '../screens';
 
 export type AuthStackParamList = {
   Login: undefined;
   Signup: undefined;
   ProfileCreationStep1: undefined;
+  ProfileCreationStep2: undefined;
+  ProfileCreationStep3: undefined;
 };
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -31,10 +36,12 @@ const screenOptions: NativeStackNavigationOptions = {
 const AuthStackNavigator = () => {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="ProfileCreationStep1" screenOptions={screenOptions}>
-        <Stack.Screen name="ProfileCreationStep1" component={ProfileCreationStep1} />
+      <Stack.Navigator initialRouteName="Login" screenOptions={screenOptions}>
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Signup" component={SignupScreen} />
+        <Stack.Screen name="ProfileCreationStep1" component={ProfileCreationStep1} />
+        <Stack.Screen name="ProfileCreationStep2" component={ProfileCreationStep2} />
+        <Stack.Screen name="ProfileCreationStep3" component={ProfileCreationStep3} />
       </Stack.Navigator>
     </NavigationContainer>
   );

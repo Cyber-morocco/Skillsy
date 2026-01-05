@@ -21,7 +21,6 @@ type Contact = {
     avatarColor: string;
 };
 
-//MOCKDATA NIET VERGETEN TE VERWIJDEREN
 const CONTACTS: Contact[] = [
     { id: '1', name: 'Iliés Mazouz', initials: 'IM', status: 'offline', lastSeen: 'gisteren', avatarColor: '#3B82F6' },
     { id: '2', name: 'Yassine Eddouks', initials: 'YE', status: 'online', avatarColor: '#10B981' },
