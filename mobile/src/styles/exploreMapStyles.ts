@@ -143,9 +143,28 @@ export const exploreMapStyles = StyleSheet.create({
   mapContainer: {
     flex: 1,
     overflow: 'hidden',
+    position: 'relative',
   },
   map: {
     flex: 1,
+  },
+  locationButton: {
+    position: 'absolute',
+    bottom: 120,
+    right: 16,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#7c3aed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#7c3aed',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 12,
+    borderWidth: 0,
+    zIndex: 10,
   },
   listContainer: {
     flex: 1,

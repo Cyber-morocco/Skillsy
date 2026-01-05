@@ -1,6 +1,7 @@
 import React from 'react';
-import { StatusBar, Text, View } from 'react-native';
+import { StatusBar, Text, View, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { ExploreSearchBar } from '../features/explore/ExploreSearchBar';
 import { FiltersBar } from '../features/explore/FiltersBar';
 import { MapViewLeaflet } from './logic/MapViewLeaflet';
@@ -19,6 +20,8 @@ export default function ExploreMapScreen() {
     handleDistanceSelect,
     handleSearch,
     isSearching,
+    locationPermissionGranted,
+    requestLocationPermission,
     resetSearch,
     searchQuery,
     searchType,
@@ -62,17 +65,35 @@ export default function ExploreMapScreen() {
         categoryOptions={categoryOptions}
       />
 
-      {viewMode === 'map' ? (
-        <MapViewLeaflet
-          userLocation={userLocation}
-          radiusKm={selectedDistance}
-          talents={filteredTalents}
-          focusTalent={focusTalent}
-          onTalentClick={handleTalentPress}
-        />
-      ) : (
-        <TalentList talents={filteredTalents} onPress={handleTalentPress} />
-      )}
+      <View style={styles.mapContainer}>
+        {viewMode === 'map' ? (
+          <MapViewLeaflet
+            userLocation={userLocation}
+            radiusKm={selectedDistance}
+            talents={filteredTalents}
+            focusTalent={focusTalent}
+            onTalentClick={handleTalentPress}
+          />
+        ) : (
+          <TalentList talents={filteredTalents} onPress={handleTalentPress} />
+        )}
+        
+        {viewMode === 'map' && (
+          <TouchableOpacity
+            style={styles.locationButton}
+            onPress={() => {
+              requestLocationPermission();
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={locationPermissionGranted ? 'locate' : 'locate-outline'}
+              size={28}
+              color="#FFFFFF"
+            />
+          </TouchableOpacity>
+        )}
+      </View>
 
       <View style={styles.resultsContainer}>
         <Text style={styles.resultsCount}>{filteredTalents.length} talenten</Text>

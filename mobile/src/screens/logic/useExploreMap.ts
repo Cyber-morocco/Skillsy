@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import * as ExpoLocation from 'expo-location';
 import { mockTalents, Talent } from '../../mockdummies/markers';
 import { CATEGORY_OPTIONS, DISTANCE_OPTIONS } from '../../constants/exploreMap';
 import { calculateDistance } from './distance';
@@ -53,6 +54,31 @@ export const useExploreMap = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [searchType, setSearchType] = useState<'skill' | 'address'>('skill');
   const [focusTalent, setFocusTalent] = useState<{ id: number; lat: number; lng: number } | null>(null);
+  const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
+
+  // Check if location permission is already granted on mount
+  useEffect(() => {
+    const checkLocationPermission = async () => {
+      try {
+        const { status } = await ExpoLocation.getForegroundPermissionsAsync();
+        if (status === 'granted') {
+          setLocationPermissionGranted(true);
+          const location = await ExpoLocation.getCurrentPositionAsync({
+            accuracy: ExpoLocation.Accuracy.Balanced,
+          });
+          const newLocation: Location = {
+            lat: location.coords.latitude,
+            lng: location.coords.longitude,
+          };
+          console.log('Location loaded on mount:', newLocation);
+          setUserLocation(newLocation);
+        }
+      } catch (error) {
+        console.error('Error checking location permission:', error);
+      }
+    };
+    checkLocationPermission();
+  }, []);
 
   const filteredTalents = useMemo(
     () =>
@@ -150,6 +176,65 @@ export const useExploreMap = () => {
     }
   };
 
+  const requestLocationPermission = async () => {
+    try {
+      // If permission already granted, verify it's still valid and get location
+      if (locationPermissionGranted) {
+        const { status } = await ExpoLocation.getForegroundPermissionsAsync();
+        
+        // If permission was revoked, silently reset state
+        if (status !== 'granted') {
+          setLocationPermissionGranted(false);
+          return false;
+        }
+        
+        // Permission still valid, fetch location with Low accuracy for speed
+        const location = await ExpoLocation.getCurrentPositionAsync({
+          accuracy: ExpoLocation.Accuracy.Low,
+          timeInterval: 5000,
+          mayShowUserSettingsDialog: false,
+        });
+        
+        const newLocation: Location = {
+          lat: location.coords.latitude,
+          lng: location.coords.longitude,
+        };
+        
+        setUserLocation(newLocation);
+        return true;
+      }
+      
+      // Request permission (shows system dialog)
+      const { status } = await ExpoLocation.requestForegroundPermissionsAsync();
+      
+      // If user denied, silently reset without showing anything
+      if (status !== 'granted') {
+        setLocationPermissionGranted(false);
+        return false;
+      }
+      
+      // Permission granted, fetch location
+      setLocationPermissionGranted(true);
+      const location = await ExpoLocation.getCurrentPositionAsync({
+        accuracy: ExpoLocation.Accuracy.Low,
+        timeInterval: 5000,
+        mayShowUserSettingsDialog: false,
+      });
+      
+      const newLocation: Location = {
+        lat: location.coords.latitude,
+        lng: location.coords.longitude,
+      };
+      
+      setUserLocation(newLocation);
+      return true;
+    } catch (error) {
+      // Silently handle any errors
+      setLocationPermissionGranted(false);
+      return false;
+    }
+  };
+
   return {
     CATEGORY_OPTIONS,
     DISTANCE_OPTIONS,
@@ -161,6 +246,8 @@ export const useExploreMap = () => {
     handleDistanceSelect,
     handleSearch,
     isSearching,
+    locationPermissionGranted,
+    requestLocationPermission,
     resetSearch,
     searchQuery,
     searchType,
