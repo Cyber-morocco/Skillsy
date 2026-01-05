@@ -38,8 +38,6 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email.toLowerCase().trim(), password);
-      // La navigation est gérée automatiquement par App.tsx
-      // basée sur l'état d'auth et profileComplete
     } catch (error: any) {
       let errorMessage = 'Une erreur est survenue';
 
@@ -48,19 +46,19 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
           errorMessage = 'Adresse email invalide';
           break;
         case 'auth/user-not-found':
-          errorMessage = 'Aucun compte trouvé avec cet email';
+          errorMessage = 'Aucun compte trouvé met dit email';
           break;
         case 'auth/wrong-password':
-          errorMessage = 'Mot de passe incorrect';
+          errorMessage = 'Onjuist wachtwoord';
           break;
         case 'auth/invalid-credential':
-          errorMessage = 'Email ou mot de passe incorrect';
+          errorMessage = 'Email of wachtwoord onjuist';
           break;
         default:
           errorMessage = error.message;
       }
 
-      Alert.alert('Erreur de connexion', errorMessage);
+      Alert.alert('Inlogfout', errorMessage);
     } finally {
       setLoading(false);
     }

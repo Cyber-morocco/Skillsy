@@ -1,9 +1,5 @@
-// Shared TypeScript types for Skillsy app
-
-// User skill levels
 export type SkillLevel = 'Beginner' | 'Gevorderd' | 'Expert';
 
-// A skill the user can teach
 export interface Skill {
     id: string;
     subject: string;
@@ -11,13 +7,11 @@ export interface Skill {
     price: string;
 }
 
-// A skill the user wants to learn
 export interface LearnSkill {
     id: string;
     subject: string;
 }
 
-// User profile data
 export interface UserProfile {
     uid: string;
     displayName: string;
@@ -36,7 +30,6 @@ export interface UserProfile {
     createdAt: any;
 }
 
-// Availability day configuration
 export interface AvailabilityDay {
     name: string;
     enabled: boolean;
@@ -44,7 +37,6 @@ export interface AvailabilityDay {
     end: string;
 }
 
-// Talent shown on explore map
 export interface Talent {
     id: string;
     userId: string;
@@ -57,7 +49,6 @@ export interface Talent {
     isActive: boolean;
 }
 
-// Chat contact/conversation
 export interface Conversation {
     id: string;
     participants: string[];
@@ -69,7 +60,6 @@ export interface Conversation {
     unreadCount: { [userId: string]: number };
 }
 
-// Chat message
 export interface Message {
     id: string;
     text: string;
@@ -78,7 +68,6 @@ export interface Message {
     read: boolean;
 }
 
-// Appointment data
 export interface Appointment {
     id: string;
     tutorId: string;

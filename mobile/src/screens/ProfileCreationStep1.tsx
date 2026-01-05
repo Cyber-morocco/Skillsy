@@ -30,6 +30,28 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
     const [zipCode, setZipCode] = useState('');
     const [city, setCity] = useState('');
     const [saving, setSaving] = useState(false);
+
+    const geocodeAddress = async (street: string, city: string, zipCode: string): Promise<{ lat: number; lng: number } | null> => {
+        try {
+            const address = `${street}, ${zipCode} ${city}`;
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+                { headers: { 'User-Agent': 'Skillsy-App/1.0' } }
+            );
+            const data = await response.json();
+            if (data && data.length > 0) {
+                return {
+                    lat: parseFloat(data[0].lat),
+                    lng: parseFloat(data[0].lon),
+                };
+            }
+            return null;
+        } catch (error) {
+            console.error('Geocoding error:', error);
+            return null;
+        }
+    };
+
     return (
         <SafeAreaView style={styles.safeArea}>
             <StatusBar barStyle="light-content" />
@@ -126,6 +148,8 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
 
                                         setSaving(true);
                                         try {
+                                            const coords = await geocodeAddress(street, city, zipCode);
+
                                             await updateDoc(doc(db, 'users', auth.currentUser.uid), {
                                                 displayName: name.trim() || auth.currentUser.displayName,
                                                 bio: bio.trim(),
@@ -133,12 +157,12 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                                                     street: street.trim(),
                                                     zipCode: zipCode.trim(),
                                                     city: city.trim(),
+                                                    lat: coords?.lat || 50.8503,
+                                                    lng: coords?.lng || 4.3517,
                                                 },
                                                 profileComplete: true,
                                                 updatedAt: serverTimestamp(),
                                             });
-                                            // App.tsx détectera le changement de profileComplete
-                                            // et redirigera vers l'app principale
                                         } catch (error: any) {
                                             Alert.alert('Erreur', error.message || 'Impossible de sauvegarder le profil');
                                         } finally {
@@ -163,4 +187,3 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
 };
 
 export default ProfileCreationStep1;
-

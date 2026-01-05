@@ -32,7 +32,6 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
 
   const handleSignup = async () => {
-    // Validation
     if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs');
       return;
@@ -50,16 +49,11 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 
     setLoading(true);
     try {
-      // Créer le compte Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email.toLowerCase().trim(), password);
       const user = userCredential.user;
 
-      // Mettre à jour le profil avec le nom
       await updateProfile(user, { displayName: fullName.trim() });
 
-      // Créer le document utilisateur dans Firestore
-      // profileComplete: false indique que le profil n'est pas encore complet
-      // App.tsx utilisera ce flag pour rediriger vers ProfileCreationStep1
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
         email: user.email,
@@ -69,7 +63,6 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
         updatedAt: serverTimestamp(),
       });
 
-      // Naviguer explicitement vers ProfileCreationStep1
       navigation?.navigate?.('ProfileCreationStep1');
     } catch (error: any) {
       let errorMessage = 'Une erreur est survenue';
@@ -159,10 +152,6 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
                 <Text style={styles.label}>Wachtwoord</Text>
                 <Text style={styles.helperText}>Min. 8 tekens</Text>
               </View>
-              {/* We use AppInput but want to preserve the custom label row with helper text above,
-                   so we might just pass 'style' or leave it blank and key off label.
-                   To simplify, we can use AppInput without label prop and render label manually,
-                   OR just update AppInput to support RightLabel, BUT for now I will manual render label */}
               <AppInput
                 placeholder="Sterk wachtwoord"
                 secureTextEntry
@@ -211,5 +200,3 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 };
 
 export default SignupScreen;
-
-

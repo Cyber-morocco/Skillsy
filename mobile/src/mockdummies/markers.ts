@@ -9,7 +9,6 @@ export interface Talent {
 }
 
 export const mockTalents: Talent[] = [
-  // Amsterdam Center
   {
     id: 1,
     name: 'John',
@@ -46,8 +45,6 @@ export const mockTalents: Talent[] = [
     avatar: 'https://i.pravatar.cc/150?img=4',
     skills: [{ name: 'Leadership' }, { name: 'Analytics' }],
   },
-
-  // Amsterdam - nearby (1-3 km)
   {
     id: 5,
     name: 'Mark',
@@ -93,8 +90,6 @@ export const mockTalents: Talent[] = [
     avatar: 'https://i.pravatar.cc/150?img=9',
     skills: [{ name: 'Vue.js' }, { name: 'Express' }],
   },
-
-  // Amsterdam - slightly further (3-8 km)
   {
     id: 10,
     name: 'Sophie',
@@ -140,8 +135,6 @@ export const mockTalents: Talent[] = [
     avatar: 'https://i.pravatar.cc/150?img=14',
     skills: [{ name: 'SEO' }, { name: 'Copywriting' }],
   },
-
-  // Rotterdam (60 km from Amsterdam)
   {
     id: 15,
     name: 'Peter',

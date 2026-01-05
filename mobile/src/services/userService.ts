@@ -1,4 +1,3 @@
-// Firebase service for user-related operations
 import {
     collection,
     doc,
@@ -14,7 +13,6 @@ import {
 import { db, auth } from '../config/firebase';
 import { Skill, LearnSkill, AvailabilityDay } from '../types';
 
-// Get current user ID or throw error
 const getCurrentUserId = (): string => {
     const user = auth.currentUser;
     if (!user) {
@@ -23,11 +21,6 @@ const getCurrentUserId = (): string => {
     return user.uid;
 };
 
-// ============ USER PROFILE ============
-
-/**
- * Subscribe to real-time updates of the user's root profile document
- */
 export const subscribeToUserProfile = (
     onProfileChange: (profile: any) => void,
     onError?: (error: Error) => void
@@ -51,11 +44,6 @@ export const subscribeToUserProfile = (
     );
 };
 
-// ============ SKILLS (Teaching) ============
-
-/**
- * Subscribe to real-time updates of user's teaching skills
- */
 export const subscribeToSkills = (
     onSkillsChange: (skills: Skill[]) => void,
     onError?: (error: Error) => void
@@ -79,9 +67,6 @@ export const subscribeToSkills = (
     );
 };
 
-/**
- * Add a new teaching skill
- */
 export const addSkill = async (skill: Omit<Skill, 'id'>): Promise<string> => {
     const userId = getCurrentUserId();
     const skillsRef = collection(db, 'users', userId, 'skills');
@@ -92,29 +77,18 @@ export const addSkill = async (skill: Omit<Skill, 'id'>): Promise<string> => {
     return docRef.id;
 };
 
-/**
- * Update an existing teaching skill
- */
 export const updateSkill = async (skillId: string, updates: Partial<Skill>): Promise<void> => {
     const userId = getCurrentUserId();
     const skillRef = doc(db, 'users', userId, 'skills', skillId);
     await updateDoc(skillRef, updates);
 };
 
-/**
- * Delete a teaching skill
- */
 export const deleteSkill = async (skillId: string): Promise<void> => {
     const userId = getCurrentUserId();
     const skillRef = doc(db, 'users', userId, 'skills', skillId);
     await deleteDoc(skillRef);
 };
 
-// ============ LEARN SKILLS ============
-
-/**
- * Subscribe to real-time updates of user's learning skills
- */
 export const subscribeToLearnSkills = (
     onSkillsChange: (skills: LearnSkill[]) => void,
     onError?: (error: Error) => void
@@ -138,9 +112,6 @@ export const subscribeToLearnSkills = (
     );
 };
 
-/**
- * Add a new learning skill
- */
 export const addLearnSkill = async (skill: Omit<LearnSkill, 'id'>): Promise<string> => {
     const userId = getCurrentUserId();
     const skillsRef = collection(db, 'users', userId, 'learnSkills');
@@ -151,20 +122,12 @@ export const addLearnSkill = async (skill: Omit<LearnSkill, 'id'>): Promise<stri
     return docRef.id;
 };
 
-/**
- * Delete a learning skill
- */
 export const deleteLearnSkill = async (skillId: string): Promise<void> => {
     const userId = getCurrentUserId();
     const skillRef = doc(db, 'users', userId, 'learnSkills', skillId);
     await deleteDoc(skillRef);
 };
 
-// ============ AVAILABILITY ============
-
-/**
- * Subscribe to real-time updates of user's weekly availability
- */
 export const subscribeToAvailability = (
     onAvailabilityChange: (days: AvailabilityDay[]) => void,
     onError?: (error: Error) => void
@@ -179,7 +142,6 @@ export const subscribeToAvailability = (
                 const data = snapshot.data();
                 onAvailabilityChange(data.days as AvailabilityDay[]);
             } else {
-                // Return default availability if none set
                 onAvailabilityChange([
                     { name: 'Maandag', enabled: false, start: '08:00', end: '22:00' },
                     { name: 'Dinsdag', enabled: false, start: '08:00', end: '22:00' },
@@ -198,9 +160,6 @@ export const subscribeToAvailability = (
     );
 };
 
-/**
- * Save user's weekly availability
- */
 export const saveAvailability = async (days: AvailabilityDay[]): Promise<void> => {
     const userId = getCurrentUserId();
     const availabilityRef = doc(db, 'users', userId, 'availability', 'weekly');

@@ -35,7 +35,6 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [learnModalVisible, setLearnModalVisible] = useState(false);
   const [newLearnSubject, setNewLearnSubject] = useState('');
 
-  // Subscribe to profile and skills from Firestore
   useEffect(() => {
     const unsubscribeProfile = subscribeToUserProfile(
       (profile) => {
@@ -140,7 +139,6 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
     }
   };
 
-  // Show loading indicator while fetching initial data
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -153,7 +151,6 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
     );
   }
 
-  // Format date for display
   const formatDate = (timestamp: any) => {
     if (!timestamp) return 'Nooit';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -374,7 +371,6 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
           </TouchableWithoutFeedback>
         </Modal>
 
-        {/* Logout Button */}
         <View style={styles.logoutContainer}>
           <TouchableOpacity
             style={styles.logoutButton}

@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image, Dimensions, Modal, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Image, Dimensions, Modal, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView, WebViewMessageEvent } from 'react-native-webview';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { mockTalents, Talent } from '../mockdummies/markers';
+import { subscribeToTalents } from '../services/talentService';
+import { subscribeToUserProfile } from '../services/userService';
+import { Talent, UserProfile } from '../types';
 
 const { width, height } = Dimensions.get('window');
 
@@ -40,22 +42,23 @@ const CATEGORY_OPTIONS = [
   'Engels',
 ];
 
-// Calculate distance between two coordinates in km
 const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
-  const R = 6371; // Earth's radius in km
+  const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLng / 2) *
+    Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
 
 export default function ExploreMapScreen() {
+  const [talents, setTalents] = useState<Talent[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [skillSearch, setSkillSearch] = useState('');
   const [selectedDistance, setSelectedDistance] = useState<number | null>(null);
@@ -69,10 +72,34 @@ export default function ExploreMapScreen() {
   const [distanceLayout, setDistanceLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const [categoryLayout, setCategoryLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const webViewRef = useRef<WebView>(null);
-  
-  const allTalents = mockTalents;
 
-  // Geocode address to coordinates
+  useEffect(() => {
+    const unsubscribeProfile = subscribeToUserProfile((profile: UserProfile | null) => {
+      if (profile?.location?.lat && profile?.location?.lng) {
+        setUserLocation({
+          lat: profile.location.lat,
+          lng: profile.location.lng,
+          address: profile.location.city || profile.location.address
+        });
+      }
+    });
+
+    const unsubscribeTalents = subscribeToTalents((fetchedTalents) => {
+      setTalents(fetchedTalents);
+      setLoading(false);
+    }, (error) => {
+      console.error('Error loading talents:', error);
+      setLoading(false);
+    });
+
+    return () => {
+      unsubscribeProfile();
+      unsubscribeTalents();
+    };
+  }, []);
+
+  const allTalents = talents;
+
   const geocodeAddress = async (address: string): Promise<Location | null> => {
     try {
       const response = await fetch(
@@ -94,7 +121,6 @@ export default function ExploreMapScreen() {
     }
   };
 
-  // Unified search: try geocoding; if it fails, treat as skill search
   const handleSearch = async () => {
     const q = searchQuery.trim();
     if (!q) return;
@@ -105,9 +131,7 @@ export default function ExploreMapScreen() {
       setIsSearching(false);
 
       if (result) {
-        // It's a location search
         setUserLocation(result);
-        // Keep the query visible in the input
         if (webViewRef.current) {
           webViewRef.current.postMessage(
             JSON.stringify({
@@ -120,10 +144,8 @@ export default function ExploreMapScreen() {
         }
       }
     } else {
-      // Treat as skill search term: filter and focus on nearest matching talent
       const searchTerm = q.toLowerCase().trim();
       const matches = allTalents.filter((talent: Talent) => {
-        // Distance filter
         if (selectedDistance !== null) {
           const distance = calculateDistance(
             userLocation.lat,
@@ -133,7 +155,6 @@ export default function ExploreMapScreen() {
           );
           if (distance > selectedDistance) return false;
         }
-        // Category filter
         if (selectedCategories.length > 0) {
           const talentSkillNames = talent.skills.map((s: { name: string }) => s.name.toLowerCase());
           const hasMatchingCategory = selectedCategories.some(category =>
@@ -141,7 +162,6 @@ export default function ExploreMapScreen() {
           );
           if (!hasMatchingCategory) return false;
         }
-        // Skill match
         return talent.skills.some((skill: { name: string }) =>
           skill.name.toLowerCase().includes(searchTerm)
         );
@@ -151,7 +171,6 @@ export default function ExploreMapScreen() {
       setIsSearching(false);
 
       if (webViewRef.current) {
-        // Update markers immediately with matches
         webViewRef.current.postMessage(
           JSON.stringify({
             type: 'updateRadius',
@@ -160,7 +179,6 @@ export default function ExploreMapScreen() {
           })
         );
 
-        // Focus map on nearest matching talent
         if (matches.length > 0) {
           let nearest = matches[0];
           let minDist = calculateDistance(userLocation.lat, userLocation.lng, nearest.lat, nearest.lng);
@@ -184,9 +202,7 @@ export default function ExploreMapScreen() {
     }
   };
 
-  // Filter talents based on all filters (distance, categories, and skill search)
   const filteredTalents = allTalents.filter((talent: Talent) => {
-    // Distance filter
     if (selectedDistance !== null) {
       const distance = calculateDistance(
         userLocation.lat,
@@ -196,33 +212,30 @@ export default function ExploreMapScreen() {
       );
       if (distance > selectedDistance) return false;
     }
-    
-    // Category filter (any selected category must match)
+
     if (selectedCategories.length > 0) {
       const talentSkillNames = talent.skills.map((s: { name: string }) => s.name.toLowerCase());
-      const hasMatchingCategory = selectedCategories.some(category => 
+      const hasMatchingCategory = selectedCategories.some(category =>
         talentSkillNames.some((skill: string) => skill.includes(category.toLowerCase()))
       );
       if (!hasMatchingCategory) return false;
     }
-    
-    // Skill search filter
+
     if (skillSearch.trim()) {
       const searchTerm = skillSearch.toLowerCase().trim();
-      const hasMatchingSkill = talent.skills.some((skill: { name: string }) => 
+      const hasMatchingSkill = talent.skills.some((skill: { name: string }) =>
         skill.name.toLowerCase().includes(searchTerm)
       );
       if (!hasMatchingSkill) return false;
     }
-    
+
     return true;
   });
 
-  // Update map when filtered talents or filters change
   useEffect(() => {
     if (webViewRef.current) {
-      webViewRef.current.postMessage(JSON.stringify({ 
-        type: 'updateRadius', 
+      webViewRef.current.postMessage(JSON.stringify({
+        type: 'updateRadius',
         radiusKm: selectedDistance,
         talents: filteredTalents
       }));
@@ -290,7 +303,6 @@ export default function ExploreMapScreen() {
               maxZoom: 19
             }).addTo(map);
 
-            // User location marker
             const userMarker = L.circleMarker([centerLat, centerLng], {
               radius: 8,
               fillColor: '#10b981',
@@ -301,7 +313,6 @@ export default function ExploreMapScreen() {
             }).addTo(map);
             userMarker.bindPopup('<strong>You</strong>');
 
-            // Initial radius circle
             radiusCircle = L.circle([centerLat, centerLng], {
               radius: radiusKm * 1000,
               color: '#7c3aed',
@@ -311,9 +322,7 @@ export default function ExploreMapScreen() {
               dashArray: '5, 5'
             }).addTo(map);
 
-            // Function to add talent markers
             const addTalentMarkers = (talents) => {
-              // Remove old markers
               Object.values(talentMarkers).forEach(marker => {
                 map.removeLayer(marker);
               });
@@ -347,11 +356,9 @@ export default function ExploreMapScreen() {
               });
             };
 
-            // Initial talent markers
             const initialTalents = ${JSON.stringify(filteredTalents)};
             addTalentMarkers(initialTalents);
 
-            // Handle messages from React Native
             document.addEventListener('message', (event) => {
               try {
                 const data = JSON.parse(event.data);
@@ -369,7 +376,6 @@ export default function ExploreMapScreen() {
                     dashArray: '5, 5'
                   }).addTo(map);
 
-                  // Update talent markers
                   if (data.talents) {
                     addTalentMarkers(data.talents);
                   }
@@ -417,21 +423,16 @@ export default function ExploreMapScreen() {
     </html>
   `;
 
-  // Handle distance button press
   const handleDistancePress = (distance: number) => {
     if (selectedDistance === distance) {
-      // If clicking the same button, deselect it
       setSelectedDistance(null);
     } else {
-      // Otherwise, select the new distance
       setSelectedDistance(distance);
     }
   };
 
-  // Handle distance selection
   const handleDistanceSelect = (distance: number) => {
     if (selectedDistance === distance) {
-      // Deselect if clicking the same distance
       setSelectedDistance(null);
     } else {
       setSelectedDistance(distance);
@@ -439,37 +440,38 @@ export default function ExploreMapScreen() {
     setShowDistanceDropdown(false);
   };
 
-  // Handle category selection (multiple selections allowed)
   const handleCategorySelect = (category: string) => {
     if (selectedCategories.includes(category)) {
-      // Remove if already selected
       setSelectedCategories(selectedCategories.filter(c => c !== category));
     } else {
-      // Add if not selected
       setSelectedCategories([...selectedCategories, category]);
     }
   };
 
-  // Handle talent card press (for list view)
-  const handleTalentPress = (talentId: number) => {
-    // Navigate to talent profile or show details
+  const handleTalentPress = (talentId: string) => {
     console.log('Talent pressed:', talentId);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      {/* Header */}
+
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#7c3aed" />
+          <Text style={styles.loadingText}>Talenten laden...</Text>
+        </View>
+      )}
+
       <View style={styles.header}>
-        {/* Skill/Address Toggle Button */}
         <TouchableOpacity
           style={styles.searchTypeToggleButton}
           onPress={() => setSearchType(searchType === 'skill' ? 'address' : 'skill')}
         >
-          <MaterialCommunityIcons 
-            name={searchType === 'skill' ? 'star-outline' : 'map-marker'} 
-            size={20} 
-            color="#fff" 
+          <MaterialCommunityIcons
+            name={searchType === 'skill' ? 'star-outline' : 'map-marker'}
+            size={20}
+            color="#fff"
           />
         </TouchableOpacity>
         <View style={styles.searchContainer}>
@@ -501,10 +503,8 @@ export default function ExploreMapScreen() {
         </View>
       </View>
 
-      {/* Filter Section */}
       <View style={styles.filterSection}>
         <View style={styles.filterButtonsContainer}>
-          {/* Distance Filter Button */}
           <TouchableOpacity
             style={[
               styles.filterButton,
@@ -529,7 +529,6 @@ export default function ExploreMapScreen() {
             />
           </TouchableOpacity>
 
-          {/* Category Filter Button */}
           <TouchableOpacity
             style={[
               styles.filterButton,
@@ -554,7 +553,6 @@ export default function ExploreMapScreen() {
             />
           </TouchableOpacity>
 
-          {/* Map/List Toggle Button */}
           <TouchableOpacity
             style={styles.viewModeToggleButton}
             onPress={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
@@ -567,7 +565,6 @@ export default function ExploreMapScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Distance Dropdown */}
         {showDistanceDropdown && (
           <View
             style={[
@@ -605,7 +602,6 @@ export default function ExploreMapScreen() {
           </View>
         )}
 
-        {/* Category Dropdown */}
         {showCategoryDropdown && (
           <View
             style={[
@@ -642,8 +638,7 @@ export default function ExploreMapScreen() {
                   )}
                 </TouchableOpacity>
               ))}
-              
-              {/* Clear Filter Option */}
+
               {selectedCategories.length > 0 && (
                 <TouchableOpacity
                   style={styles.dropdownOption}
@@ -659,7 +654,6 @@ export default function ExploreMapScreen() {
         )}
       </View>
 
-      {/* Close dropdowns when clicking outside */}
       {(showDistanceDropdown || showCategoryDropdown) && (
         <TouchableOpacity
           style={styles.dropdownOverlay}
@@ -671,7 +665,6 @@ export default function ExploreMapScreen() {
         />
       )}
 
-      {/* Map or List View */}
       {viewMode === 'map' ? (
         <View style={styles.mapContainer}>
           <WebView
@@ -705,7 +698,6 @@ export default function ExploreMapScreen() {
         </ScrollView>
       )}
 
-      {/* Results Info */}
       <View style={styles.resultsContainer}>
         <Text style={styles.resultsCount}>{filteredTalents.length} talenten</Text>
         <Text style={styles.resultsSubtext}>
@@ -798,45 +790,51 @@ const styles = StyleSheet.create({
   },
   filterButtonText: {
     fontSize: 12,
+    color: '#7c3aed',
     fontWeight: '600',
-    color: '#94A3B8',
-  },
-  viewModeToggleButton: {
-    width: 40,
-    height: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: 'rgba(148, 163, 184, 0.25)',
-    backgroundColor: '#101936',
   },
   filterButtonTextActive: {
-    color: '#F8FAFC',
+    color: '#fff',
+  },
+  viewModeToggleButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#101936',
+    borderWidth: 1.5,
+    borderColor: 'rgba(148, 163, 184, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dropdownOverlay: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 90,
   },
   dropdownContainer: {
     position: 'absolute',
     backgroundColor: '#101936',
-    borderRadius: 14,
+    borderRadius: 12,
+    padding: 8,
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.25)',
-    paddingVertical: 6,
-    zIndex: 1000,
+    zIndex: 100,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
     elevation: 8,
   },
   dropdownOption: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: 10,
-    marginHorizontal: 4,
-    marginVertical: 1,
+    paddingHorizontal: 12,
+    borderRadius: 8,
   },
   dropdownOptionActive: {
     backgroundColor: 'rgba(124, 58, 237, 0.1)',
@@ -844,23 +842,13 @@ const styles = StyleSheet.create({
   dropdownOptionText: {
     fontSize: 14,
     color: '#94A3B8',
-    fontWeight: '500',
   },
   dropdownOptionTextActive: {
     color: '#7c3aed',
     fontWeight: '600',
   },
-  dropdownOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 999,
-  },
   mapContainer: {
     flex: 1,
-    overflow: 'hidden',
   },
   map: {
     flex: 1,
@@ -868,41 +856,41 @@ const styles = StyleSheet.create({
   listContainer: {
     flex: 1,
     backgroundColor: '#050816',
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
   },
   talentCard: {
     flexDirection: 'row',
     backgroundColor: '#101936',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 12,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.25)',
+    borderColor: 'rgba(148, 163, 184, 0.1)',
   },
   talentAvatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 12,
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    backgroundColor: '#1E293B',
   },
   talentInfo: {
     flex: 1,
+    marginLeft: 12,
   },
   talentName: {
     fontSize: 16,
     fontWeight: '700',
     color: '#F8FAFC',
+    marginBottom: 4,
   },
   talentBio: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#94A3B8',
-    marginTop: 4,
+    marginBottom: 8,
   },
   skillsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 8,
     gap: 6,
   },
   skillTag: {
@@ -931,5 +919,17 @@ const styles = StyleSheet.create({
   resultsSubtext: {
     fontSize: 12,
     color: '#94A3B8',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(5, 8, 22, 0.7)',
+    zIndex: 1000,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#fff',
+    marginTop: 10,
+    fontSize: 16,
   },
 });

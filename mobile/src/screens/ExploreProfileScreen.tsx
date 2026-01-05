@@ -18,11 +18,9 @@ const ExploreProfileScreen: React.FC = () => {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
 
-      {/* Bovenste gekleurde balk */}
       <View style={styles.headerBackground} />
 
       <View style={styles.content}>
-        {/* Navigatie-icoontjes */}
         <View style={styles.topRow}>
           <TouchableOpacity activeOpacity={0.8} style={styles.roundIconButton}>
             <Text style={styles.roundIconText}>←</Text>
@@ -49,7 +47,6 @@ const ExploreProfileScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Profielfoto + naam + locatie + rating */}
         <View style={styles.profileHeader}>
           <View style={styles.avatarWrapper}>
             <View style={styles.avatarCircle} />
@@ -71,7 +68,6 @@ const ExploreProfileScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Afspraakknop + bericht */}
         <View style={styles.actionRow}>
           <TouchableOpacity activeOpacity={0.9} style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>Afspraak maken</Text>
@@ -82,7 +78,6 @@ const ExploreProfileScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Over Thomas */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Over Thomas</Text>
           <Text style={styles.cardBody}>
@@ -90,7 +85,6 @@ const ExploreProfileScreen: React.FC = () => {
           </Text>
         </View>
 
-        {/* Tabs: vaardigheden + reviews */}
         <View style={styles.tabRow}>
           <TouchableOpacity
             activeOpacity={0.9}
@@ -352,5 +346,3 @@ const styles = StyleSheet.create({
 });
 
 export default ExploreProfileScreen;
-
-
