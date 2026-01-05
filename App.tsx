@@ -1,11 +1,7 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-import HomePage from './mobile/src/screens/HomePage';
-import ExploreMapScreen from './mobile/src/screens/ExploreMapScreen';
-import AppointmentsScreen from './mobile/src/screens/AppointmentsScreen';
-import ProfileScreen from './mobile/src/screens/ProfileScreen';
-import BottomNavBar from './mobile/src/components/BottomNavBar';
-import ChatStackNavigator from './mobile/src/navigation/ChatStack';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
 import Availability from './mobile/src/screens/Availability';
 import ExploreProfileScreen from './mobile/src/screens/ExploreProfileScreen';
 
@@ -59,13 +55,3 @@ export default function App() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  screenContainer: {
-    flex: 1,
-  },
-});
