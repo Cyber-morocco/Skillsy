@@ -3,9 +3,10 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, FlatList } from '
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authColors } from '../styles/authStyles';
 import { Ionicons } from '@expo/vector-icons';
-import FeedItem from '../components/FeedItem';
+import FeedItem, { PostType } from '../components/FeedItem';
+import CreatePostModal from '../components/CreatePostModal';
 
-const DUMMY_POSTS = [
+const INITIAL_POSTS = [
   {
     id: '1',
     user: {
@@ -13,7 +14,7 @@ const DUMMY_POSTS = [
       avatar: 'https://i.pravatar.cc/150?img=11',
     },
     date: '25 nov, 10:30',
-    type: 'Vraag' as const,
+    type: 'Vraag' as PostType,
     content: 'Ik zoek iemand die me kan helpen met naaien. Ik wil graag leren hoe ik gordijnen kan maken!',
     likes: 5,
     comments: 3,
@@ -25,7 +26,7 @@ const DUMMY_POSTS = [
       avatar: 'https://i.pravatar.cc/150?img=5',
     },
     date: '25 nov, 09:15',
-    type: 'Succes' as const,
+    type: 'Succes' as PostType,
     content: 'Vandaag mijn eerste JavaScript-les gevolgd! Zo blij dat ik nu begrijp hoe functies werken 🎉',
     likes: 12,
     comments: 5,
@@ -37,7 +38,7 @@ const DUMMY_POSTS = [
       avatar: 'https://i.pravatar.cc/150?img=3',
     },
     date: '24 nov, 14:20',
-    type: 'Materiaal' as const,
+    type: 'Materiaal' as PostType,
     content: 'Ik heb een oude boormachine over die nog prima werkt. Wie kan ik er blij mee maken?',
     likes: 8,
     comments: 12,
@@ -46,7 +47,33 @@ const DUMMY_POSTS = [
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState('Alle');
+  const [posts, setPosts] = useState(INITIAL_POSTS);
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const tabs = ['Alle', 'Vragen', 'Successen', 'Materiaal'];
+
+  const handleCreatePost = (newPost: { type: PostType; content: string }) => {
+    const post = {
+      id: Date.now().toString(),
+      user: {
+        name: 'Jij', 
+        avatar: 'https://i.pravatar.cc/150?img=8',
+      },
+      date: 'Zojuist',
+      type: newPost.type,
+      content: newPost.content,
+      likes: 0,
+      comments: 0,
+    };
+    setPosts([post, ...posts]);
+  };
+
+  const filteredPosts = activeTab === 'Alle'
+    ? posts
+    : posts.filter(post => {
+      if (activeTab === 'Vragen') return post.type === 'Vraag';
+      if (activeTab === 'Successen') return post.type === 'Succes';
+      return post.type === activeTab;
+    });
 
   const renderHeader = () => (
     <View style={styles.headerContainer}>
@@ -57,7 +84,10 @@ export default function HomePage() {
         </Text>
       </View>
 
-      <TouchableOpacity style={styles.newPostButton}>
+      <TouchableOpacity
+        style={styles.newPostButton}
+        onPress={() => setIsModalVisible(true)}
+      >
         <Ionicons name="add" size={24} color={authColors.text} style={styles.icon} />
         <Text style={styles.buttonText}>Nieuw Bericht Plaatsen</Text>
       </TouchableOpacity>
@@ -88,12 +118,18 @@ export default function HomePage() {
   return (
     <SafeAreaView style={styles.container}>
       <FlatList
-        data={DUMMY_POSTS}
+        data={filteredPosts}
         renderItem={({ item }) => <FeedItem post={item} />}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
+      />
+
+      <CreatePostModal
+        visible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        onSubmit={handleCreatePost}
       />
     </SafeAreaView>
   );
