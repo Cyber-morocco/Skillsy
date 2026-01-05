@@ -15,7 +15,11 @@ import { AvailabilityDay } from '../types';
 
 const purple = '#A020F0';
 
-const Availability: React.FC = () => {
+interface AvailabilityProps {
+  onNavigate?: (screen: any) => void;
+}
+
+const Availability: React.FC<AvailabilityProps> = ({ onNavigate }) => {
   const [activeTab, setActiveTab] = useState<'week' | 'dates'>('week');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -123,7 +127,7 @@ const Availability: React.FC = () => {
 
           <TouchableOpacity
             style={styles.tab}
-            onPress={() => navigation.navigate('AvailabilitySpecificDates')}
+            onPress={() => onNavigate && onNavigate('availabilitySpecificDates')}
           >
             <Text style={styles.tabText}>Specifieke datums</Text>
           </TouchableOpacity>

@@ -14,13 +14,13 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 const purple = '#A020F0';
 
 const TIMES = [
-  '08:00','09:00','10:00','11:00','12:00',
-  '13:00','14:00','15:00','16:00','17:00',
-  '18:00','19:00','20:00','21:00','22:00',
+  '08:00', '09:00', '10:00', '11:00', '12:00',
+  '13:00', '14:00', '15:00', '16:00', '17:00',
+  '18:00', '19:00', '20:00', '21:00', '22:00',
 ];
 
 type Props = {
-  navigation: any;
+  onNavigate?: (screen: any) => void;
 };
 
 type SpecificDate = {
@@ -29,7 +29,7 @@ type SpecificDate = {
   end: string;
 };
 
-const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
+const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
   const [dates, setDates] = useState<SpecificDate[]>([]);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
@@ -64,7 +64,7 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
         </Text>
 
         <View style={styles.tabs}>
-          <TouchableOpacity style={styles.tab} onPress={() => navigation.goBack()}>
+          <TouchableOpacity style={styles.tab} onPress={() => onNavigate && onNavigate('availability')}>
             <Text style={styles.tabText}>Per week</Text>
           </TouchableOpacity>
 
@@ -140,7 +140,7 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
           value={dates[activeIndex].date}
           mode="date"
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={(_, selected) => {
+          onChange={(event: any, selected?: Date) => {
             setDatePickerVisible(false);
             if (!selected) return;
             const copy = [...dates];

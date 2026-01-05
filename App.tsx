@@ -3,22 +3,27 @@ import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './mobile/src/config/firebase';
-import HomePage from './mobile/src/screens/HomePage';
-import ExploreMapScreen from './mobile/src/screens/ExploreMapScreen';
-import AppointmentsScreen from './mobile/src/screens/AppointmentsScreen';
-import ProfileScreen from './mobile/src/screens/ProfileScreen';
+import {
+  ExploreProfileScreen,
+  Availability,
+  AvailabilitySpecificDates,
+  HomePage,
+  ExploreMapScreen,
+  AppointmentsScreen,
+  ProfileScreen
+} from './mobile/src/screens';
 import BottomNavBar from './mobile/src/components/BottomNavBar';
 import ChatStackNavigator from './mobile/src/navigation/ChatStack';
-import Availability from './mobile/src/screens/Availability';
 import AuthStackNavigator from './mobile/src/navigation/AuthStack';
 
-type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability' | 'exploreProfile';
+type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability' | 'exploreProfile' | 'availabilitySpecificDates';
 
 export default function App() {
   const [activeScreen, setActiveScreen] = useState<NavName>('home');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
 
   // Écouter les changements d'état d'authentification
   useEffect(() => {
@@ -61,7 +66,9 @@ export default function App() {
   const renderScreen = () => {
     switch (activeScreen) {
       case 'availability':
-        return <Availability />;
+        return <Availability onNavigate={handleNavigate} />;
+      case 'availabilitySpecificDates':
+        return <AvailabilitySpecificDates onNavigate={handleNavigate} />;
       case 'home':
         return <HomePage onViewProfile={handleViewProfile} />;
       case 'explore':
@@ -90,6 +97,11 @@ export default function App() {
     setActiveScreen(screen);
   };
 
+  const handleViewProfile = (user: any) => {
+    setSelectedUser(user);
+    setActiveScreen('exploreProfile');
+  };
+
   // Afficher un loader pendant la vérification de l'auth
   if (loading) {
     return (
@@ -108,7 +120,14 @@ export default function App() {
   return (
     <View style={styles.container}>
       <View style={styles.screenContainer}>{renderScreen()}</View>
-      <BottomNavBar activeScreen={activeScreen === 'exploreProfile' ? 'home' : activeScreen} onNavigate={handleNavigate} />
+      <BottomNavBar
+        activeScreen={
+          activeScreen === 'exploreProfile'
+            ? 'home'
+            : (activeScreen === 'availabilitySpecificDates' ? 'availability' : activeScreen as any)
+        }
+        onNavigate={handleNavigate}
+      />
     </View>
   );
 }
