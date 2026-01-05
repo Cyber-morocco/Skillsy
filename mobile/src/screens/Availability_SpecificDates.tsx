@@ -137,10 +137,10 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ navigation }) => {
 
       {datePickerVisible && activeIndex !== null && (
         <DateTimePicker
-          value={dates[activeIndex].date}
+          value={dates[activeIndex]?.date ?? new Date()}
           mode="date"
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={(_, selected) => {
+          onChange={(event: any, selected?: Date | undefined) => {
             setDatePickerVisible(false);
             if (!selected) return;
             const copy = [...dates];

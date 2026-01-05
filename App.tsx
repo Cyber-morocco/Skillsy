@@ -1,15 +1,51 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React, { useState } from 'react';
+import { View, StyleSheet } from 'react-native';
 
 import Availability from './mobile/src/screens/Availability';
+import AvailabilitySpecificDates from './mobile/src/screens/Availability_SpecificDates';
 import ExploreProfileScreen from './mobile/src/screens/ExploreProfileScreen';
+import HomePage from './mobile/src/screens/HomePage';
+import ExploreMapScreen from './mobile/src/screens/ExploreMapScreen';
+import AppointmentsScreen from './mobile/src/screens/AppointmentsScreen';
+import ChatStackNavigator from './mobile/src/navigation/ChatStack';
+import ProfileScreen from './mobile/src/screens/ProfileScreen';
+import BottomNavBar from './mobile/src/components/BottomNavBar';
 
-type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability' | 'exploreProfile';
+type NavName =
+  | 'home'
+  | 'explore'
+  | 'appointments'
+  | 'messages'
+  | 'profile'
+  | 'availability'
+  | 'exploreProfile'
+  | 'availabilitySpecificDates';
 
 export default function App() {
   const [activeScreen, setActiveScreen] = useState<NavName>('home');
   const [selectedUser, setSelectedUser] = useState<any>(null);
+
+  const navigationObj: any = {
+    navigate: (name: string) => {
+      if (name === 'AvailabilitySpecificDates') {
+        setActiveScreen('availabilitySpecificDates');
+        return;
+      }
+    
+      const map: Record<string, NavName> = {
+        home: 'home',
+        explore: 'explore',
+        appointments: 'appointments',
+        messages: 'messages',
+        profile: 'profile',
+        availability: 'availability',
+        exploreProfile: 'exploreProfile',
+      };
+      const key = (name as string) as keyof typeof map;
+      if (map[key]) setActiveScreen(map[key]);
+    },
+    goBack: () => setActiveScreen('home'),
+  };
 
   const handleViewProfile = (user: any) => {
     setSelectedUser(user);
@@ -19,7 +55,9 @@ export default function App() {
   const renderScreen = () => {
     switch (activeScreen) {
       case 'availability':
-        return <Availability />;
+        return <Availability navigation={navigationObj} />;
+      case 'availabilitySpecificDates':
+        return <AvailabilitySpecificDates navigation={navigationObj} />;
       case 'home':
         return <HomePage onViewProfile={handleViewProfile} />;
       case 'explore':
@@ -51,7 +89,22 @@ export default function App() {
   return (
     <View style={styles.container}>
       <View style={styles.screenContainer}>{renderScreen()}</View>
-      <BottomNavBar activeScreen={activeScreen === 'exploreProfile' ? 'home' : activeScreen} onNavigate={handleNavigate} />
+      <BottomNavBar
+        activeScreen={
+          activeScreen === 'exploreProfile'
+            ? 'home'
+            : activeScreen === 'availabilitySpecificDates'
+            ? 'availability'
+            : activeScreen
+        }
+        onNavigate={handleNavigate}
+        badges={{ messages: 2 }}
+      />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#fff' },
+  screenContainer: { flex: 1 },
+});
