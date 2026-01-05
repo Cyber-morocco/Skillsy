@@ -13,12 +13,14 @@ interface ExploreProfileScreenProps {
   user?: {
     name: string;
     avatar: string;
-    
+
   };
   onBack?: () => void;
+  onMakeAppointment?: () => void;
+  onSendMessage?: () => void;
 }
 
-const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, onBack }) => {
+const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, onBack, onMakeAppointment, onSendMessage }) => {
   const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews'>(
     'vaardigheden',
   );
@@ -26,18 +28,18 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, onBac
 
   const displayUser = user || {
     name: 'Thomas Berg',
-    avatar: '', 
+    avatar: '',
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
 
-      
+
       <View style={styles.headerBackground} />
 
       <View style={styles.content}>
-        
+
         <View style={styles.topRow}>
           <TouchableOpacity activeOpacity={0.8} style={styles.roundIconButton} onPress={onBack}>
             <Text style={styles.roundIconText}>←</Text>
@@ -90,11 +92,19 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, onBac
         </View>
 
         <View style={styles.actionRow}>
-          <TouchableOpacity activeOpacity={0.9} style={styles.primaryButton}>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={styles.primaryButton}
+            onPress={onMakeAppointment}
+          >
             <Text style={styles.primaryButtonText}>Afspraak maken</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity activeOpacity={0.9} style={styles.ghostButton}>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={styles.ghostButton}
+            onPress={onSendMessage}
+          >
             <Text style={styles.ghostButtonText}>Bericht zenden</Text>
           </TouchableOpacity>
         </View>

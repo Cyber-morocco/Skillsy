@@ -35,7 +35,14 @@ export default function App() {
       case 'profile':
         return <ProfileScreen onNavigate={handleNavigate} />;
       case 'exploreProfile':
-        return <ExploreProfileScreen user={selectedUser} onBack={() => setActiveScreen('home')} />;
+        return (
+          <ExploreProfileScreen
+            user={selectedUser}
+            onBack={() => setActiveScreen('home')}
+            onMakeAppointment={() => setActiveScreen('appointments')}
+            onSendMessage={() => setActiveScreen('messages')}
+          />
+        );
       default:
         return <HomePage onViewProfile={handleViewProfile} />;
     }
