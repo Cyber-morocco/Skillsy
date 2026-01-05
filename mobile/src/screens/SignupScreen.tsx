@@ -58,15 +58,18 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       await updateProfile(user, { displayName: fullName.trim() });
 
       // Créer le document utilisateur dans Firestore
+      // profileComplete: false indique que le profil n'est pas encore complet
+      // App.tsx utilisera ce flag pour rediriger vers ProfileCreationStep1
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
         email: user.email,
         displayName: fullName.trim(),
+        profileComplete: false,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
 
-      // Naviguer vers la création de profil
+      // Naviguer explicitement vers ProfileCreationStep1
       navigation?.navigate?.('ProfileCreationStep1');
     } catch (error: any) {
       let errorMessage = 'Une erreur est survenue';

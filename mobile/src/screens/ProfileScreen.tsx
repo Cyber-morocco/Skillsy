@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, ScrollView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { signOut } from 'firebase/auth';
+import { auth } from '../config/firebase';
 
 type SkillLevel = 'Beginner' | 'Gevorderd' | 'Expert';
 interface Skill {
@@ -298,6 +300,36 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             </View>
           </TouchableWithoutFeedback>
         </Modal>
+
+        {/* Logout Button */}
+        <View style={styles.logoutContainer}>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={() => {
+              Alert.alert(
+                'Uitloggen',
+                'Weet je zeker dat je wilt uitloggen?',
+                [
+                  { text: 'Annuleren', style: 'cancel' },
+                  {
+                    text: 'Uitloggen',
+                    style: 'destructive',
+                    onPress: async () => {
+                      try {
+                        await signOut(auth);
+                      } catch (error) {
+                        Alert.alert('Fout', 'Kan niet uitloggen');
+                      }
+                    },
+                  },
+                ]
+              );
+            }}
+          >
+            <Ionicons name="log-out-outline" size={20} color="#ff4444" />
+            <Text style={styles.logoutButtonText}>Uitloggen</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView >
     </SafeAreaView >
   );
@@ -593,5 +625,28 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+  },
+  logoutContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 30,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    marginTop: 20,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ff4444',
+  },
+  logoutButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ff4444',
   },
 });

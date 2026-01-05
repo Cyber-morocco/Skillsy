@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import {
+    ActivityIndicator,
+    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -11,6 +13,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authColors, authStyles as styles } from '../styles/authStyles';
 import { AppInput } from '../components/AppInput';
+import { auth, db } from '../config/firebase';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 type NavProps = {
     navigation: {
@@ -25,7 +29,7 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
     const [street, setStreet] = useState('');
     const [zipCode, setZipCode] = useState('');
     const [city, setCity] = useState('');
-
+    const [saving, setSaving] = useState(false);
     return (
         <SafeAreaView style={styles.safeArea}>
             <StatusBar barStyle="light-content" />
@@ -107,17 +111,47 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                                 <TouchableOpacity
                                     onPress={() => navigation.goBack()}
                                     style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(148,163,184,0.2)' }}
+                                    disabled={saving}
                                 >
                                     <Text style={{ color: authColors.text, fontWeight: '600' }}>‹ Vorige</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
-                                    style={[styles.primaryButton, { marginTop: 0, paddingVertical: 12, paddingHorizontal: 32 }]}
-                                    onPress={() => {
-                                        console.log('Next Step');
+                                    style={[styles.primaryButton, { marginTop: 0, paddingVertical: 12, paddingHorizontal: 32 }, saving && { opacity: 0.7 }]}
+                                    onPress={async () => {
+                                        if (!auth.currentUser) {
+                                            Alert.alert('Erreur', 'Utilisateur non connecté');
+                                            return;
+                                        }
+
+                                        setSaving(true);
+                                        try {
+                                            await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+                                                displayName: name.trim() || auth.currentUser.displayName,
+                                                bio: bio.trim(),
+                                                location: {
+                                                    street: street.trim(),
+                                                    zipCode: zipCode.trim(),
+                                                    city: city.trim(),
+                                                },
+                                                profileComplete: true,
+                                                updatedAt: serverTimestamp(),
+                                            });
+                                            // App.tsx détectera le changement de profileComplete
+                                            // et redirigera vers l'app principale
+                                        } catch (error: any) {
+                                            Alert.alert('Erreur', error.message || 'Impossible de sauvegarder le profil');
+                                        } finally {
+                                            setSaving(false);
+                                        }
                                     }}
+                                    disabled={saving}
                                 >
-                                    <Text style={styles.primaryButtonText}>Volgende ›</Text>
+                                    {saving ? (
+                                        <ActivityIndicator color="#fff" />
+                                    ) : (
+                                        <Text style={styles.primaryButtonText}>Volgende ›</Text>
+                                    )}
                                 </TouchableOpacity>
                             </View>
                         </View>

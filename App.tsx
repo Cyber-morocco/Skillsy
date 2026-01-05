@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from './mobile/src/config/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { auth, db } from './mobile/src/config/firebase';
 import HomePage from './mobile/src/screens/HomePage';
 import ExploreMapScreen from './mobile/src/screens/ExploreMapScreen';
 import AppointmentsScreen from './mobile/src/screens/AppointmentsScreen';
@@ -17,16 +18,45 @@ export default function App() {
   const [activeScreen, setActiveScreen] = useState<NavName>('home');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
 
   // Écouter les changements d'état d'authentification
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      setLoading(false);
+      if (!currentUser) {
+        setLoading(false);
+        setProfileComplete(null);
+      }
     });
 
     return () => unsubscribe();
   }, []);
+
+  // Écouter le statut de complétion du profil
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubscribe = onSnapshot(
+      doc(db, 'users', user.uid),
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          setProfileComplete(data.profileComplete ?? true);
+        } else {
+          // Document doesn't exist yet, assume profile not complete
+          setProfileComplete(false);
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error listening to user profile:', error);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user]);
 
   const renderScreen = () => {
     switch (activeScreen) {
@@ -60,8 +90,8 @@ export default function App() {
     );
   }
 
-  // Si pas connecté, afficher AuthStack (Login/Signup)
-  if (!user) {
+  // Si pas connecté OU profil pas complet, afficher AuthStack (Login/Signup/ProfileCreation)
+  if (!user || !profileComplete) {
     return <AuthStackNavigator />;
   }
 

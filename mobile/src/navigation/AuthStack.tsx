@@ -5,6 +5,7 @@ import {
   createNativeStackNavigator,
 } from '@react-navigation/native-stack';
 import { authColors } from '../styles/authStyles';
+import { auth } from '../config/firebase';
 
 
 import {
