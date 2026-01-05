@@ -15,6 +15,16 @@ import { AvailabilityDay } from '../types';
 
 const purple = '#A020F0';
 
+type Props = {
+  navigation?: any;
+};
+
+type DayAvailability = {
+  name: string;
+  enabled: boolean;
+  start: string;
+  end: string;
+};
 interface AvailabilityProps {
   onNavigate?: (screen: any) => void;
 }

@@ -129,11 +129,12 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#0B1021',
   },
   screenContainer: {
     flex: 1,
   },
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
