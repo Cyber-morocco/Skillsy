@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 
 type SkillLevel = 'Beginner' | 'Gevorderd' | 'Expert';
 interface Skill {
@@ -40,20 +41,54 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [learnModalVisible, setLearnModalVisible] = useState(false);
   const [newLearnSubject, setNewLearnSubject] = useState('');
 
-  
+
   const [profileName, setProfileName] = useState('Sophie Bakker');
   const [profileLocation, setProfileLocation] = useState('Centrum, Amsterdam');
   const [profileAbout, setProfileAbout] = useState('Gepassioneerd lerares met een liefde voor talen en koken.');
+  const [profileImage, setProfileImage] = useState<string | null>(null);
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [tempName, setTempName] = useState('');
   const [tempLocation, setTempLocation] = useState('');
   const [tempAbout, setTempAbout] = useState('');
+  const [tempImage, setTempImage] = useState<string | null>(null);
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setTempImage(result.assets[0].uri);
+    }
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Sorry, we hebben toestemming nodig om de camera te gebruiken! Geef toestemming in de instellingen van jouw telefoon.');
+      return;
+    }
+
+    let result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setTempImage(result.assets[0].uri);
+    }
+  };
 
   const handleEditProfile = () => {
     setTempName(profileName);
     setTempLocation(profileLocation);
     setTempAbout(profileAbout);
+    setTempImage(profileImage);
     setEditModalVisible(true);
   };
 
@@ -61,6 +96,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
     setProfileName(tempName);
     setProfileLocation(tempLocation);
     setProfileAbout(tempAbout);
+    setProfileImage(tempImage);
     setEditModalVisible(false);
   };
 
@@ -134,7 +170,15 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
         </View>
 
         <View style={styles.profileInfo}>
-          <View style={styles.profileImage} />
+          <View style={styles.profileImageContainer}>
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            ) : (
+              <View style={styles.profileImagePlaceholder}>
+                <Ionicons name="person" size={60} color="#ccc" />
+              </View>
+            )}
+          </View>
 
           <Text style={styles.nameText}>{profileName}</Text>
 
@@ -327,7 +371,6 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
           </TouchableWithoutFeedback>
         </Modal>
 
-        
         <Modal
           animationType="slide"
           transparent={true}
@@ -364,6 +407,29 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                   multiline={true}
                   numberOfLines={4}
                 />
+
+                <Text style={styles.inputLabel}>Profielfoto</Text>
+                <View style={styles.imageEditContainer}>
+                  <View style={styles.tempImageContainer}>
+                    {tempImage ? (
+                      <Image source={{ uri: tempImage }} style={styles.tempImage} />
+                    ) : (
+                      <View style={styles.profileImagePlaceholder}>
+                        <Ionicons name="person" size={40} color="#ccc" />
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.imageButtons}>
+                    <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
+                      <Ionicons name="image-outline" size={20} color="#24253d" />
+                      <Text style={styles.imagePickerButtonText}>Galerij</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.imagePickerButton} onPress={takePhoto}>
+                      <Ionicons name="camera-outline" size={20} color="#24253d" />
+                      <Text style={styles.imagePickerButtonText}>Camera</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
 
                 <View style={styles.modalButtons}>
                   <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.cancelButton}>
@@ -442,11 +508,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
   },
-  profileImage: {
+  profileImageContainer: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#e1e1e1',
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  profileImage: {
+    width: '100%',
+    height: '100%',
+  },
+  profileImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#f0f0f5',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   nameText: {
     fontSize: 24,
@@ -673,5 +756,45 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+  },
+  imageEditContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 20,
+    backgroundColor: '#f6f6f9',
+    padding: 12,
+    borderRadius: 16,
+  },
+  tempImageContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+  },
+  tempImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imageButtons: {
+    flex: 1,
+    gap: 8,
+  },
+  imagePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#fff',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e1e1e1',
+  },
+  imagePickerButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#24253d',
   },
 });
