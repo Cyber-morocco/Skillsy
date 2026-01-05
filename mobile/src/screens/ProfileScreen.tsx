@@ -40,6 +40,30 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [learnModalVisible, setLearnModalVisible] = useState(false);
   const [newLearnSubject, setNewLearnSubject] = useState('');
 
+  
+  const [profileName, setProfileName] = useState('Sophie Bakker');
+  const [profileLocation, setProfileLocation] = useState('Centrum, Amsterdam');
+  const [profileAbout, setProfileAbout] = useState('Gepassioneerd lerares met een liefde voor talen en koken.');
+
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [tempName, setTempName] = useState('');
+  const [tempLocation, setTempLocation] = useState('');
+  const [tempAbout, setTempAbout] = useState('');
+
+  const handleEditProfile = () => {
+    setTempName(profileName);
+    setTempLocation(profileLocation);
+    setTempAbout(profileAbout);
+    setEditModalVisible(true);
+  };
+
+  const saveProfile = () => {
+    setProfileName(tempName);
+    setProfileLocation(tempLocation);
+    setProfileAbout(tempAbout);
+    setEditModalVisible(false);
+  };
+
 
 
   const AddSkill = () => {
@@ -102,20 +126,23 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             <Text style={styles.squareButtonText}>Beschikbaarheid</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.squareButtonWide}>
+          <TouchableOpacity style={styles.squareButtonWide} onPress={handleEditProfile}>
             <Ionicons name="create-outline" size={18} color="#24253d" />
             <Text style={styles.squareButtonText}>Edit</Text>
           </TouchableOpacity>
+
         </View>
 
         <View style={styles.profileInfo}>
           <View style={styles.profileImage} />
 
-          <Text style={styles.nameText}>Sophie Bakker</Text>
+          <Text style={styles.nameText}>{profileName}</Text>
+
 
           <View style={styles.locationContainer}>
             <Ionicons name="location-outline" size={16} color="rgba(255,255,255,0.9)" />
-            <Text style={styles.locationText}>Centrum, Amsterdam</Text>
+            <Text style={styles.locationText}>{profileLocation}</Text>
+
           </View>
 
           <View style={styles.reviewsContainer}>
@@ -127,8 +154,9 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
           </View>
 
           <Text style={styles.aboutText}>
-            Gepassioneerd lerares met een liefde voor talen en koken.
+            {profileAbout}
           </Text>
+
 
           <View style={styles.tabsContainer}>
             <TouchableOpacity onPress={() => setActiveTab('skills')} style={styles.tabItem}>
@@ -298,7 +326,59 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             </View>
           </TouchableWithoutFeedback>
         </Modal>
+
+        
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={editModalVisible}
+          onRequestClose={() => setEditModalVisible(false)}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Profiel Bewerken</Text>
+
+                <Text style={styles.inputLabel}>Naam</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Naam"
+                  value={tempName}
+                  onChangeText={setTempName}
+                />
+
+                <Text style={styles.inputLabel}>Locatie</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Locatie"
+                  value={tempLocation}
+                  onChangeText={setTempLocation}
+                />
+
+                <Text style={styles.inputLabel}>Over mij</Text>
+                <TextInput
+                  style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+                  placeholder="Vertel iets over jezelf..."
+                  value={tempAbout}
+                  onChangeText={setTempAbout}
+                  multiline={true}
+                  numberOfLines={4}
+                />
+
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.cancelButton}>
+                    <Text style={styles.cancelButtonText}>Annuleren</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={saveProfile} style={styles.saveButton}>
+                    <Text style={styles.saveButtonText}>Opslaan</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
       </ScrollView >
+
     </SafeAreaView >
   );
 }
