@@ -1,6 +1,5 @@
 import { Platform, StyleSheet } from 'react-native';
 
-// Color palette matching app theme
 const PRIMARY = '#7C3AED';
 const BACKGROUND = '#050816';
 const CARD = '#101936';
@@ -34,13 +33,10 @@ const sharedShadow =
         };
 
 export const appointmentStyles = StyleSheet.create({
-    // Container
     safeArea: {
         flex: 1,
         backgroundColor: BACKGROUND,
     },
-
-    // Header
     header: {
         paddingHorizontal: 20,
         paddingTop: 24,
@@ -52,8 +48,6 @@ export const appointmentStyles = StyleSheet.create({
         color: TEXT,
         letterSpacing: 0.3,
     },
-
-    // Tabs
     tabContainer: {
         flexDirection: 'row',
         marginHorizontal: 20,
@@ -103,14 +97,10 @@ export const appointmentStyles = StyleSheet.create({
     tabBadgeTextActive: {
         color: TEXT,
     },
-
-    // Content
     content: {
         flex: 1,
         paddingHorizontal: 20,
     },
-
-    // Empty state
     emptyContainer: {
         flex: 1,
         justifyContent: 'center',
@@ -122,8 +112,6 @@ export const appointmentStyles = StyleSheet.create({
         color: TEXT_SECONDARY,
         textAlign: 'center',
     },
-
-    // Appointment Card
     card: {
         backgroundColor: CARD,
         borderRadius: 16,
@@ -197,8 +185,6 @@ export const appointmentStyles = StyleSheet.create({
     statusCompletedText: {
         color: SUCCESS,
     },
-
-    // Card details
     cardDetails: {
         marginBottom: 12,
     },
@@ -231,8 +217,6 @@ export const appointmentStyles = StyleSheet.create({
         fontWeight: '600',
         fontSize: 13,
     },
-
-    // Card actions
     cardActions: {
         borderTopWidth: 1,
         borderTopColor: BORDER,
@@ -263,8 +247,6 @@ export const appointmentStyles = StyleSheet.create({
         fontWeight: '600',
         fontSize: 14,
     },
-
-    // Review Modal
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.7)',

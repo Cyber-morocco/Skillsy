@@ -30,7 +30,6 @@ interface ScheduleMatchScreenProps {
     onMatch?: (day: string) => void;
 }
 
-// TE VERWIJDEREN MOCK DATA
 const MOCK_AVAILABILITY: DayAvailability[] = [
     {
         day: 'Maandag',
@@ -144,4 +143,3 @@ export default function ScheduleMatchScreen({
         </SafeAreaView>
     );
 }
-

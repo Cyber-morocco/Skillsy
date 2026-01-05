@@ -14,7 +14,6 @@ interface NavBarItem {
 interface BottomNavBarProps {
   activeScreen: NavName;
   onNavigate: (screen: NavName) => void;
-  // Optional dynamic badges you can pass later, e.g. { messages: 3 }
   badges?: Partial<Record<NavName, number>>;
 }
 
@@ -93,7 +92,6 @@ export default function BottomNavBar({ activeScreen, onNavigate, badges }: Botto
                 <View style={[styles.iconCircle, isActive && styles.iconCircleActive]}>
                   {renderIcon(item, isActive)}
                 </View>
-                {/* Badge */}
                 {badgeCount > 0 && (
                   <View
                     style={[
@@ -114,99 +112,99 @@ export default function BottomNavBar({ activeScreen, onNavigate, badges }: Botto
 }
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: '#0A0D1A',
-        paddingBottom: Platform.OS === 'ios' ? 20 : 10,
-    },
-    navBar: {
-        flexDirection: 'row',
-        height: 70,
-        alignItems: 'center',
-        justifyContent: 'space-around',
-        backgroundColor: '#0F1629',
-        borderRadius: 20,
-        marginHorizontal: 12,
-        marginBottom: 8,
-        paddingHorizontal: 8,
-    },
-    navItemWrapper: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    navItem: {
-        position: 'relative',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: 50,
-    },
-    navItemActive: {
-        marginTop: -30,
-    },
-    glowEffect: {
-        position: 'absolute',
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: '#7C3AED',
-        opacity: 0.4,
-        ...Platform.select({
-            ios: {
-                shadowColor: '#7C3AED',
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.8,
-                shadowRadius: 20,
-            },
-            android: {
-                elevation: 15,
-            },
-        }),
-    },
-    iconCircle: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'transparent',
-    },
-    iconCircleActive: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: '#7C3AED',
-        ...Platform.select({
-            ios: {
-                shadowColor: '#7C3AED',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.5,
-                shadowRadius: 12,
-            },
-            android: {
-                elevation: 10,
-            },
-        }),
-    },
-    badge: {
-        position: 'absolute',
-        top: -4,
-        right: -4,
-        minWidth: 18,
-        height: 18,
-        borderRadius: 9,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 4,
-    },
-    badgeActive: {
-        backgroundColor: '#EF4444',
-    },
-    badgeInactive: {
-        backgroundColor: '#EF4444',
-    },
-    badgeText: {
-        color: '#FFFFFF',
-        fontSize: 10,
-        fontWeight: 'bold',
-    },
+  container: {
+    backgroundColor: '#0A0D1A',
+    paddingBottom: Platform.OS === 'ios' ? 20 : 10,
+  },
+  navBar: {
+    flexDirection: 'row',
+    height: 70,
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    backgroundColor: '#0F1629',
+    borderRadius: 20,
+    marginHorizontal: 12,
+    marginBottom: 8,
+    paddingHorizontal: 8,
+  },
+  navItemWrapper: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navItem: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 50,
+  },
+  navItemActive: {
+    marginTop: -30,
+  },
+  glowEffect: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#7C3AED',
+    opacity: 0.4,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#7C3AED',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.8,
+        shadowRadius: 20,
+      },
+      android: {
+        elevation: 15,
+      },
+    }),
+  },
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  iconCircleActive: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#7C3AED',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#7C3AED',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.5,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 10,
+      },
+    }),
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeActive: {
+    backgroundColor: '#EF4444',
+  },
+  badgeInactive: {
+    backgroundColor: '#EF4444',
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
 });

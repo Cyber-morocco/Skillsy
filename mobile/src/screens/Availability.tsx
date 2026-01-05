@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -7,29 +7,20 @@ import {
   View,
   StyleSheet,
   Modal,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
+import { subscribeToAvailability, saveAvailability } from '../services/userService';
+import { AvailabilityDay } from '../types';
 
 const purple = '#A020F0';
 
-type Props = {
-  navigation: any;
-};
+const Availability: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'week' | 'dates'>('week');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-type DayAvailability = {
-  name: string;
-  enabled: boolean;
-  start: string;
-  end: string;
-};
-
-const TIMES = [
-  '08:00','09:00','10:00','11:00','12:00',
-  '13:00','14:00','15:00','16:00','17:00',
-  '18:00','19:00','20:00','21:00','22:00',
-];
-
-const Availability: React.FC<Props> = ({ navigation }) => {
-  const [days, setDays] = useState<DayAvailability[]>([
+  const [days, setDays] = useState<AvailabilityDay[]>([
     { name: 'Maandag', enabled: false, start: '08:00', end: '22:00' },
     { name: 'Dinsdag', enabled: true, start: '08:00', end: '22:00' },
     { name: 'Woensdag', enabled: false, start: '08:00', end: '22:00' },
@@ -38,6 +29,23 @@ const Availability: React.FC<Props> = ({ navigation }) => {
     { name: 'Zaterdag', enabled: false, start: '08:00', end: '22:00' },
     { name: 'Zondag', enabled: false, start: '08:00', end: '22:00' },
   ]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToAvailability(
+      (data) => {
+        if (data) {
+          setDays(data);
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error loading availability:', error);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   const [picker, setPicker] = useState<{
     index: number;
@@ -66,10 +74,35 @@ const Availability: React.FC<Props> = ({ navigation }) => {
     setPicker({ ...picker, visible: false });
   };
 
-  const handleSave = () => {
-    console.log('Wekelijkse beschikbaarheid:', days);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await saveAvailability(days);
+      Alert.alert('Succes', 'Beschikbaarheid opgeslagen');
+    } catch (error) {
+      console.error('Error saving availability:', error);
+      Alert.alert('Fout', 'Kon beschikbaarheid niet opslaan');
+    } finally {
+      setSaving(false);
+    }
   };
 
+  const TIMES = [
+    '08:00', '09:00', '10:00', '11:00', '12:00',
+    '13:00', '14:00', '15:00', '16:00', '17:00',
+    '18:00', '19:00', '20:00', '21:00', '22:00',
+  ];
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={purple} />
+          <Text style={{ marginTop: 12, color: '#777' }}>Laden...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -133,8 +166,16 @@ const Availability: React.FC<Props> = ({ navigation }) => {
           </View>
         ))}
 
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Opslaan</Text>
+        <TouchableOpacity
+          style={[styles.saveButton, saving && { opacity: 0.7 }]}
+          onPress={handleSave}
+          disabled={saving}
+        >
+          {saving ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.saveButtonText}>Opslaan</Text>
+          )}
         </TouchableOpacity>
 
       </ScrollView>

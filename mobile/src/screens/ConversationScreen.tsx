@@ -65,7 +65,6 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
         setShowScheduleMatch(true);
     };
 
-    // Show ScheduleMatchScreen when button is pressed
     if (showScheduleMatch) {
         return (
             <ScheduleMatchScreen
