@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform, Text } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability';
@@ -52,6 +52,28 @@ const NAV_ITEMS: NavBarItem[] = [
 ];
 
 export default function BottomNavBar({ activeScreen, onNavigate, badges }: BottomNavBarProps) {
+  const renderIcon = (item: NavBarItem, isActive: boolean) => {
+    const size = isActive ? 30 : 24;
+    const color = isActive ? '#FFFFFF' : '#9CA3AF';
+
+    if (item.type === 'material') {
+      return (
+        <MaterialCommunityIcons
+          name={item.icon as any}
+          size={size}
+          color={color}
+        />
+      );
+    }
+    return (
+      <Ionicons
+        name={item.icon as any}
+        size={size}
+        color={color}
+      />
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.navBar}>
@@ -59,24 +81,18 @@ export default function BottomNavBar({ activeScreen, onNavigate, badges }: Botto
           const isActive = activeScreen === item.name;
           const badgeCount = badges?.[item.name] ?? 0;
 
-        if (item.type === 'material') {
-            return (
-                <MaterialCommunityIcons
-                    name={item.icon as any}
-                    size={size}
-                    color={color}
-                />
-            );
-        }
-        return (
-            <Ionicons
-                name={item.icon as any}
-                size={size}
-                color={color}
-            />
-        );
-    };
-
+          return (
+            <TouchableOpacity
+              key={item.name}
+              style={styles.navItemWrapper}
+              onPress={() => onNavigate(item.name)}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.navItem, isActive && styles.navItemActive]}>
+                {isActive && <View style={styles.glowEffect} />}
+                <View style={[styles.iconCircle, isActive && styles.iconCircleActive]}>
+                  {renderIcon(item, isActive)}
+                </View>
                 {/* Badge */}
                 {badgeCount > 0 && (
                   <View
@@ -89,26 +105,12 @@ export default function BottomNavBar({ activeScreen, onNavigate, badges }: Botto
                   </View>
                 )}
               </View>
-
-                    return (
-                        <TouchableOpacity
-                            key={item.name}
-                            style={styles.navItemWrapper}
-                            onPress={() => onNavigate(item.name)}
-                            activeOpacity={0.8}
-                        >
-                            <View style={[styles.navItem, isActive && styles.navItemActive]}>
-                                {isActive && <View style={styles.glowEffect} />}
-                                <View style={[styles.iconCircle, isActive && styles.iconCircleActive]}>
-                                    {renderIcon(item, isActive)}
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-                    );
-                })}
-            </View>
-        </View>
-    );
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -184,5 +186,27 @@ const styles = StyleSheet.create({
                 elevation: 10,
             },
         }),
+    },
+    badge: {
+        position: 'absolute',
+        top: -4,
+        right: -4,
+        minWidth: 18,
+        height: 18,
+        borderRadius: 9,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 4,
+    },
+    badgeActive: {
+        backgroundColor: '#EF4444',
+    },
+    badgeInactive: {
+        backgroundColor: '#EF4444',
+    },
+    badgeText: {
+        color: '#FFFFFF',
+        fontSize: 10,
+        fontWeight: 'bold',
     },
 });
