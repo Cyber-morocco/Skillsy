@@ -7,18 +7,25 @@ import ProfileScreen from './mobile/src/screens/ProfileScreen';
 import BottomNavBar from './mobile/src/components/BottomNavBar';
 import ChatStackNavigator from './mobile/src/navigation/ChatStack';
 import Availability from './mobile/src/screens/Availability';
+import ExploreProfileScreen from './mobile/src/screens/ExploreProfileScreen';
 
-type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile';
+type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability' | 'exploreProfile';
 
 export default function App() {
-  const [activeScreen, setActiveScreen] = useState<'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability'>('home');
+  const [activeScreen, setActiveScreen] = useState<NavName>('home');
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+
+  const handleViewProfile = (user: any) => {
+    setSelectedUser(user);
+    setActiveScreen('exploreProfile');
+  };
 
   const renderScreen = () => {
     switch (activeScreen) {
       case 'availability':
         return <Availability />;
       case 'home':
-        return <HomePage />;
+        return <HomePage onViewProfile={handleViewProfile} />;
       case 'explore':
         return <ExploreMapScreen />;
       case 'appointments':
@@ -27,19 +34,28 @@ export default function App() {
         return <ChatStackNavigator />;
       case 'profile':
         return <ProfileScreen onNavigate={handleNavigate} />;
+      case 'exploreProfile':
+        return (
+          <ExploreProfileScreen
+            user={selectedUser}
+            onBack={() => setActiveScreen('home')}
+            onMakeAppointment={() => setActiveScreen('appointments')}
+            onSendMessage={() => setActiveScreen('messages')}
+          />
+        );
       default:
-        return <HomePage />;
+        return <HomePage onViewProfile={handleViewProfile} />;
     }
   };
 
-  const handleNavigate = (screen: string) => {
-    setActiveScreen(screen as 'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability');
+  const handleNavigate = (screen: NavName) => {
+    setActiveScreen(screen);
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.screenContainer}>{renderScreen()}</View>
-      <BottomNavBar activeScreen={activeScreen} onNavigate={handleNavigate} />
+      <BottomNavBar activeScreen={activeScreen === 'exploreProfile' ? 'home' : activeScreen} onNavigate={handleNavigate} />
     </View>
   );
 }
