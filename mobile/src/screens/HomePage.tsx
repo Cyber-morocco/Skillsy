@@ -1,10 +1,13 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authColors } from '../styles/authStyles';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function HomePage() {
+  const [activeTab, setActiveTab] = useState('Alle');
+  const tabs = ['Alle', 'Vragen', 'Successen', 'Materiaal'];
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -19,6 +22,27 @@ export default function HomePage() {
           <Ionicons name="add" size={24} color={authColors.text} style={styles.icon} />
           <Text style={styles.buttonText}>Nieuw Bericht Plaatsen</Text>
         </TouchableOpacity>
+
+        <View style={styles.tabsContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {tabs.map((tab) => (
+              <TouchableOpacity
+                key={tab}
+                style={[styles.tab, activeTab === tab && styles.activeTab]}
+                onPress={() => setActiveTab(tab)}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    activeTab === tab && styles.activeTabText,
+                  ]}
+                >
+                  {tab}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -66,5 +90,29 @@ const styles = StyleSheet.create({
     color: authColors.text,
     fontSize: 16,
     fontWeight: '600',
+  },
+  tabsContainer: {
+    marginTop: 24,
+  },
+  tab: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: authColors.card,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.25)',
+  },
+  activeTab: {
+    backgroundColor: authColors.accent,
+    borderColor: authColors.accent,
+  },
+  tabText: {
+    color: authColors.muted,
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  activeTabText: {
+    color: authColors.text,
   },
 });
