@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform, Text } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability';
@@ -18,37 +18,21 @@ interface BottomNavBarProps {
 }
 
 const NAV_ITEMS: NavBarItem[] = [
-  {
-    name: 'home',
-    label: 'Home',
-    icon: 'home',
-    type: 'ionicons',
-  },
-  {
-    name: 'explore',
-    label: 'Ontdekken',
-    icon: 'map-marker',
-    type: 'material',
-  },
-  {
-    name: 'appointments',
-    label: 'Afspraken',
-    icon: 'calendar',
-    type: 'ionicons',
-  },
-  {
-    name: 'messages',
-    label: 'Berichten',
-    icon: 'chatbubble',
-    type: 'ionicons',
-  },
-  {
-    name: 'profile',
-    label: 'Profiel',
-    icon: 'person',
-    type: 'ionicons',
-  },
+  { name: 'home', label: 'Home', icon: 'home', type: 'ionicons' },
+  { name: 'explore', label: 'Ontdekken', icon: 'map-marker', type: 'material' },
+  { name: 'appointments', label: 'Afspraken', icon: 'calendar', type: 'ionicons' },
+  { name: 'messages', label: 'Berichten', icon: 'chatbubble', type: 'ionicons' },
+  { name: 'profile', label: 'Profiel', icon: 'person', type: 'ionicons' },
 ];
+
+function renderIcon(item: NavBarItem, isActive: boolean) {
+  const size = isActive ? 28 : 22;
+  const color = isActive ? '#FFFFFF' : '#9AA4B2';
+  if (item.type === 'material') {
+    return <MaterialCommunityIcons name={item.icon as any} size={size} color={color} />;
+  }
+  return <Ionicons name={item.icon as any} size={size} color={color} />;
+}
 
 export default function BottomNavBar({ activeScreen, onNavigate, badges }: BottomNavBarProps) {
   return (
@@ -58,56 +42,33 @@ export default function BottomNavBar({ activeScreen, onNavigate, badges }: Botto
           const isActive = activeScreen === item.name;
           const badgeCount = badges?.[item.name] ?? 0;
 
-        if (item.type === 'material') {
-            return (
-                <MaterialCommunityIcons
-                    name={item.icon as any}
-                    size={size}
-                    color={color}
-                />
-            );
-        }
-        return (
-            <Ionicons
-                name={item.icon as any}
-                size={size}
-                color={color}
-            />
-        );
-    };
+          return (
+            <TouchableOpacity
+              key={item.name}
+              style={styles.navItemWrapper}
+              onPress={() => onNavigate(item.name)}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.navItem, isActive && styles.navItemActive]}>
+                {isActive && <View style={styles.glowEffect} />}
+                <View style={[styles.iconCircle, isActive && styles.iconCircleActive]}>
+                  {renderIcon(item, isActive)}
+                </View>
 
-                {/* Badge */}
                 {badgeCount > 0 && (
-                  <View
-                    style={[
-                      styles.badge,
-                      isActive ? styles.badgeActive : styles.badgeInactive,
-                    ]}
-                  >
-                    <Text style={styles.badgeText}>{badgeCount}</Text>
+                  <View style={[styles.badge, isActive ? styles.badgeActive : styles.badgeInactive]}>
+                    <Text style={[styles.badgeText, isActive && styles.badgeTextActive]}>
+                      {badgeCount}
+                    </Text>
                   </View>
                 )}
               </View>
-
-                    return (
-                        <TouchableOpacity
-                            key={item.name}
-                            style={styles.navItemWrapper}
-                            onPress={() => onNavigate(item.name)}
-                            activeOpacity={0.8}
-                        >
-                            <View style={[styles.navItem, isActive && styles.navItemActive]}>
-                                {isActive && <View style={styles.glowEffect} />}
-                                <View style={[styles.iconCircle, isActive && styles.iconCircleActive]}>
-                                    {renderIcon(item, isActive)}
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-                    );
-                })}
-            </View>
-        </View>
-    );
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -183,5 +144,30 @@ const styles = StyleSheet.create({
                 elevation: 10,
             },
         }),
+    },
+    badge: {
+      position: 'absolute',
+      top: -6,
+      right: -6,
+      minWidth: 18,
+      height: 18,
+      paddingHorizontal: 4,
+      borderRadius: 9,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    badgeActive: {
+      backgroundColor: '#FFFFFF',
+    },
+    badgeInactive: {
+      backgroundColor: '#FF3B30',
+    },
+    badgeText: {
+      color: '#FFFFFF',
+      fontSize: 10,
+      fontWeight: '600',
+    },
+    badgeTextActive: {
+      color: '#7C3AED',
     },
 });
