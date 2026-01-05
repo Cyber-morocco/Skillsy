@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -12,6 +14,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authColors, authStyles as styles } from '../styles/authStyles';
 import { AppInput } from '../components/AppInput';
+import { auth, db } from '../config/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 type AuthScreenProps = {
   navigation?: {
@@ -24,9 +29,66 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSignup = () => {
-    console.log('Signing up:', { fullName, email, password, confirmPassword });
+  const handleSignup = async () => {
+    // Validation
+    if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
+      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Erreur', 'Les mots de passe ne correspondent pas');
+      return;
+    }
+
+    if (password.length < 8) {
+      Alert.alert('Erreur', 'Le mot de passe doit contenir au moins 8 caractères');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Créer le compte Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email.toLowerCase().trim(), password);
+      const user = userCredential.user;
+
+      // Mettre à jour le profil avec le nom
+      await updateProfile(user, { displayName: fullName.trim() });
+
+      // Créer le document utilisateur dans Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        email: user.email,
+        displayName: fullName.trim(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      // Naviguer vers la création de profil
+      navigation?.navigate?.('ProfileCreationStep1');
+    } catch (error: any) {
+      let errorMessage = 'Une erreur est survenue';
+
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          errorMessage = 'Cette adresse email est déjà utilisée';
+          break;
+        case 'auth/invalid-email':
+          errorMessage = 'Adresse email invalide';
+          break;
+        case 'auth/weak-password':
+          errorMessage = 'Le mot de passe est trop faible';
+          break;
+        default:
+          errorMessage = error.message;
+      }
+
+      Alert.alert('Erreur d\'inscription', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -116,10 +178,15 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 
             <TouchableOpacity
               activeOpacity={0.85}
-              style={styles.primaryButton}
+              style={[styles.primaryButton, loading && { opacity: 0.7 }]}
               onPress={handleSignup}
+              disabled={loading}
             >
-              <Text style={styles.primaryButtonText}>Account maken</Text>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Account maken</Text>
+              )}
             </TouchableOpacity>
 
             <Text style={styles.mutedInfo}>
