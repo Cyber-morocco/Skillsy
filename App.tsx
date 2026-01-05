@@ -25,7 +25,6 @@ export default function App() {
   const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
-  // Écouter les changements d'état d'authentification
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -38,7 +37,6 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Écouter le statut de complétion du profil
   useEffect(() => {
     if (!user) return;
 
@@ -49,7 +47,6 @@ export default function App() {
           const data = docSnapshot.data();
           setProfileComplete(data.profileComplete ?? true);
         } else {
-          // Document doesn't exist yet, assume profile not complete
           setProfileComplete(false);
         }
         setLoading(false);
@@ -102,7 +99,6 @@ export default function App() {
     setActiveScreen('exploreProfile');
   };
 
-  // Afficher un loader pendant la vérification de l'auth
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -111,12 +107,10 @@ export default function App() {
     );
   }
 
-  // Si pas connecté OU profil pas complet, afficher AuthStack (Login/Signup/ProfileCreation)
   if (!user || !profileComplete) {
     return <AuthStackNavigator />;
   }
 
-  // Si connecté, afficher l'app principale
   return (
     <View style={styles.container}>
       <View style={styles.screenContainer}>{renderScreen()}</View>
