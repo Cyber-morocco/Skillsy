@@ -12,7 +12,7 @@ import {
 const purple = '#A020F0';
 
 type Props = {
-  navigation: any;
+  navigation?: any;
 };
 
 type DayAvailability = {
@@ -90,7 +90,7 @@ const Availability: React.FC<Props> = ({ navigation }) => {
 
           <TouchableOpacity
             style={styles.tab}
-            onPress={() => navigation.navigate('AvailabilitySpecificDates')}
+            onPress={() => navigation?.navigate?.('AvailabilitySpecificDates')}
           >
             <Text style={styles.tabText}>Specifieke datums</Text>
           </TouchableOpacity>
