@@ -132,14 +132,12 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
     try {
       let finalImageUrl = userProfile?.photoURL || profileImage;
 
-      // If tempImage is null, it means the user wants to remove the photo
       if (tempImage === null) {
         if (userProfile?.photoURL) {
           await deleteProfileImage();
         }
         finalImageUrl = null;
       }
-      // If tempImage exists and is a local URI (doesn't start with http), upload it
       else if (tempImage && !tempImage.startsWith('http')) {
         finalImageUrl = await uploadProfileImage(tempImage);
       }
