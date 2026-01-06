@@ -593,10 +593,11 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: authColors.background,
+    backgroundColor: authColors.accent,
   },
   scrollView: {
     flex: 1,
+    backgroundColor: authColors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -605,7 +606,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     width: '100%',
-    height: 400,
+    height: 0,
     backgroundColor: authColors.accent,
   },
   content: {
@@ -650,6 +651,7 @@ const styles = StyleSheet.create({
   profileInfo: {
     alignItems: 'center',
     marginTop: 20,
+    width: '100%',
   },
   profileImageContainer: {
     width: 120,
@@ -719,16 +721,17 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     flexDirection: 'row',
-    marginTop: 24,
-    width: '100%',
-    paddingHorizontal: 10,
+    marginTop: 5,
+    backgroundColor: authColors.background,
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(148, 163, 184, 0.1)',
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
-    paddingBottom: 16,
+    paddingBottom: 15,
   },
   tabText: {
     fontSize: 16,
