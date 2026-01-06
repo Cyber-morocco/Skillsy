@@ -722,6 +722,7 @@ const styles = StyleSheet.create({
   tabsContainer: {
     flexDirection: 'row',
     marginTop: 5,
+    paddingTop: 18,
     backgroundColor: authColors.background,
     marginHorizontal: -20,
     paddingHorizontal: 20,
