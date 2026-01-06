@@ -24,9 +24,11 @@ interface AppointmentConfig {
     location: string;
     locationType: 'Fysiek' | 'Online';
     price?: string;
+    swapRequest?: string; 
     status: 'Bevestigd' | 'In afwachting' | 'Voltooid' | 'Geannuleerd';
-    avatarUrl?: string; // In real app, this would be a URL
+    avatarUrl?: string;
 }
+
 
 const DUMMY_UPCOMING: AppointmentConfig[] = [
     {
@@ -49,35 +51,66 @@ const DUMMY_UPCOMING: AppointmentConfig[] = [
         location: 'Online',
         price: 'Vergoeding: €30',
         status: 'Bevestigd',
-        avatarUrl: 'https://i.pravatar.cc/150?u=Thomas' // Placeholder if we had one
+        avatarUrl: 'https://i.pravatar.cc/150?u=Thomas'
+    }
+];
+
+const DUMMY_PENDING: AppointmentConfig[] = [
+    {
+        id: '3',
+        subject: 'Spaanse les',
+        personName: 'met Lisa Vermeer',
+        date: '18 november 2024',
+        time: '16:00 - 17:00',
+        locationType: 'Fysiek',
+        location: 'West, Amsterdam',
+        price: 'Vergoeding: €22',
+        status: 'In afwachting',
+        avatarUrl: 'https://i.pravatar.cc/150?u=Lisa'
+    }
+];
+
+const DUMMY_PAST: AppointmentConfig[] = [
+    {
+        id: '4',
+        subject: 'Kookles',
+        personName: 'met Peter Visser',
+        date: '2 november 2024',
+        time: '19:00 - 20:30',
+        locationType: 'Fysiek',
+        location: 'Oud-Zuid, Amsterdam',
+        swapRequest: 'Ruil voor: Yogales',
+        status: 'Voltooid',
+        avatarUrl: 'https://i.pravatar.cc/150?u=Peter'
+    },
+    {
+        id: '5',
+        subject: 'Frans les',
+        personName: 'met Maria Santos',
+        date: '28 oktober 2024',
+        time: '15:00 - 16:00',
+        locationType: 'Fysiek',
+        location: 'Centrum, Amsterdam',
+        price: '€25',
+        status: 'Voltooid',
+        avatarUrl: 'https://i.pravatar.cc/150?u=Maria'
     }
 ];
 
 export default function AppointmentsScreen() {
     const [activeTab, setActiveTab] = useState<Tab>('upcoming');
 
-    // Counts - hardcoded for this step as per screenshot
     const COUNTS = {
-        upcoming: 2,
-        pending: 1,
-        past: 2
+        upcoming: DUMMY_UPCOMING.length,
+        pending: DUMMY_PENDING.length,
+        past: DUMMY_PAST.length
     };
 
     const renderTab = (tab: Tab, label: string) => {
         const isActive = activeTab === tab;
         return (
             <TouchableOpacity
-                onPress={() => {
-                    if (tab !== 'upcoming') {
-                        Alert.alert('Info', 'Deze stap doen we later! Eerst stap 1 goedkeuren.');
-                        // Usually setActiveTab(tab) here, but user asked for Step 1 first.
-                        // Actually, switching tabs is fine UI-wise, but we only implement content for Upcoming.
-                        // Let's implement switching but empty content for others to signify "Not done yet".
-                        setActiveTab(tab);
-                    } else {
-                        setActiveTab(tab);
-                    }
-                }}
+                onPress={() => setActiveTab(tab)}
                 style={[
                     styles.tab,
                     isActive && styles.activeTab
@@ -90,12 +123,27 @@ export default function AppointmentsScreen() {
         );
     };
 
-    const renderUpcomingCard = (item: AppointmentConfig) => {
+
+    const getStatusStyle = (status: string) => {
+        switch (status) {
+            case 'Bevestigd':
+                return { bg: 'rgba(34, 197, 94, 0.15)', text: '#4ade80' }; // Green
+            case 'In afwachting':
+                return { bg: 'rgba(234, 179, 8, 0.15)', text: '#facc15' }; // Yellow
+            case 'Voltooid':
+                return { bg: 'rgba(148, 163, 184, 0.15)', text: '#94a3b8' }; // Gray
+            default:
+                return { bg: 'rgba(148, 163, 184, 0.15)', text: authColors.muted };
+        }
+    };
+
+    const renderCard = (item: AppointmentConfig, type: Tab) => {
+        const statusStyle = getStatusStyle(item.status);
+
         return (
             <View key={item.id} style={styles.card}>
                 <View style={styles.cardHeader}>
                     <View style={styles.avatarContainer}>
-                        {/* Placeholder Avatar */}
                         <Image
                             source={{ uri: item.avatarUrl || `https://ui-avatars.com/api/?name=${item.personName.split(' ').slice(1).join('+')}&background=random` }}
                             style={styles.avatar}
@@ -105,8 +153,8 @@ export default function AppointmentsScreen() {
                         <Text style={styles.subjectText}>{item.subject}</Text>
                         <Text style={styles.personText}>{item.personName}</Text>
                     </View>
-                    <View style={styles.statusBadge}>
-                        <Text style={styles.statusText}>{item.status}</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                        <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.status}</Text>
                     </View>
                 </View>
 
@@ -123,16 +171,41 @@ export default function AppointmentsScreen() {
                         <Ionicons name="location-outline" size={16} color={authColors.muted} style={styles.icon} />
                         <Text style={styles.detailText}>{item.location}</Text>
                     </View>
-                    {item.price && (
+
+                    {item.swapRequest && (
+                        <View style={[styles.priceContainer, { backgroundColor: 'rgba(192, 132, 252, 0.15)' }]}>
+                            <Text style={[styles.priceText, { color: '#c084fc' }]}>{item.swapRequest}</Text>
+                        </View>
+                    )}
+                    {item.price && !item.swapRequest && (
                         <View style={styles.priceContainer}>
                             <Text style={styles.priceText}>{item.price}</Text>
                         </View>
                     )}
                 </View>
 
-                <TouchableOpacity style={styles.cancelButton}>
-                    <Text style={styles.cancelButtonText}>Annuleren</Text>
-                </TouchableOpacity>
+                {type === 'upcoming' && (
+                    <TouchableOpacity style={styles.outlineButton}>
+                        <Text style={styles.outlineButtonText}>Annuleren</Text>
+                    </TouchableOpacity>
+                )}
+
+                {type === 'pending' && (
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                        <TouchableOpacity style={[styles.outlineButton, { flex: 1 }]}>
+                            <Text style={styles.outlineButtonText}>Afwijzen</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[styles.solidButton, { flex: 1 }]}>
+                            <Text style={styles.solidButtonText}>Accepteren</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+
+                {type === 'past' && (
+                    <TouchableOpacity style={styles.outlineButton}>
+                        <Text style={styles.outlineButtonText}>Beoordeling achterlaten</Text>
+                    </TouchableOpacity>
+                )}
             </View>
         );
     };
@@ -150,15 +223,9 @@ export default function AppointmentsScreen() {
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                {activeTab === 'upcoming' ? (
-                    DUMMY_UPCOMING.map(renderUpcomingCard)
-                ) : (
-                    <View style={styles.placeholderContainer}>
-                        <Text style={styles.placeholderText}>
-                            Stap 2 komt hierna...
-                        </Text>
-                    </View>
-                )}
+                {activeTab === 'upcoming' && DUMMY_UPCOMING.map(item => renderCard(item, 'upcoming'))}
+                {activeTab === 'pending' && DUMMY_PENDING.map(item => renderCard(item, 'pending'))}
+                {activeTab === 'past' && DUMMY_PAST.map(item => renderCard(item, 'past'))}
             </ScrollView>
         </SafeAreaView>
     );
@@ -197,7 +264,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     tabText: {
-        fontSize: 13,
+        fontSize: 12,
         color: authColors.muted,
         fontWeight: '500',
     },
@@ -210,11 +277,6 @@ const styles = StyleSheet.create({
         paddingBottom: 24,
     },
     card: {
-        backgroundColor: '#fff', // Card background is white in screenshot, usually. But for Dark Mode app?
-        // User asked: "change color to how the site looks now".
-        // Site is Dark Mode (authColors.card = #101936).
-        // Let's use authColors.card or a slightly lighter/darker variant.
-        // Screenshot shows WHITE cards. User said "verander de kleur naar hoe de site er nu al uit ziet" -> Dark Mode.
         backgroundColor: authColors.card,
         borderRadius: 16,
         padding: 16,
@@ -252,14 +314,12 @@ const styles = StyleSheet.create({
     statusBadge: {
         paddingHorizontal: 8,
         paddingVertical: 4,
-        backgroundColor: 'rgba(34, 197, 94, 0.15)', // Green tint
         borderRadius: 6,
         alignSelf: 'flex-start',
     },
     statusText: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#4ade80', // Green
     },
     detailsContainer: {
         marginBottom: 16,
@@ -271,7 +331,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     icon: {
-        width: 16, // Fixed width for alignment
+        width: 16,
     },
     detailText: {
         fontSize: 14,
@@ -290,7 +350,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: authColors.text,
     },
-    cancelButton: {
+    outlineButton: {
         width: '100%',
         paddingVertical: 12,
         borderRadius: 12,
@@ -299,17 +359,21 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: 'transparent',
     },
-    cancelButtonText: {
+    outlineButtonText: {
         fontSize: 14,
         fontWeight: '500',
         color: authColors.text,
     },
-    placeholderContainer: {
-        padding: 40,
+    solidButton: {
+        width: '100%',
+        paddingVertical: 12,
+        borderRadius: 12,
         alignItems: 'center',
+        backgroundColor: authColors.accent, // Purple
     },
-    placeholderText: {
-        color: authColors.muted,
-        fontSize: 16,
+    solidButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#fff',
     }
 });
