@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, ScrollView, Alert, ActivityIndicator, Image, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
@@ -13,7 +13,11 @@ import {
   deleteSkill,
   addLearnSkill,
   deleteLearnSkill,
+  updateUserProfile,
+  uploadProfileImage,
+  deleteProfileImage,
 } from '../services/userService';
+import * as ImagePicker from 'expo-image-picker';
 
 interface ProfileScreenProps {
   onNavigate?: (screen: 'availability') => void;
@@ -34,6 +38,17 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
 
   const [learnModalVisible, setLearnModalVisible] = useState(false);
   const [newLearnSubject, setNewLearnSubject] = useState('');
+
+  const [profileName, setProfileName] = useState('Sophie Bakker');
+  const [profileLocation, setProfileLocation] = useState('Centrum, Amsterdam');
+  const [profileAbout, setProfileAbout] = useState('Gepassioneerd lerares met een liefde voor talen en koken.');
+  const [profileImage, setProfileImage] = useState<string | null>(null);
+
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [tempName, setTempName] = useState('');
+  const [tempLocation, setTempLocation] = useState('');
+  const [tempAbout, setTempAbout] = useState('');
+  const [tempImage, setTempImage] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribeProfile = subscribeToUserProfile(
@@ -72,6 +87,81 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
       unsubscribeLearnSkills();
     };
   }, []);
+
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setTempImage(result.assets[0].uri);
+    }
+  };
+
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Sorry, we hebben toestemming nodig om de camera te gebruiken! Geef toestemming in de instellingen van jouw telefoon.');
+      return;
+    }
+
+    let result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setTempImage(result.assets[0].uri);
+    }
+  };
+
+  const handleEditProfile = () => {
+    setTempName(userProfile?.displayName || profileName);
+    setTempLocation(userProfile?.location?.city || profileLocation);
+    setTempAbout(userProfile?.bio || profileAbout);
+    setTempImage(userProfile?.photoURL || profileImage);
+    setEditModalVisible(true);
+  };
+
+  const saveProfile = async () => {
+    setSaving(true);
+    try {
+      let finalImageUrl = userProfile?.photoURL || profileImage;
+
+      if (tempImage === null) {
+        if (userProfile?.photoURL) {
+          await deleteProfileImage();
+        }
+        finalImageUrl = null;
+      }
+      else if (tempImage && !tempImage.startsWith('http')) {
+        finalImageUrl = await uploadProfileImage(tempImage);
+      }
+
+      await updateUserProfile({
+        displayName: tempName,
+        'location.city': tempLocation,
+        bio: tempAbout,
+        photoURL: finalImageUrl,
+      });
+
+      setProfileName(tempName);
+      setProfileLocation(tempLocation);
+      setProfileAbout(tempAbout);
+      setProfileImage(finalImageUrl);
+      setEditModalVisible(false);
+      Alert.alert('Succes', 'Profiel bijgewerkt');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      Alert.alert('Fout', 'Kon profiel niet bijwerken');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const AddSkill = () => {
     setModalVisible(true);
@@ -172,21 +262,32 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             <Text style={styles.squareButtonText}>Beschikbaarheid</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.squareButtonWide}>
+          <TouchableOpacity style={styles.squareButtonWide} onPress={handleEditProfile}>
             <Ionicons name="create-outline" size={18} color="#24253d" />
             <Text style={styles.squareButtonText}>Edit</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.profileInfo}>
-          <View style={styles.profileImage} />
+          <View style={styles.profileImageContainer}>
+            {(userProfile?.photoURL || profileImage) ? (
+              <Image
+                source={{ uri: (userProfile?.photoURL || profileImage) as string }}
+                style={styles.profileImage}
+              />
+            ) : (
+              <View style={styles.profileImagePlaceholder}>
+                <Ionicons name="person" size={60} color="#ccc" />
+              </View>
+            )}
+          </View>
 
-          <Text style={styles.nameText}>{userProfile?.displayName || 'Naam onbekend'}</Text>
+          <Text style={styles.nameText}>{userProfile?.displayName || profileName}</Text>
 
           <View style={styles.locationContainer}>
             <Ionicons name="location-outline" size={16} color="rgba(255,255,255,0.9)" />
             <Text style={styles.locationText}>
-              {userProfile?.location?.city || userProfile?.location?.address || 'Locatie onbekend'}
+              {userProfile?.location?.city || userProfile?.location?.address || profileLocation}
             </Text>
           </View>
 
@@ -199,7 +300,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
           </View>
 
           <Text style={styles.aboutText}>
-            {userProfile?.bio || 'Geen biografie beschikbaar.'}
+            {userProfile?.bio || profileAbout}
           </Text>
 
           <View style={styles.tabsContainer}>
@@ -232,7 +333,6 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-
         {activeTab === 'skills' && (
           <View style={styles.sectionContainer}>
             <View style={styles.sectionHeader}>
@@ -259,7 +359,6 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
               </TouchableOpacity>
             ))}
           </View>
-
         )}
         {activeTab === 'wilLeren' && (
           <View style={styles.sectionContainer}>
@@ -371,6 +470,88 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
           </TouchableWithoutFeedback>
         </Modal>
 
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={editModalVisible}
+          onRequestClose={() => setEditModalVisible(false)}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Profiel Bewerken</Text>
+
+                <Text style={styles.inputLabel}>Naam</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Naam"
+                  value={tempName}
+                  onChangeText={setTempName}
+                />
+
+                <Text style={styles.inputLabel}>Locatie</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Locatie"
+                  value={tempLocation}
+                  onChangeText={setTempLocation}
+                />
+
+                <Text style={styles.inputLabel}>Over mij</Text>
+                <TextInput
+                  style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+                  placeholder="Vertel iets over jezelf..."
+                  value={tempAbout}
+                  onChangeText={setTempAbout}
+                  multiline={true}
+                  numberOfLines={4}
+                />
+
+                <Text style={styles.inputLabel}>Profielfoto</Text>
+                <View style={styles.imageEditContainer}>
+                  <View style={styles.tempImageContainer}>
+                    {tempImage ? (
+                      <Image source={{ uri: tempImage as string }} style={styles.tempImage} />
+                    ) : (
+                      <View style={styles.profileImagePlaceholder}>
+                        <Ionicons name="person" size={40} color="#ccc" />
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.imageButtons}>
+                    <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
+                      <Ionicons name="image-outline" size={20} color="#24253d" />
+                      <Text style={styles.imagePickerButtonText}>Galerij</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.imagePickerButton} onPress={takePhoto}>
+                      <Ionicons name="camera-outline" size={20} color="#24253d" />
+                      <Text style={styles.imagePickerButtonText}>Camera</Text>
+                    </TouchableOpacity>
+                    {(tempImage || userProfile?.photoURL) && (
+                      <TouchableOpacity
+                        style={[styles.imagePickerButton, { borderColor: '#ff4444' }]}
+                        onPress={() => setTempImage(null)}
+                      >
+                        <Ionicons name="trash-outline" size={20} color="#ff4444" />
+                        <Text style={[styles.imagePickerButtonText, { color: '#ff4444' }]}>Verwijder</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.cancelButton}>
+                    <Text style={styles.cancelButtonText}>Annuleren</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={saveProfile} style={styles.saveButton}>
+                    <Text style={styles.saveButtonText}>Opslaan</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+
         <View style={styles.logoutContainer}>
           <TouchableOpacity
             style={styles.logoutButton}
@@ -399,11 +580,10 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             <Text style={styles.logoutButtonText}>Uitloggen</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView >
-    </SafeAreaView >
+      </ScrollView>
+    </SafeAreaView>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -424,7 +604,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#b832ff',
   },
   content: {
-
     paddingHorizontal: 20,
     paddingTop: 20,
   },
@@ -463,11 +642,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
   },
-  profileImage: {
+  profileImageContainer: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#e1e1e1',
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  profileImage: {
+    width: '100%',
+    height: '100%',
+  },
+  profileImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#f0f0f5',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   nameText: {
     fontSize: 24,
@@ -694,6 +890,46 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+  },
+  imageEditContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 20,
+    backgroundColor: '#f6f6f9',
+    padding: 12,
+    borderRadius: 16,
+  },
+  tempImageContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+  },
+  tempImage: {
+    width: '100%',
+    height: '100%',
+  },
+  imageButtons: {
+    flex: 1,
+    gap: 8,
+  },
+  imagePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#fff',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e1e1e1',
+  },
+  imagePickerButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#24253d',
   },
   logoutContainer: {
     paddingHorizontal: 20,
