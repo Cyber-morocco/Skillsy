@@ -53,21 +53,21 @@ export default function PrePagina() {
                         icon="location-outline"
                         title="Lokaal leren"
                         description="Vind experts in je eigen buurt en maak persoonlijk contact"
-                        color="#a855f7" 
+                        color="#a855f7"
                         bgColor="#f3e8ff"
                     />
                     <FeatureItem
                         icon="swap-horizontal-outline"
                         title="Vaardigheden ruilen"
                         description="Ruil je kennis of betaal voor een les - jij beslist"
-                        color="#3b82f6" 
+                        color="#3b82f6"
                         bgColor="#dbeafe"
                     />
                     <FeatureItem
                         icon="heart-outline"
                         title="Vertrouwde community"
                         description="Beoordelingen en reviews voor een veilige ervaring"
-                        color="#ec4899" 
+                        color="#ec4899"
                         bgColor="#fce7f3"
                     />
                 </View>
@@ -186,6 +186,38 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: colors.textMuted,
         lineHeight: 20,
+    },
+    statsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        width: '100%',
+        backgroundColor: '#fff',
+        borderRadius: 24,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    statItem: {
+        alignItems: 'center',
+        flex: 1,
+    },
+    statValue: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: colors.text,
+        marginBottom: 4,
+    },
+    statLabel: {
+        fontSize: 12,
+        color: colors.textMuted,
+        textAlign: 'center',
+        lineHeight: 16,
+    },
+    statDivider: {
+        width: 1,
+        height: 24,
+        backgroundColor: colors.border,
     },
 });
 
