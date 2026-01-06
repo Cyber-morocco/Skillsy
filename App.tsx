@@ -71,7 +71,7 @@ export default function App() {
       case 'explore':
         return <ExploreMapScreen />;
       case 'appointments':
-        return <AppointmentsScreen />;
+        return <AppointmentsScreen onViewProfile={handleViewProfile} />;
       case 'messages':
         return <ChatStackNavigator />;
       case 'profile':

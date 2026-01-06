@@ -24,7 +24,7 @@ interface AppointmentConfig {
     location: string;
     locationType: 'Fysiek' | 'Online';
     price?: string;
-    swapRequest?: string; 
+    swapRequest?: string;
     status: 'Bevestigd' | 'In afwachting' | 'Voltooid' | 'Geannuleerd';
     avatarUrl?: string;
 }
@@ -97,7 +97,11 @@ const DUMMY_PAST: AppointmentConfig[] = [
     }
 ];
 
-export default function AppointmentsScreen() {
+interface AppointmentsScreenProps {
+    onViewProfile?: (user: any) => void;
+}
+
+export default function AppointmentsScreen({ onViewProfile }: AppointmentsScreenProps) {
     const [activeTab, setActiveTab] = useState<Tab>('upcoming');
 
     const COUNTS = {
@@ -127,11 +131,11 @@ export default function AppointmentsScreen() {
     const getStatusStyle = (status: string) => {
         switch (status) {
             case 'Bevestigd':
-                return { bg: 'rgba(34, 197, 94, 0.15)', text: '#4ade80' }; // Green
+                return { bg: 'rgba(34, 197, 94, 0.15)', text: '#4ade80' }; 
             case 'In afwachting':
-                return { bg: 'rgba(234, 179, 8, 0.15)', text: '#facc15' }; // Yellow
+                return { bg: 'rgba(234, 179, 8, 0.15)', text: '#facc15' }; 
             case 'Voltooid':
-                return { bg: 'rgba(148, 163, 184, 0.15)', text: '#94a3b8' }; // Gray
+                return { bg: 'rgba(148, 163, 184, 0.15)', text: '#94a3b8' }; 
             default:
                 return { bg: 'rgba(148, 163, 184, 0.15)', text: authColors.muted };
         }
@@ -140,19 +144,32 @@ export default function AppointmentsScreen() {
     const renderCard = (item: AppointmentConfig, type: Tab) => {
         const statusStyle = getStatusStyle(item.status);
 
+        const dummyUser = {
+            id: item.personName, 
+            displayName: item.personName.replace(/^(met|Met)\s+/, ''),
+            photoURL: item.avatarUrl,
+            bio: 'Docent bij Skillsy',
+            location: { city: 'Amsterdam' }
+        };
+
         return (
             <View key={item.id} style={styles.card}>
                 <View style={styles.cardHeader}>
-                    <View style={styles.avatarContainer}>
-                        <Image
-                            source={{ uri: item.avatarUrl || `https://ui-avatars.com/api/?name=${item.personName.split(' ').slice(1).join('+')}&background=random` }}
-                            style={styles.avatar}
-                        />
-                    </View>
-                    <View style={styles.headerInfo}>
-                        <Text style={styles.subjectText}>{item.subject}</Text>
-                        <Text style={styles.personText}>{item.personName}</Text>
-                    </View>
+                    <TouchableOpacity
+                        style={{ flexDirection: 'row', flex: 1, alignItems: 'center' }}
+                        onPress={() => onViewProfile?.(dummyUser)}
+                    >
+                        <View style={styles.avatarContainer}>
+                            <Image
+                                source={{ uri: item.avatarUrl || `https://ui-avatars.com/api/?name=${item.personName.split(' ').slice(1).join('+')}&background=random` }}
+                                style={styles.avatar}
+                            />
+                        </View>
+                        <View style={styles.headerInfo}>
+                            <Text style={styles.subjectText}>{item.subject}</Text>
+                            <Text style={styles.personText}>{item.personName}</Text>
+                        </View>
+                    </TouchableOpacity>
                     <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
                         <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.status}</Text>
                     </View>
