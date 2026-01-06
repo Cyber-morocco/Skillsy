@@ -7,12 +7,12 @@ import { StatusBar } from 'expo-status-bar';
 const { width } = Dimensions.get('window');
 
 const colors = {
-    primary: '#6366f1', 
+    primary: '#6366f1',
     secondary: '#fff',
     background: '#ffffff',
-    text: '#1e293b', 
-    textMuted: '#64748b', 
-    accent: '#a855f7', 
+    text: '#1e293b',
+    textMuted: '#64748b',
+    accent: '#a855f7',
     border: '#e2e8f0',
 };
 
@@ -38,6 +38,16 @@ export default function PrePagina() {
                     </Text>
                 </View>
 
+                <View style={styles.authContainer}>
+                    <TouchableOpacity style={styles.primaryButton}>
+                        <Text style={styles.primaryButtonText}>Sign up</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity style={styles.secondaryButton}>
+                        <Text style={styles.secondaryButtonText}>Log in</Text>
+                    </TouchableOpacity>
+                </View>
+
             </ScrollView>
         </SafeAreaView>
     );
@@ -60,12 +70,12 @@ const styles = StyleSheet.create({
     newBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f5f3ff', 
+        backgroundColor: '#f5f3ff',
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 100,
         borderWidth: 1,
-        borderColor: '#d8b4fe', 
+        borderColor: '#d8b4fe',
         marginBottom: 24,
     },
     newBadgeText: {
@@ -87,5 +97,39 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: 24,
         maxWidth: '90%',
+    },
+    authContainer: {
+        width: '100%',
+        gap: 16,
+        marginBottom: 40,
+    },
+    primaryButton: {
+        backgroundColor: colors.primary,
+        paddingVertical: 16,
+        borderRadius: 16,
+        alignItems: 'center',
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    primaryButtonText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: '700',
+    },
+    secondaryButton: {
+        backgroundColor: '#fff',
+        paddingVertical: 16,
+        borderRadius: 16,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    secondaryButtonText: {
+        color: colors.text,
+        fontSize: 18,
+        fontWeight: '600',
     },
 });
