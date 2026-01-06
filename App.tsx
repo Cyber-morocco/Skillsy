@@ -3,6 +3,7 @@ import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './mobile/src/config/firebase';
+import { Review } from './mobile/src/types';
 import {
   ExploreProfileScreen,
   Availability,
@@ -25,6 +26,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [reviews, setReviews] = useState<Record<string, Review[]>>({});
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -61,6 +63,13 @@ export default function App() {
     return () => unsubscribe();
   }, [user]);
 
+  const handleAddReview = (review: Review, userId: string) => {
+    setReviews(prev => ({
+      ...prev,
+      [userId]: [review, ...(prev[userId] || [])]
+    }));
+  };
+
   const renderScreen = () => {
     switch (activeScreen) {
       case 'availability':
@@ -72,7 +81,13 @@ export default function App() {
       case 'explore':
         return <ExploreMapScreen />;
       case 'appointments':
-        return <AppointmentsScreen onViewProfile={handleViewProfile} />;
+        return (
+          <AppointmentsScreen
+            onViewProfile={handleViewProfile}
+            onSubmitReview={handleAddReview}
+            reviewedUsers={Object.keys(reviews)}
+          />
+        );
       case 'messages':
         return <ChatStackNavigator />;
       case 'profile':
@@ -81,6 +96,7 @@ export default function App() {
         return (
           <ExploreProfileScreen
             user={selectedUser}
+            reviews={selectedUser ? reviews[selectedUser.id] : []}
             onBack={() => setActiveScreen(previousScreen)}
             onMakeAppointment={() => setActiveScreen('appointments')}
             onSendMessage={() => setActiveScreen('messages')}

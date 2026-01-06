@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Review } from '../types';
+
 interface ExploreProfileScreenProps {
   user?: {
     name?: string;
@@ -16,12 +18,13 @@ interface ExploreProfileScreenProps {
     avatar?: string;
     photoURL?: string;
   };
+  reviews?: Review[];
   onBack?: () => void;
   onMakeAppointment?: () => void;
   onSendMessage?: () => void;
 }
 
-const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, onBack, onMakeAppointment, onSendMessage }) => {
+const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, reviews = [], onBack, onMakeAppointment, onSendMessage }) => {
   const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews'>(
     'vaardigheden',
   );
@@ -31,6 +34,12 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, onBac
     name: user?.name || user?.displayName || 'Thomas Berg',
     avatar: user?.avatar || user?.photoURL || '',
   };
+
+  const averageRating = reviews.length > 0
+    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
+    : '4.8'; 
+    
+  const sortedReviews = [...reviews].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -85,8 +94,8 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, onBac
 
           <View style={styles.ratingRow}>
             <Text style={styles.ratingIcon}>⭐</Text>
-            <Text style={styles.ratingValue}>4.8</Text>
-            <Text style={styles.ratingReviews}>(18 reviews)</Text>
+            <Text style={styles.ratingValue}>{averageRating}</Text>
+            <Text style={styles.ratingReviews}>({reviews.length > 0 ? reviews.length : 18} reviews)</Text>
           </View>
         </View>
 
@@ -154,11 +163,35 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, onBac
         </View>
 
         <View style={styles.tabContent}>
-          <Text style={styles.tabContentText}>
-            {activeTab === 'vaardigheden'
-              ? 'Hier komen de vaardigheden.'
-              : 'Hier komen de reviews.'}
-          </Text>
+          {activeTab === 'vaardigheden' ? (
+            <Text style={styles.tabContentText}>Hier komen de vaardigheden.</Text>
+          ) : (
+            <View>
+              {sortedReviews.length > 0 ? (
+                sortedReviews.map((review) => (
+                  <View key={review.id} style={{ marginBottom: 16, borderBottomWidth: 1, borderBottomColor: '#f0f0f5', paddingBottom: 16 }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <Text style={{ fontWeight: '600', color: '#24253d' }}>{review.reviewerName}</Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#FCD34D', marginRight: 2 }}>{review.rating.toFixed(1)}</Text>
+                        <Text style={{ fontSize: 13, color: '#FCD34D' }}>★</Text>
+                      </View>
+                    </View>
+                    <Text style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>
+                      {review.createdAt.toLocaleDateString()}
+                    </Text>
+                    <View style={{ gap: 4 }}>
+                      <Text style={{ fontSize: 12, color: '#6b7280' }}>• Uitleg: {review.questions.q1}/5</Text>
+                      <Text style={{ fontSize: 12, color: '#6b7280' }}>• Afspraken: {review.questions.q2}/5</Text>
+                      <Text style={{ fontSize: 12, color: '#6b7280' }}>• Samenwerking: {review.questions.q3}/5</Text>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.tabContentText}>Nog geen nieuwe reviews.</Text>
+              )}
+            </View>
+          )}
         </View>
 
 

@@ -7,7 +7,12 @@ import {
     TouchableOpacity,
     ScrollView,
     Image,
-    Alert
+    Alert,
+    Modal,
+    KeyboardAvoidingView,
+    Platform,
+    TouchableWithoutFeedback,
+    Keyboard
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,7 +33,6 @@ interface AppointmentConfig {
     status: 'Bevestigd' | 'In afwachting' | 'Voltooid' | 'Geannuleerd';
     avatarUrl?: string;
 }
-
 
 const DUMMY_UPCOMING: AppointmentConfig[] = [
     {
@@ -97,17 +101,63 @@ const DUMMY_PAST: AppointmentConfig[] = [
     }
 ];
 
+import { Review } from '../types';
+
 interface AppointmentsScreenProps {
     onViewProfile?: (user: any) => void;
+    onSubmitReview?: (review: Review, userId: string) => void;
+    reviewedUsers?: string[];
 }
 
-export default function AppointmentsScreen({ onViewProfile }: AppointmentsScreenProps) {
+export default function AppointmentsScreen({ onViewProfile, onSubmitReview, reviewedUsers = [] }: AppointmentsScreenProps) {
     const [activeTab, setActiveTab] = useState<Tab>('upcoming');
+    const [reviewModalVisible, setReviewModalVisible] = useState(false);
+    const [selectedAppointment, setSelectedAppointment] = useState<AppointmentConfig | null>(null);
+
+    const [ratings, setRatings] = useState({
+        q1: 0,
+        q2: 0,
+        q3: 0
+    });
 
     const COUNTS = {
         upcoming: DUMMY_UPCOMING.length,
         pending: DUMMY_PENDING.length,
         past: DUMMY_PAST.length
+    };
+
+    const handleOpenReview = (item: AppointmentConfig) => {
+        setSelectedAppointment(item);
+        setRatings({ q1: 0, q2: 0, q3: 0 });
+        setReviewModalVisible(true);
+    };
+
+    const handleSubmitReview = () => {
+        if (ratings.q1 === 0 || ratings.q2 === 0 || ratings.q3 === 0) {
+            Alert.alert('Nog niet klaar', 'Beantwoord alstublieft alle vragen.');
+            return;
+        }
+
+        const averageRating = (ratings.q1 + ratings.q2 + ratings.q3) / 3;
+
+        const newReview: Review = {
+            id: Date.now().toString(),
+            reviewerName: 'Jij (Huidige Gebruiker)',
+            rating: averageRating,
+            questions: ratings,
+            createdAt: new Date(),
+        };
+
+        if (selectedAppointment && onSubmitReview) {
+            onSubmitReview(newReview, selectedAppointment.personName);
+        }
+
+        Alert.alert('Bedankt!', 'Je beoordeling is verstuurd.');
+        setReviewModalVisible(false);
+    };
+
+    const setRatingForQuestion = (question: 'q1' | 'q2' | 'q3', value: number) => {
+        setRatings(prev => ({ ...prev, [question]: value }));
     };
 
     const renderTab = (tab: Tab, label: string) => {
@@ -131,11 +181,11 @@ export default function AppointmentsScreen({ onViewProfile }: AppointmentsScreen
     const getStatusStyle = (status: string) => {
         switch (status) {
             case 'Bevestigd':
-                return { bg: 'rgba(34, 197, 94, 0.15)', text: '#4ade80' }; 
+                return { bg: 'rgba(34, 197, 94, 0.15)', text: '#4ade80' };
             case 'In afwachting':
-                return { bg: 'rgba(234, 179, 8, 0.15)', text: '#facc15' }; 
+                return { bg: 'rgba(234, 179, 8, 0.15)', text: '#facc15' };
             case 'Voltooid':
-                return { bg: 'rgba(148, 163, 184, 0.15)', text: '#94a3b8' }; 
+                return { bg: 'rgba(148, 163, 184, 0.15)', text: '#94a3b8' };
             default:
                 return { bg: 'rgba(148, 163, 184, 0.15)', text: authColors.muted };
         }
@@ -145,7 +195,7 @@ export default function AppointmentsScreen({ onViewProfile }: AppointmentsScreen
         const statusStyle = getStatusStyle(item.status);
 
         const dummyUser = {
-            id: item.personName, 
+            id: item.personName,
             displayName: item.personName.replace(/^(met|Met)\s+/, ''),
             photoURL: item.avatarUrl,
             bio: 'Docent bij Skillsy',
@@ -219,13 +269,45 @@ export default function AppointmentsScreen({ onViewProfile }: AppointmentsScreen
                 )}
 
                 {type === 'past' && (
-                    <TouchableOpacity style={styles.outlineButton}>
-                        <Text style={styles.outlineButtonText}>Beoordeling achterlaten</Text>
+                    <TouchableOpacity
+                        style={[
+                            styles.outlineButton,
+                            reviewedUsers.includes(item.personName) && { backgroundColor: 'rgba(148, 163, 184, 0.1)', borderColor: 'transparent' }
+                        ]}
+                        onPress={() => !reviewedUsers.includes(item.personName) && handleOpenReview(item)}
+                        disabled={reviewedUsers.includes(item.personName)}
+                    >
+                        <Text style={[
+                            styles.outlineButtonText,
+                            reviewedUsers.includes(item.personName) && { color: authColors.muted }
+                        ]}>
+                            {reviewedUsers.includes(item.personName) ? 'Beoordeeld' : 'Beoordeling achterlaten'}
+                        </Text>
                     </TouchableOpacity>
                 )}
             </View>
         );
     };
+
+    const renderQuestionStars = (questionKey: 'q1' | 'q2' | 'q3', questionText: string) => (
+        <View style={{ marginBottom: 24 }}>
+            <Text style={styles.questionText}>{questionText}</Text>
+            <View style={styles.starsContainer}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                    <TouchableOpacity key={star} onPress={() => setRatingForQuestion(questionKey, star)}>
+                        <Ionicons
+                            name={ratings[questionKey] >= star ? "star" : "star-outline"}
+                            size={32}
+                            color="#FCD34D"
+                            style={{ marginRight: 8 }}
+                        />
+                    </TouchableOpacity>
+                ))}
+            </View>
+        </View>
+    );
+
+    const isSubmitDisabled = ratings.q1 === 0 || ratings.q2 === 0 || ratings.q3 === 0;
 
     return (
         <SafeAreaView style={styles.container}>
@@ -244,6 +326,50 @@ export default function AppointmentsScreen({ onViewProfile }: AppointmentsScreen
                 {activeTab === 'pending' && DUMMY_PENDING.map(item => renderCard(item, 'pending'))}
                 {activeTab === 'past' && DUMMY_PAST.map(item => renderCard(item, 'past'))}
             </ScrollView>
+
+            {/* REVIEW MODAL */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={reviewModalVisible}
+                onRequestClose={() => setReviewModalVisible(false)}
+            >
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <View style={styles.modalOverlay}>
+                        <KeyboardAvoidingView
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            style={styles.modalContent}
+                        >
+                            <View style={styles.modalHeader}>
+                                <TouchableOpacity onPress={() => setReviewModalVisible(false)} style={styles.closeButton}>
+                                    <Ionicons name="arrow-back" size={24} color={authColors.text} />
+                                </TouchableOpacity>
+                            </View>
+
+                            <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 24 }}>
+                                <Text style={styles.modalTitle}>
+                                    Beoordeel {selectedAppointment?.personName.replace(/^(met|Met)\s+/, '')}
+                                </Text>
+                                <Text style={styles.modalSubtitle}>
+                                    {selectedAppointment?.subject}
+                                </Text>
+
+                                {renderQuestionStars('q1', 'Was de uitleg duidelijk en aangepast aan jouw niveau?')}
+                                {renderQuestionStars('q2', 'Kwam de persoon afspraken en verwachtingen na?')}
+                                {renderQuestionStars('q3', 'Zou je opnieuw met deze persoon willen samenwerken?')}
+
+                                <TouchableOpacity
+                                    style={[styles.submitButton, { opacity: isSubmitDisabled ? 0.6 : 1 }]}
+                                    onPress={handleSubmitReview}
+                                    disabled={isSubmitDisabled}
+                                >
+                                    <Text style={styles.submitButtonText}>Verstuur beoordeling</Text>
+                                </TouchableOpacity>
+                            </ScrollView>
+                        </KeyboardAvoidingView>
+                    </View>
+                </TouchableWithoutFeedback>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -392,5 +518,69 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         color: '#fff',
+    },
+
+    // MODAL STYLES
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: authColors.card,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        minHeight: '80%',
+        paddingTop: 20,
+    },
+    modalHeader: {
+        paddingHorizontal: 24,
+        marginBottom: 20,
+    },
+    closeButton: {
+        padding: 4,
+    },
+    modalTitle: {
+        fontSize: 24,
+        fontWeight: '700',
+        color: authColors.text,
+        marginBottom: 8,
+    },
+    modalSubtitle: {
+        fontSize: 16,
+        color: authColors.muted,
+        marginBottom: 32,
+    },
+    questionText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: authColors.text,
+        marginBottom: 12,
+        lineHeight: 22,
+    },
+    starsContainer: {
+        flexDirection: 'row',
+        marginBottom: 12,
+    },
+    textArea: {
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 16,
+        padding: 16,
+        color: authColors.text,
+        fontSize: 15,
+        minHeight: 120,
+        marginBottom: 32,
+    },
+    submitButton: {
+        backgroundColor: authColors.accent,
+        borderRadius: 16,
+        paddingVertical: 16,
+        alignItems: 'center',
+        marginBottom: 40,
+    },
+    submitButtonText: {
+        color: '#fff',
+        fontWeight: '700',
+        fontSize: 16,
     }
 });

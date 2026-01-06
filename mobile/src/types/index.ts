@@ -86,3 +86,17 @@ export interface Appointment {
     tutorEmail?: string;
     createdAt: Date;
 }
+
+export interface Review {
+    id: string;
+    reviewerName: string;
+    reviewerAvatar?: string;
+    rating: number; // Overall average
+    questions: {
+        q1: number;
+        q2: number;
+        q3: number;
+    };
+    createdAt: Date;
+    text?: string; // Optional text if we ever re-add it
+}
