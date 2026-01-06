@@ -9,7 +9,6 @@ import {
     Image,
     Alert,
     Modal,
-    TextInput,
     KeyboardAvoidingView,
     Platform,
     TouchableWithoutFeedback,
@@ -110,8 +109,13 @@ export default function AppointmentsScreen({ onViewProfile }: AppointmentsScreen
     const [activeTab, setActiveTab] = useState<Tab>('upcoming');
     const [reviewModalVisible, setReviewModalVisible] = useState(false);
     const [selectedAppointment, setSelectedAppointment] = useState<AppointmentConfig | null>(null);
-    const [rating, setRating] = useState(0);
-    const [reviewText, setReviewText] = useState('');
+
+    // State for 3 separate ratings
+    const [ratings, setRatings] = useState({
+        q1: 0,
+        q2: 0,
+        q3: 0
+    });
 
     const COUNTS = {
         upcoming: DUMMY_UPCOMING.length,
@@ -121,15 +125,26 @@ export default function AppointmentsScreen({ onViewProfile }: AppointmentsScreen
 
     const handleOpenReview = (item: AppointmentConfig) => {
         setSelectedAppointment(item);
-        setRating(0);
-        setReviewText('');
+        setRatings({ q1: 0, q2: 0, q3: 0 }); // Reset ratings
         setReviewModalVisible(true);
     };
 
     const handleSubmitReview = () => {
+        // Validate that all questions are answered
+        if (ratings.q1 === 0 || ratings.q2 === 0 || ratings.q3 === 0) {
+            Alert.alert('Nog niet klaar', 'Beantwoord alstublieft alle vragen.');
+            return;
+        }
+
         // Logic to submit review would go here
+        console.log('Submitted Ratings:', ratings);
+
         Alert.alert('Bedankt!', 'Je beoordeling is verstuurd.');
         setReviewModalVisible(false);
+    };
+
+    const setRatingForQuestion = (question: 'q1' | 'q2' | 'q3', value: number) => {
+        setRatings(prev => ({ ...prev, [question]: value }));
     };
 
     const renderTab = (tab: Tab, label: string) => {
@@ -252,6 +267,26 @@ export default function AppointmentsScreen({ onViewProfile }: AppointmentsScreen
         );
     };
 
+    const renderQuestionStars = (questionKey: 'q1' | 'q2' | 'q3', questionText: string) => (
+        <View style={{ marginBottom: 24 }}>
+            <Text style={styles.questionText}>{questionText}</Text>
+            <View style={styles.starsContainer}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                    <TouchableOpacity key={star} onPress={() => setRatingForQuestion(questionKey, star)}>
+                        <Ionicons
+                            name={ratings[questionKey] >= star ? "star" : "star-outline"}
+                            size={32}
+                            color="#FCD34D"
+                            style={{ marginRight: 8 }}
+                        />
+                    </TouchableOpacity>
+                ))}
+            </View>
+        </View>
+    );
+
+    const isSubmitDisabled = ratings.q1 === 0 || ratings.q2 === 0 || ratings.q3 === 0;
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
@@ -270,6 +305,7 @@ export default function AppointmentsScreen({ onViewProfile }: AppointmentsScreen
                 {activeTab === 'past' && DUMMY_PAST.map(item => renderCard(item, 'past'))}
             </ScrollView>
 
+            {/* REVIEW MODAL */}
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -293,39 +329,17 @@ export default function AppointmentsScreen({ onViewProfile }: AppointmentsScreen
                                     Beoordeel {selectedAppointment?.personName.replace(/^(met|Met)\s+/, '')}
                                 </Text>
                                 <Text style={styles.modalSubtitle}>
-                                    Deel je ervaring met de {selectedAppointment?.subject}
+                                    {selectedAppointment?.subject}
                                 </Text>
 
-                                <Text style={styles.label}>Geef een beoordeling</Text>
-                                <View style={styles.starsContainer}>
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                                        <TouchableOpacity key={star} onPress={() => setRating(star)}>
-                                            <Ionicons
-                                                name={rating >= star ? "star" : "star-outline"}
-                                                size={32}
-                                                color="#FCD34D" 
-                                                style={{ marginRight: 8 }}
-                                            />
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
-
-                                <Text style={styles.label}>Jouw review</Text>
-                                <TextInput
-                                    style={styles.textArea}
-                                    placeholder="Vertel over je ervaring..."
-                                    placeholderTextColor={authColors.muted}
-                                    multiline
-                                    numberOfLines={6}
-                                    textAlignVertical="top"
-                                    value={reviewText}
-                                    onChangeText={setReviewText}
-                                />
+                                {renderQuestionStars('q1', 'Was de uitleg duidelijk en aangepast aan jouw niveau?')}
+                                {renderQuestionStars('q2', 'Kwam de persoon afspraken en verwachtingen na?')}
+                                {renderQuestionStars('q3', 'Zou je opnieuw met deze persoon willen samenwerken?')}
 
                                 <TouchableOpacity
-                                    style={[styles.submitButton, { opacity: rating === 0 ? 0.6 : 1 }]}
+                                    style={[styles.submitButton, { opacity: isSubmitDisabled ? 0.6 : 1 }]}
                                     onPress={handleSubmitReview}
-                                    disabled={rating === 0}
+                                    disabled={isSubmitDisabled}
                                 >
                                     <Text style={styles.submitButtonText}>Verstuur beoordeling</Text>
                                 </TouchableOpacity>
@@ -515,15 +529,16 @@ const styles = StyleSheet.create({
         color: authColors.muted,
         marginBottom: 32,
     },
-    label: {
+    questionText: {
         fontSize: 16,
         fontWeight: '600',
         color: authColors.text,
         marginBottom: 12,
+        lineHeight: 22,
     },
     starsContainer: {
         flexDirection: 'row',
-        marginBottom: 32,
+        marginBottom: 12,
     },
     textArea: {
         backgroundColor: 'rgba(255,255,255,0.05)',
@@ -539,6 +554,7 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         paddingVertical: 16,
         alignItems: 'center',
+        marginBottom: 40,
     },
     submitButtonText: {
         color: '#fff',
