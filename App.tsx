@@ -20,6 +20,7 @@ type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'a
 
 export default function App() {
   const [activeScreen, setActiveScreen] = useState<NavName>('home');
+  const [previousScreen, setPreviousScreen] = useState<NavName>('home');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
@@ -71,7 +72,7 @@ export default function App() {
       case 'explore':
         return <ExploreMapScreen />;
       case 'appointments':
-        return <AppointmentsScreen />;
+        return <AppointmentsScreen onViewProfile={handleViewProfile} />;
       case 'messages':
         return <ChatStackNavigator />;
       case 'profile':
@@ -80,7 +81,7 @@ export default function App() {
         return (
           <ExploreProfileScreen
             user={selectedUser}
-            onBack={() => setActiveScreen('home')}
+            onBack={() => setActiveScreen(previousScreen)}
             onMakeAppointment={() => setActiveScreen('appointments')}
             onSendMessage={() => setActiveScreen('messages')}
           />
@@ -96,6 +97,7 @@ export default function App() {
 
   const handleViewProfile = (user: any) => {
     setSelectedUser(user);
+    setPreviousScreen(activeScreen);
     setActiveScreen('exploreProfile');
   };
 

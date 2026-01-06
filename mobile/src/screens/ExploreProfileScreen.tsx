@@ -11,9 +11,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface ExploreProfileScreenProps {
   user?: {
-    name: string;
-    avatar: string;
-
+    name?: string;
+    displayName?: string;
+    avatar?: string;
+    photoURL?: string;
   };
   onBack?: () => void;
   onMakeAppointment?: () => void;
@@ -26,9 +27,9 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, onBac
   );
   const [liked, setLiked] = useState(false);
 
-  const displayUser = user || {
-    name: 'Thomas Berg',
-    avatar: '',
+  const displayUser = {
+    name: user?.name || user?.displayName || 'Thomas Berg',
+    avatar: user?.avatar || user?.photoURL || '',
   };
 
   return (
