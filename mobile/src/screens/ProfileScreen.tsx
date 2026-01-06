@@ -498,7 +498,10 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                   onChangeText={setTempLocation}
                 />
 
-                <Text style={styles.inputLabel}>Over mij</Text>
+                <View style={styles.labelContainer}>
+                  <Text style={styles.inputLabel}>Over mij</Text>
+                  <Text style={styles.charCount}>{tempAbout?.length || 0}/175</Text>
+                </View>
                 <TextInput
                   style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
                   placeholder="Vertel iets over jezelf..."
@@ -506,6 +509,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                   onChangeText={setTempAbout}
                   multiline={true}
                   numberOfLines={4}
+                  maxLength={175}
                 />
 
                 <Text style={styles.inputLabel}>Profielfoto</Text>
@@ -606,7 +610,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 10,
   },
   topRow: {
     flexDirection: 'row',
@@ -708,7 +712,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: authColors.text,
     textAlign: 'center',
-    marginTop: 16,
+    marginTop: 10,
     lineHeight: 20,
     paddingHorizontal: 20,
     opacity: 0.9,
@@ -837,6 +841,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 8,
     color: authColors.text,
+  },
+  labelContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  charCount: {
+    fontSize: 12,
+    color: authColors.muted,
   },
   input: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
