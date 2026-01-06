@@ -182,7 +182,6 @@ export const updateUserProfile = async (updates: any): Promise<void> => {
 export const uploadProfileImage = async (uri: string): Promise<string> => {
     const userId = getCurrentUserId();
 
-    // For React Native, we need to convert the file URI to a blob
     const response = await fetch(uri);
     const blob = await response.blob();
 
@@ -198,7 +197,6 @@ export const deleteProfileImage = async (): Promise<void> => {
     try {
         await deleteObject(fileRef);
     } catch (error: any) {
-        // If the file doesn't exist, we can ignore the error
         if (error.code !== 'storage/object-not-found') {
             throw error;
         }
