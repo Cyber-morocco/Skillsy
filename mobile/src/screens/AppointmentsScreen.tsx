@@ -7,7 +7,13 @@ import {
     TouchableOpacity,
     ScrollView,
     Image,
-    Alert
+    Alert,
+    Modal,
+    TextInput,
+    KeyboardAvoidingView,
+    Platform,
+    TouchableWithoutFeedback,
+    Keyboard
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,7 +34,6 @@ interface AppointmentConfig {
     status: 'Bevestigd' | 'In afwachting' | 'Voltooid' | 'Geannuleerd';
     avatarUrl?: string;
 }
-
 
 const DUMMY_UPCOMING: AppointmentConfig[] = [
     {
@@ -103,11 +108,28 @@ interface AppointmentsScreenProps {
 
 export default function AppointmentsScreen({ onViewProfile }: AppointmentsScreenProps) {
     const [activeTab, setActiveTab] = useState<Tab>('upcoming');
+    const [reviewModalVisible, setReviewModalVisible] = useState(false);
+    const [selectedAppointment, setSelectedAppointment] = useState<AppointmentConfig | null>(null);
+    const [rating, setRating] = useState(0);
+    const [reviewText, setReviewText] = useState('');
 
     const COUNTS = {
         upcoming: DUMMY_UPCOMING.length,
         pending: DUMMY_PENDING.length,
         past: DUMMY_PAST.length
+    };
+
+    const handleOpenReview = (item: AppointmentConfig) => {
+        setSelectedAppointment(item);
+        setRating(0);
+        setReviewText('');
+        setReviewModalVisible(true);
+    };
+
+    const handleSubmitReview = () => {
+        // Logic to submit review would go here
+        Alert.alert('Bedankt!', 'Je beoordeling is verstuurd.');
+        setReviewModalVisible(false);
     };
 
     const renderTab = (tab: Tab, label: string) => {
@@ -131,11 +153,11 @@ export default function AppointmentsScreen({ onViewProfile }: AppointmentsScreen
     const getStatusStyle = (status: string) => {
         switch (status) {
             case 'Bevestigd':
-                return { bg: 'rgba(34, 197, 94, 0.15)', text: '#4ade80' }; 
+                return { bg: 'rgba(34, 197, 94, 0.15)', text: '#4ade80' };
             case 'In afwachting':
-                return { bg: 'rgba(234, 179, 8, 0.15)', text: '#facc15' }; 
+                return { bg: 'rgba(234, 179, 8, 0.15)', text: '#facc15' };
             case 'Voltooid':
-                return { bg: 'rgba(148, 163, 184, 0.15)', text: '#94a3b8' }; 
+                return { bg: 'rgba(148, 163, 184, 0.15)', text: '#94a3b8' };
             default:
                 return { bg: 'rgba(148, 163, 184, 0.15)', text: authColors.muted };
         }
@@ -145,7 +167,7 @@ export default function AppointmentsScreen({ onViewProfile }: AppointmentsScreen
         const statusStyle = getStatusStyle(item.status);
 
         const dummyUser = {
-            id: item.personName, 
+            id: item.personName,
             displayName: item.personName.replace(/^(met|Met)\s+/, ''),
             photoURL: item.avatarUrl,
             bio: 'Docent bij Skillsy',
@@ -219,7 +241,10 @@ export default function AppointmentsScreen({ onViewProfile }: AppointmentsScreen
                 )}
 
                 {type === 'past' && (
-                    <TouchableOpacity style={styles.outlineButton}>
+                    <TouchableOpacity
+                        style={styles.outlineButton}
+                        onPress={() => handleOpenReview(item)}
+                    >
                         <Text style={styles.outlineButtonText}>Beoordeling achterlaten</Text>
                     </TouchableOpacity>
                 )}
@@ -244,6 +269,71 @@ export default function AppointmentsScreen({ onViewProfile }: AppointmentsScreen
                 {activeTab === 'pending' && DUMMY_PENDING.map(item => renderCard(item, 'pending'))}
                 {activeTab === 'past' && DUMMY_PAST.map(item => renderCard(item, 'past'))}
             </ScrollView>
+
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={reviewModalVisible}
+                onRequestClose={() => setReviewModalVisible(false)}
+            >
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <View style={styles.modalOverlay}>
+                        <KeyboardAvoidingView
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            style={styles.modalContent}
+                        >
+                            <View style={styles.modalHeader}>
+                                <TouchableOpacity onPress={() => setReviewModalVisible(false)} style={styles.closeButton}>
+                                    <Ionicons name="arrow-back" size={24} color={authColors.text} />
+                                </TouchableOpacity>
+                            </View>
+
+                            <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 24 }}>
+                                <Text style={styles.modalTitle}>
+                                    Beoordeel {selectedAppointment?.personName.replace(/^(met|Met)\s+/, '')}
+                                </Text>
+                                <Text style={styles.modalSubtitle}>
+                                    Deel je ervaring met de {selectedAppointment?.subject}
+                                </Text>
+
+                                <Text style={styles.label}>Geef een beoordeling</Text>
+                                <View style={styles.starsContainer}>
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <TouchableOpacity key={star} onPress={() => setRating(star)}>
+                                            <Ionicons
+                                                name={rating >= star ? "star" : "star-outline"}
+                                                size={32}
+                                                color="#FCD34D" 
+                                                style={{ marginRight: 8 }}
+                                            />
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+
+                                <Text style={styles.label}>Jouw review</Text>
+                                <TextInput
+                                    style={styles.textArea}
+                                    placeholder="Vertel over je ervaring..."
+                                    placeholderTextColor={authColors.muted}
+                                    multiline
+                                    numberOfLines={6}
+                                    textAlignVertical="top"
+                                    value={reviewText}
+                                    onChangeText={setReviewText}
+                                />
+
+                                <TouchableOpacity
+                                    style={[styles.submitButton, { opacity: rating === 0 ? 0.6 : 1 }]}
+                                    onPress={handleSubmitReview}
+                                    disabled={rating === 0}
+                                >
+                                    <Text style={styles.submitButtonText}>Verstuur beoordeling</Text>
+                                </TouchableOpacity>
+                            </ScrollView>
+                        </KeyboardAvoidingView>
+                    </View>
+                </TouchableWithoutFeedback>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -392,5 +482,67 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         color: '#fff',
+    },
+
+    // MODAL STYLES
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: authColors.card,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        minHeight: '80%',
+        paddingTop: 20,
+    },
+    modalHeader: {
+        paddingHorizontal: 24,
+        marginBottom: 20,
+    },
+    closeButton: {
+        padding: 4,
+    },
+    modalTitle: {
+        fontSize: 24,
+        fontWeight: '700',
+        color: authColors.text,
+        marginBottom: 8,
+    },
+    modalSubtitle: {
+        fontSize: 16,
+        color: authColors.muted,
+        marginBottom: 32,
+    },
+    label: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: authColors.text,
+        marginBottom: 12,
+    },
+    starsContainer: {
+        flexDirection: 'row',
+        marginBottom: 32,
+    },
+    textArea: {
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 16,
+        padding: 16,
+        color: authColors.text,
+        fontSize: 15,
+        minHeight: 120,
+        marginBottom: 32,
+    },
+    submitButton: {
+        backgroundColor: authColors.accent,
+        borderRadius: 16,
+        paddingVertical: 16,
+        alignItems: 'center',
+    },
+    submitButtonText: {
+        color: '#fff',
+        fontWeight: '700',
+        fontSize: 16,
     }
 });
