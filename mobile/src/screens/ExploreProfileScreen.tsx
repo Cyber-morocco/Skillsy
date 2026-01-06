@@ -8,7 +8,6 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
 import { Review } from '../types';
 
 interface ExploreProfileScreenProps {
@@ -20,11 +19,10 @@ interface ExploreProfileScreenProps {
   };
   reviews?: Review[];
   onBack?: () => void;
-  onMakeAppointment?: () => void;
-  onSendMessage?: () => void;
+  onMatch?: () => void;
 }
 
-const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, reviews = [], onBack, onMakeAppointment, onSendMessage }) => {
+const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, reviews = [], onBack, onMatch }) => {
   const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews'>(
     'vaardigheden',
   );
@@ -37,8 +35,8 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, revie
 
   const averageRating = reviews.length > 0
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
-    : '4.8'; 
-    
+    : '4.8';
+
   const sortedReviews = [...reviews].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return (
@@ -103,17 +101,9 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, revie
           <TouchableOpacity
             activeOpacity={0.9}
             style={styles.primaryButton}
-            onPress={onMakeAppointment}
+            onPress={onMatch}
           >
-            <Text style={styles.primaryButtonText}>Afspraak maken</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.9}
-            style={styles.ghostButton}
-            onPress={onSendMessage}
-          >
-            <Text style={styles.ghostButtonText}>Bericht zenden</Text>
+            <Text style={styles.primaryButtonText}>Match</Text>
           </TouchableOpacity>
         </View>
 
