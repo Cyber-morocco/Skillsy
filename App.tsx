@@ -81,7 +81,13 @@ export default function App() {
       case 'explore':
         return <ExploreMapScreen />;
       case 'appointments':
-        return <AppointmentsScreen onViewProfile={handleViewProfile} onSubmitReview={handleAddReview} />;
+        return (
+          <AppointmentsScreen
+            onViewProfile={handleViewProfile}
+            onSubmitReview={handleAddReview}
+            reviewedUsers={Object.keys(reviews)}
+          />
+        );
       case 'messages':
         return <ChatStackNavigator />;
       case 'profile':

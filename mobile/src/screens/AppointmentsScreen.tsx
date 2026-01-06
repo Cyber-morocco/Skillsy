@@ -106,9 +106,10 @@ import { Review } from '../types';
 interface AppointmentsScreenProps {
     onViewProfile?: (user: any) => void;
     onSubmitReview?: (review: Review, userId: string) => void;
+    reviewedUsers?: string[];
 }
 
-export default function AppointmentsScreen({ onViewProfile, onSubmitReview }: AppointmentsScreenProps) {
+export default function AppointmentsScreen({ onViewProfile, onSubmitReview, reviewedUsers = [] }: AppointmentsScreenProps) {
     const [activeTab, setActiveTab] = useState<Tab>('upcoming');
     const [reviewModalVisible, setReviewModalVisible] = useState(false);
     const [selectedAppointment, setSelectedAppointment] = useState<AppointmentConfig | null>(null);
@@ -127,7 +128,7 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview }: Ap
 
     const handleOpenReview = (item: AppointmentConfig) => {
         setSelectedAppointment(item);
-        setRatings({ q1: 0, q2: 0, q3: 0 }); 
+        setRatings({ q1: 0, q2: 0, q3: 0 });
         setReviewModalVisible(true);
     };
 
@@ -141,7 +142,7 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview }: Ap
 
         const newReview: Review = {
             id: Date.now().toString(),
-            reviewerName: 'Jij (Huidige Gebruiker)', 
+            reviewerName: 'Jij (Huidige Gebruiker)',
             rating: averageRating,
             questions: ratings,
             createdAt: new Date(),
@@ -269,10 +270,19 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview }: Ap
 
                 {type === 'past' && (
                     <TouchableOpacity
-                        style={styles.outlineButton}
-                        onPress={() => handleOpenReview(item)}
+                        style={[
+                            styles.outlineButton,
+                            reviewedUsers.includes(item.personName) && { backgroundColor: 'rgba(148, 163, 184, 0.1)', borderColor: 'transparent' }
+                        ]}
+                        onPress={() => !reviewedUsers.includes(item.personName) && handleOpenReview(item)}
+                        disabled={reviewedUsers.includes(item.personName)}
                     >
-                        <Text style={styles.outlineButtonText}>Beoordeling achterlaten</Text>
+                        <Text style={[
+                            styles.outlineButtonText,
+                            reviewedUsers.includes(item.personName) && { color: authColors.muted }
+                        ]}>
+                            {reviewedUsers.includes(item.personName) ? 'Beoordeeld' : 'Beoordeling achterlaten'}
+                        </Text>
                     </TouchableOpacity>
                 )}
             </View>
