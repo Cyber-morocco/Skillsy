@@ -101,16 +101,18 @@ const DUMMY_PAST: AppointmentConfig[] = [
     }
 ];
 
+import { Review } from '../types';
+
 interface AppointmentsScreenProps {
     onViewProfile?: (user: any) => void;
+    onSubmitReview?: (review: Review, userId: string) => void;
 }
 
-export default function AppointmentsScreen({ onViewProfile }: AppointmentsScreenProps) {
+export default function AppointmentsScreen({ onViewProfile, onSubmitReview }: AppointmentsScreenProps) {
     const [activeTab, setActiveTab] = useState<Tab>('upcoming');
     const [reviewModalVisible, setReviewModalVisible] = useState(false);
     const [selectedAppointment, setSelectedAppointment] = useState<AppointmentConfig | null>(null);
 
-    // State for 3 separate ratings
     const [ratings, setRatings] = useState({
         q1: 0,
         q2: 0,
@@ -125,19 +127,29 @@ export default function AppointmentsScreen({ onViewProfile }: AppointmentsScreen
 
     const handleOpenReview = (item: AppointmentConfig) => {
         setSelectedAppointment(item);
-        setRatings({ q1: 0, q2: 0, q3: 0 }); // Reset ratings
+        setRatings({ q1: 0, q2: 0, q3: 0 }); 
         setReviewModalVisible(true);
     };
 
     const handleSubmitReview = () => {
-        // Validate that all questions are answered
         if (ratings.q1 === 0 || ratings.q2 === 0 || ratings.q3 === 0) {
             Alert.alert('Nog niet klaar', 'Beantwoord alstublieft alle vragen.');
             return;
         }
 
-        // Logic to submit review would go here
-        console.log('Submitted Ratings:', ratings);
+        const averageRating = (ratings.q1 + ratings.q2 + ratings.q3) / 3;
+
+        const newReview: Review = {
+            id: Date.now().toString(),
+            reviewerName: 'Jij (Huidige Gebruiker)', 
+            rating: averageRating,
+            questions: ratings,
+            createdAt: new Date(),
+        };
+
+        if (selectedAppointment && onSubmitReview) {
+            onSubmitReview(newReview, selectedAppointment.personName);
+        }
 
         Alert.alert('Bedankt!', 'Je beoordeling is verstuurd.');
         setReviewModalVisible(false);
