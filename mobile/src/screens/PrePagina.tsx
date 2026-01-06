@@ -48,6 +48,30 @@ export default function PrePagina() {
                     </TouchableOpacity>
                 </View>
 
+                <View style={styles.featuresContainer}>
+                    <FeatureItem
+                        icon="location-outline"
+                        title="Lokaal leren"
+                        description="Vind experts in je eigen buurt en maak persoonlijk contact"
+                        color="#a855f7" 
+                        bgColor="#f3e8ff"
+                    />
+                    <FeatureItem
+                        icon="swap-horizontal-outline"
+                        title="Vaardigheden ruilen"
+                        description="Ruil je kennis of betaal voor een les - jij beslist"
+                        color="#3b82f6" 
+                        bgColor="#dbeafe"
+                    />
+                    <FeatureItem
+                        icon="heart-outline"
+                        title="Vertrouwde community"
+                        description="Beoordelingen en reviews voor een veilige ervaring"
+                        color="#ec4899" 
+                        bgColor="#fce7f3"
+                    />
+                </View>
+
             </ScrollView>
         </SafeAreaView>
     );
@@ -132,4 +156,49 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
     },
+    featuresContainer: {
+        width: '100%',
+        gap: 20,
+        marginBottom: 40,
+    },
+    featureItem: {
+        backgroundColor: '#fff',
+        padding: 20,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: colors.border,
+        gap: 12,
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    featureTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: colors.text,
+        marginBottom: 4,
+    },
+    featureDescription: {
+        fontSize: 14,
+        color: colors.textMuted,
+        lineHeight: 20,
+    },
 });
+
+function FeatureItem({ icon, title, description, color, bgColor }: any) {
+    return (
+        <View style={styles.featureItem}>
+            <View style={[styles.iconContainer, { backgroundColor: bgColor }]}>
+                <Ionicons name={icon as any} size={24} color={color} />
+            </View>
+            <View>
+                <Text style={styles.featureTitle}>{title}</Text>
+                <Text style={styles.featureDescription}>{description}</Text>
+            </View>
+        </View>
+    );
+}
