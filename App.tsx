@@ -1,63 +1,71 @@
-import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
-
-import Availability from './mobile/src/screens/Availability';
-import AvailabilitySpecificDates from './mobile/src/screens/Availability_SpecificDates';
-import ExploreProfileScreen from './mobile/src/screens/ExploreProfileScreen';
-import HomePage from './mobile/src/screens/HomePage';
-import ExploreMapScreen from './mobile/src/screens/ExploreMapScreen';
-import AppointmentsScreen from './mobile/src/screens/AppointmentsScreen';
-import ChatStackNavigator from './mobile/src/navigation/ChatStack';
-import ProfileScreen from './mobile/src/screens/ProfileScreen';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { auth, db } from './mobile/src/config/firebase';
+import {
+  ExploreProfileScreen,
+  Availability,
+  AvailabilitySpecificDates,
+  HomePage,
+  ExploreMapScreen,
+  AppointmentsScreen,
+  ProfileScreen
+} from './mobile/src/screens';
 import BottomNavBar from './mobile/src/components/BottomNavBar';
+import ChatStackNavigator from './mobile/src/navigation/ChatStack';
+import AuthStackNavigator from './mobile/src/navigation/AuthStack';
 
-type NavName =
-  | 'home'
-  | 'explore'
-  | 'appointments'
-  | 'messages'
-  | 'profile'
-  | 'availability'
-  | 'exploreProfile'
-  | 'availabilitySpecificDates';
+type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability' | 'exploreProfile' | 'availabilitySpecificDates';
 
 export default function App() {
   const [activeScreen, setActiveScreen] = useState<NavName>('home');
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
-  const navigationObj: any = {
-    navigate: (name: string) => {
-      if (name === 'AvailabilitySpecificDates') {
-        setActiveScreen('availabilitySpecificDates');
-        return;
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (!currentUser) {
+        setLoading(false);
+        setProfileComplete(null);
       }
-    
-      const map: Record<string, NavName> = {
-        home: 'home',
-        explore: 'explore',
-        appointments: 'appointments',
-        messages: 'messages',
-        profile: 'profile',
-        availability: 'availability',
-        exploreProfile: 'exploreProfile',
-      };
-      const key = (name as string) as keyof typeof map;
-      if (map[key]) setActiveScreen(map[key]);
-    },
-    goBack: () => setActiveScreen('home'),
-  };
+    });
 
-  const handleViewProfile = (user: any) => {
-    setSelectedUser(user);
-    setActiveScreen('exploreProfile');
-  };
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const unsubscribe = onSnapshot(
+      doc(db, 'users', user.uid),
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const data = docSnapshot.data();
+          setProfileComplete(data.profileComplete ?? true);
+        } else {
+          setProfileComplete(false);
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error listening to user profile:', error);
+        setLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user]);
 
   const renderScreen = () => {
     switch (activeScreen) {
       case 'availability':
-        return <Availability navigation={navigationObj} />;
+        return <Availability onNavigate={handleNavigate} />;
       case 'availabilitySpecificDates':
-        return <AvailabilitySpecificDates navigation={navigationObj} />;
+        return <AvailabilitySpecificDates onNavigate={handleNavigate} />;
       case 'home':
         return <HomePage onViewProfile={handleViewProfile} />;
       case 'explore':
@@ -86,6 +94,23 @@ export default function App() {
     setActiveScreen(screen);
   };
 
+  const handleViewProfile = (user: any) => {
+    setSelectedUser(user);
+    setActiveScreen('exploreProfile');
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6366f1" />
+      </View>
+    );
+  }
+
+  if (!user || !profileComplete) {
+    return <AuthStackNavigator />;
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.screenContainer}>{renderScreen()}</View>
@@ -93,18 +118,27 @@ export default function App() {
         activeScreen={
           activeScreen === 'exploreProfile'
             ? 'home'
-            : activeScreen === 'availabilitySpecificDates'
-            ? 'availability'
-            : activeScreen
+            : (activeScreen === 'availabilitySpecificDates' ? 'availability' : activeScreen as any)
         }
         onNavigate={handleNavigate}
-        badges={{ messages: 2 }}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  screenContainer: { flex: 1 },
+  container: {
+    flex: 1,
+    backgroundColor: '#0B1021',
+  },
+  screenContainer: {
+    flex: 1,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
 });

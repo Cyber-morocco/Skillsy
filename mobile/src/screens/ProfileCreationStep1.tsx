@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import {
+    ActivityIndicator,
+    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -11,6 +13,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authColors, authStyles as styles } from '../styles/authStyles';
 import { AppInput } from '../components/AppInput';
+import { auth, db } from '../config/firebase';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 type NavProps = {
     navigation: {
@@ -25,6 +29,28 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
     const [street, setStreet] = useState('');
     const [zipCode, setZipCode] = useState('');
     const [city, setCity] = useState('');
+    const [saving, setSaving] = useState(false);
+
+    const geocodeAddress = async (street: string, city: string, zipCode: string): Promise<{ lat: number; lng: number } | null> => {
+        try {
+            const address = `${street}, ${zipCode} ${city}`;
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+                { headers: { 'User-Agent': 'Skillsy-App/1.0' } }
+            );
+            const data = await response.json();
+            if (data && data.length > 0) {
+                return {
+                    lat: parseFloat(data[0].lat),
+                    lng: parseFloat(data[0].lon),
+                };
+            }
+            return null;
+        } catch (error) {
+            console.error('Geocoding error:', error);
+            return null;
+        }
+    };
 
     return (
         <SafeAreaView style={styles.safeArea}>
@@ -107,17 +133,50 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                                 <TouchableOpacity
                                     onPress={() => navigation.goBack()}
                                     style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(148,163,184,0.2)' }}
+                                    disabled={saving}
                                 >
                                     <Text style={{ color: authColors.text, fontWeight: '600' }}>‹ Vorige</Text>
                                 </TouchableOpacity>
 
                                 <TouchableOpacity
-                                    style={[styles.primaryButton, { marginTop: 0, paddingVertical: 12, paddingHorizontal: 32 }]}
-                                    onPress={() => {
-                                        console.log('Next Step');
+                                    style={[styles.primaryButton, { marginTop: 0, paddingVertical: 12, paddingHorizontal: 32 }, saving && { opacity: 0.7 }]}
+                                    onPress={async () => {
+                                        if (!auth.currentUser) {
+                                            Alert.alert('Erreur', 'Utilisateur non connecté');
+                                            return;
+                                        }
+
+                                        setSaving(true);
+                                        try {
+                                            const coords = await geocodeAddress(street, city, zipCode);
+
+                                            await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+                                                displayName: name.trim() || auth.currentUser.displayName,
+                                                bio: bio.trim(),
+                                                location: {
+                                                    street: street.trim(),
+                                                    zipCode: zipCode.trim(),
+                                                    city: city.trim(),
+                                                    lat: coords?.lat || 50.8503,
+                                                    lng: coords?.lng || 4.3517,
+                                                },
+                                                updatedAt: serverTimestamp(),
+                                            });
+
+                                            navigation.navigate('ProfileCreationStep2');
+                                        } catch (error: any) {
+                                            Alert.alert('Erreur', error.message || 'Impossible de sauvegarder le profil');
+                                        } finally {
+                                            setSaving(false);
+                                        }
                                     }}
+                                    disabled={saving}
                                 >
-                                    <Text style={styles.primaryButtonText}>Volgende ›</Text>
+                                    {saving ? (
+                                        <ActivityIndicator color="#fff" />
+                                    ) : (
+                                        <Text style={styles.primaryButtonText}>Volgende ›</Text>
+                                    )}
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -129,4 +188,3 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
 };
 
 export default ProfileCreationStep1;
-

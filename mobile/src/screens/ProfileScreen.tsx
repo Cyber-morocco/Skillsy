@@ -1,7 +1,19 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { signOut } from 'firebase/auth';
+import { auth } from '../config/firebase';
+import { Skill, LearnSkill, SkillLevel, UserProfile } from '../types';
+import {
+  subscribeToSkills,
+  subscribeToLearnSkills,
+  subscribeToUserProfile,
+  addSkill,
+  deleteSkill,
+  addLearnSkill,
+  deleteLearnSkill,
+} from '../services/userService';
 import * as ImagePicker from 'expo-image-picker';
 
 type SkillLevel = 'Beginner' | 'Gevorderd' | 'Expert';
@@ -23,24 +35,29 @@ interface ProfileScreenProps {
 
 export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [activeTab, setActiveTab] = useState<'skills' | 'wilLeren' | 'reviews'>('skills');
-  const [skills, setSkills] = useState<Skill[]>([
-    { id: '1', subject: 'Frans', level: 'Expert', price: '€25/uur' },
-    { id: '2', subject: 'Koken', level: 'Gevorderd', price: '€20/uur' },
-    { id: '3', subject: 'Yoga', level: 'Beginner', price: '€15/uur' },
-  ]);
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [learnSkills, setLearnSkills] = useState<LearnSkill[]>([]);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [newSubject, setNewSubject] = useState('');
   const [newPrice, setNewPrice] = useState('');
   const [newLevel, setNewLevel] = useState<SkillLevel>('Beginner');
 
-  const [learnSkills, setLearnSkills] = useState<LearnSkill[]>([
-    { id: '1', subject: 'Piano' },
-    { id: '2', subject: 'Spaans' },
-  ]);
   const [learnModalVisible, setLearnModalVisible] = useState(false);
   const [newLearnSubject, setNewLearnSubject] = useState('');
 
+  useEffect(() => {
+    const unsubscribeProfile = subscribeToUserProfile(
+      (profile) => {
+        setUserProfile(profile);
+      },
+      (error) => {
+        console.error('Error loading profile:', error);
+      }
+    );
 
   const [profileName, setProfileName] = useState('Sophie Bakker');
   const [profileLocation, setProfileLocation] = useState('Centrum, Amsterdam');
@@ -101,50 +118,116 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   };
 
 
+    const unsubscribeSkills = subscribeToSkills(
+      (fetchedSkills) => {
+        setSkills(fetchedSkills);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error loading skills:', error);
+        Alert.alert('Fout', 'Kon vaardigheden niet laden');
+        setLoading(false);
+      }
+    );
+
+    const unsubscribeLearnSkills = subscribeToLearnSkills(
+      (fetchedSkills) => {
+        setLearnSkills(fetchedSkills);
+      },
+      (error) => {
+        console.error('Error loading learn skills:', error);
+      }
+    );
+
+    return () => {
+      unsubscribeProfile();
+      unsubscribeSkills();
+      unsubscribeLearnSkills();
+    };
+  }, []);
 
   const AddSkill = () => {
     setModalVisible(true);
   };
 
-  const SaveSkill = () => {
+  const SaveSkill = async () => {
     if (!newSubject || !newPrice) return;
 
-    const newSkill: Skill = {
-      id: Date.now().toString(),
-      subject: newSubject,
-      level: newLevel,
-      price: `€${newPrice}/uur`,
-    };
-    setSkills([...skills, newSkill]);
-    setModalVisible(false);
-
-    setNewSubject('');
-    setNewPrice('');
-    setNewLevel('Beginner');
+    setSaving(true);
+    try {
+      await addSkill({
+        subject: newSubject,
+        level: newLevel,
+        price: `€${newPrice}/uur`,
+      });
+      setModalVisible(false);
+      setNewSubject('');
+      setNewPrice('');
+      setNewLevel('Beginner');
+    } catch (error) {
+      console.error('Error saving skill:', error);
+      Alert.alert('Fout', 'Kon vaardigheid niet opslaan');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDeleteSkill = (id: string) => {
-    setSkills(skills.filter(s => s.id !== id));
+  const handleDeleteSkill = async (id: string) => {
+    try {
+      await deleteSkill(id);
+    } catch (error) {
+      console.error('Error deleting skill:', error);
+      Alert.alert('Fout', 'Kon vaardigheid niet verwijderen');
+    }
   };
 
   const AddLearnSkill = () => {
     setLearnModalVisible(true);
   };
 
-  const SaveLearnSkill = () => {
+  const SaveLearnSkill = async () => {
     if (!newLearnSubject) return;
 
-    const newLearnSkill: LearnSkill = {
-      id: Date.now().toString(),
-      subject: newLearnSubject,
-    };
-    setLearnSkills([...learnSkills, newLearnSkill]);
-    setLearnModalVisible(false);
-    setNewLearnSubject('');
+    setSaving(true);
+    try {
+      await addLearnSkill({
+        subject: newLearnSubject,
+      });
+      setLearnModalVisible(false);
+      setNewLearnSubject('');
+    } catch (error) {
+      console.error('Error saving learn skill:', error);
+      Alert.alert('Fout', 'Kon interesse niet opslaan');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDeleteLearnSkill = (id: string) => {
-    setLearnSkills(learnSkills.filter(s => s.id !== id));
+  const handleDeleteLearnSkill = async (id: string) => {
+    try {
+      await deleteLearnSkill(id);
+    } catch (error) {
+      console.error('Error deleting learn skill:', error);
+      Alert.alert('Fout', 'Kon interesse niet verwijderen');
+    }
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.headerBackground} />
+        <View style={[styles.content, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color="#b832ff" />
+          <Text style={{ marginTop: 16, color: '#fff', fontSize: 16 }}>Laden...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return 'Nooit';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString('nl-NL', { month: 'long', year: 'numeric' });
   };
 
   return (
@@ -182,11 +265,15 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
 
           <Text style={styles.nameText}>{profileName}</Text>
 
-
           <View style={styles.locationContainer}>
             <Ionicons name="location-outline" size={16} color="rgba(255,255,255,0.9)" />
             <Text style={styles.locationText}>{profileLocation}</Text>
-
+          <Text style={styles.nameText}>{userProfile?.displayName || 'Naam onbekend'}</Text>
+          <View style={styles.locationContainer}>
+            <Ionicons name="location-outline" size={16} color="rgba(255,255,255,0.9)" />
+            <Text style={styles.locationText}>
+              {userProfile?.location?.city || userProfile?.location?.address || 'Locatie onbekend'}
+            </Text>
           </View>
 
           <View style={styles.reviewsContainer}>
@@ -194,11 +281,12 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             <Text style={styles.reviewsText}>4.9 (15 reviews)</Text>
             <Text style={styles.punt}>•</Text>
             <Ionicons name="laptop-outline" size={16} color="rgba(255,255,255,0.9)" />
-            <Text style={styles.reviewsText}>Lid sinds Maart 2024</Text>
+            <Text style={styles.reviewsText}>Lid sinds {formatDate(userProfile?.createdAt)}</Text>
           </View>
 
           <Text style={styles.aboutText}>
             {profileAbout}
+            {userProfile?.bio || 'Geen biografie beschikbaar.'}
           </Text>
 
 
@@ -443,6 +531,35 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             </View>
           </TouchableWithoutFeedback>
         </Modal>
+
+        <View style={styles.logoutContainer}>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={() => {
+              Alert.alert(
+                'Uitloggen',
+                'Weet je zeker dat je wilt uitloggen?',
+                [
+                  { text: 'Annuleren', style: 'cancel' },
+                  {
+                    text: 'Uitloggen',
+                    style: 'destructive',
+                    onPress: async () => {
+                      try {
+                        await signOut(auth);
+                      } catch (error) {
+                        Alert.alert('Fout', 'Kan niet uitloggen');
+                      }
+                    },
+                  },
+                ]
+              );
+            }}
+          >
+            <Ionicons name="log-out-outline" size={20} color="#ff4444" />
+            <Text style={styles.logoutButtonText}>Uitloggen</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView >
 
     </SafeAreaView >
@@ -796,5 +913,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#24253d',
+=======
+  logoutContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 30,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    marginTop: 20,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ff4444',
+  },
+  logoutButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ff4444',
   },
 });
