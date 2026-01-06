@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, ScrollView, Alert, ActivityIndicator, Image, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
@@ -13,21 +13,11 @@ import {
   deleteSkill,
   addLearnSkill,
   deleteLearnSkill,
+  updateUserProfile,
+  uploadProfileImage,
+  deleteProfileImage,
 } from '../services/userService';
 import * as ImagePicker from 'expo-image-picker';
-
-type SkillLevel = 'Beginner' | 'Gevorderd' | 'Expert';
-interface Skill {
-  id: string;
-  subject: string;
-  level: SkillLevel;
-  price: string;
-}
-
-interface LearnSkill {
-  id: string;
-  subject: string;
-}
 
 interface ProfileScreenProps {
   onNavigate?: (screen: 'availability') => void;
@@ -49,16 +39,6 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [learnModalVisible, setLearnModalVisible] = useState(false);
   const [newLearnSubject, setNewLearnSubject] = useState('');
 
-  useEffect(() => {
-    const unsubscribeProfile = subscribeToUserProfile(
-      (profile) => {
-        setUserProfile(profile);
-      },
-      (error) => {
-        console.error('Error loading profile:', error);
-      }
-    );
-
   const [profileName, setProfileName] = useState('Sophie Bakker');
   const [profileLocation, setProfileLocation] = useState('Centrum, Amsterdam');
   const [profileAbout, setProfileAbout] = useState('Gepassioneerd lerares met een liefde voor talen en koken.');
@@ -69,6 +49,44 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [tempLocation, setTempLocation] = useState('');
   const [tempAbout, setTempAbout] = useState('');
   const [tempImage, setTempImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribeProfile = subscribeToUserProfile(
+      (profile) => {
+        setUserProfile(profile);
+      },
+      (error) => {
+        console.error('Error loading profile:', error);
+      }
+    );
+
+    const unsubscribeSkills = subscribeToSkills(
+      (fetchedSkills) => {
+        setSkills(fetchedSkills);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('Error loading skills:', error);
+        Alert.alert('Fout', 'Kon vaardigheden niet laden');
+        setLoading(false);
+      }
+    );
+
+    const unsubscribeLearnSkills = subscribeToLearnSkills(
+      (fetchedSkills) => {
+        setLearnSkills(fetchedSkills);
+      },
+      (error) => {
+        console.error('Error loading learn skills:', error);
+      }
+    );
+
+    return () => {
+      unsubscribeProfile();
+      unsubscribeSkills();
+      unsubscribeLearnSkills();
+    };
+  }, []);
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -102,49 +120,50 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   };
 
   const handleEditProfile = () => {
-    setTempName(profileName);
-    setTempLocation(profileLocation);
-    setTempAbout(profileAbout);
-    setTempImage(profileImage);
+    setTempName(userProfile?.displayName || profileName);
+    setTempLocation(userProfile?.location?.city || profileLocation);
+    setTempAbout(userProfile?.bio || profileAbout);
+    setTempImage(userProfile?.photoURL || profileImage);
     setEditModalVisible(true);
   };
 
-  const saveProfile = () => {
-    setProfileName(tempName);
-    setProfileLocation(tempLocation);
-    setProfileAbout(tempAbout);
-    setProfileImage(tempImage);
-    setEditModalVisible(false);
+  const saveProfile = async () => {
+    setSaving(true);
+    try {
+      let finalImageUrl = userProfile?.photoURL || profileImage;
+
+      // If tempImage is null, it means the user wants to remove the photo
+      if (tempImage === null) {
+        if (userProfile?.photoURL) {
+          await deleteProfileImage();
+        }
+        finalImageUrl = null;
+      }
+      // If tempImage exists and is a local URI (doesn't start with http), upload it
+      else if (tempImage && !tempImage.startsWith('http')) {
+        finalImageUrl = await uploadProfileImage(tempImage);
+      }
+
+      await updateUserProfile({
+        displayName: tempName,
+        'location.city': tempLocation,
+        bio: tempAbout,
+        photoURL: finalImageUrl,
+      });
+
+      setProfileName(tempName);
+      setProfileLocation(tempLocation);
+      setProfileAbout(tempAbout);
+      setProfileImage(finalImageUrl);
+      setEditModalVisible(false);
+      Alert.alert('Succes', 'Profiel bijgewerkt');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      Alert.alert('Fout', 'Kon profiel niet bijwerken');
+    } finally {
+      setSaving(false);
+    }
   };
-
-
-    const unsubscribeSkills = subscribeToSkills(
-      (fetchedSkills) => {
-        setSkills(fetchedSkills);
-        setLoading(false);
-      },
-      (error) => {
-        console.error('Error loading skills:', error);
-        Alert.alert('Fout', 'Kon vaardigheden niet laden');
-        setLoading(false);
-      }
-    );
-
-    const unsubscribeLearnSkills = subscribeToLearnSkills(
-      (fetchedSkills) => {
-        setLearnSkills(fetchedSkills);
-      },
-      (error) => {
-        console.error('Error loading learn skills:', error);
-      }
-    );
-
-    return () => {
-      unsubscribeProfile();
-      unsubscribeSkills();
-      unsubscribeLearnSkills();
-    };
-  }, []);
 
   const AddSkill = () => {
     setModalVisible(true);
@@ -249,13 +268,15 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             <Ionicons name="create-outline" size={18} color="#24253d" />
             <Text style={styles.squareButtonText}>Edit</Text>
           </TouchableOpacity>
-
         </View>
 
         <View style={styles.profileInfo}>
           <View style={styles.profileImageContainer}>
-            {profileImage ? (
-              <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            {(userProfile?.photoURL || profileImage) ? (
+              <Image
+                source={{ uri: (userProfile?.photoURL || profileImage) as string }}
+                style={styles.profileImage}
+              />
             ) : (
               <View style={styles.profileImagePlaceholder}>
                 <Ionicons name="person" size={60} color="#ccc" />
@@ -263,16 +284,12 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             )}
           </View>
 
-          <Text style={styles.nameText}>{profileName}</Text>
+          <Text style={styles.nameText}>{userProfile?.displayName || profileName}</Text>
 
           <View style={styles.locationContainer}>
             <Ionicons name="location-outline" size={16} color="rgba(255,255,255,0.9)" />
-            <Text style={styles.locationText}>{profileLocation}</Text>
-          <Text style={styles.nameText}>{userProfile?.displayName || 'Naam onbekend'}</Text>
-          <View style={styles.locationContainer}>
-            <Ionicons name="location-outline" size={16} color="rgba(255,255,255,0.9)" />
             <Text style={styles.locationText}>
-              {userProfile?.location?.city || userProfile?.location?.address || 'Locatie onbekend'}
+              {userProfile?.location?.city || userProfile?.location?.address || profileLocation}
             </Text>
           </View>
 
@@ -285,10 +302,8 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
           </View>
 
           <Text style={styles.aboutText}>
-            {profileAbout}
-            {userProfile?.bio || 'Geen biografie beschikbaar.'}
+            {userProfile?.bio || profileAbout}
           </Text>
-
 
           <View style={styles.tabsContainer}>
             <TouchableOpacity onPress={() => setActiveTab('skills')} style={styles.tabItem}>
@@ -320,7 +335,6 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-
         {activeTab === 'skills' && (
           <View style={styles.sectionContainer}>
             <View style={styles.sectionHeader}>
@@ -347,7 +361,6 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
               </TouchableOpacity>
             ))}
           </View>
-
         )}
         {activeTab === 'wilLeren' && (
           <View style={styles.sectionContainer}>
@@ -500,7 +513,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 <View style={styles.imageEditContainer}>
                   <View style={styles.tempImageContainer}>
                     {tempImage ? (
-                      <Image source={{ uri: tempImage }} style={styles.tempImage} />
+                      <Image source={{ uri: tempImage as string }} style={styles.tempImage} />
                     ) : (
                       <View style={styles.profileImagePlaceholder}>
                         <Ionicons name="person" size={40} color="#ccc" />
@@ -516,6 +529,15 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                       <Ionicons name="camera-outline" size={20} color="#24253d" />
                       <Text style={styles.imagePickerButtonText}>Camera</Text>
                     </TouchableOpacity>
+                    {(tempImage || userProfile?.photoURL) && (
+                      <TouchableOpacity
+                        style={[styles.imagePickerButton, { borderColor: '#ff4444' }]}
+                        onPress={() => setTempImage(null)}
+                      >
+                        <Ionicons name="trash-outline" size={20} color="#ff4444" />
+                        <Text style={[styles.imagePickerButtonText, { color: '#ff4444' }]}>Verwijder</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
 
@@ -560,12 +582,10 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             <Text style={styles.logoutButtonText}>Uitloggen</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView >
-
-    </SafeAreaView >
+      </ScrollView>
+    </SafeAreaView>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -586,7 +606,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#b832ff',
   },
   content: {
-
     paddingHorizontal: 20,
     paddingTop: 20,
   },
@@ -913,7 +932,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#24253d',
-=======
+  },
   logoutContainer: {
     paddingHorizontal: 20,
     paddingVertical: 30,

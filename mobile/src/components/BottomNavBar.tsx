@@ -56,7 +56,7 @@ export default function BottomNavBar({ activeScreen, onNavigate, badges }: Botto
                 </View>
                 {badgeCount > 0 && (
                   <View style={[styles.badge, isActive ? styles.badgeActive : styles.badgeInactive]}>
-                    <Text style={[styles.badgeText, isActive && styles.badgeTextActive]}>
+                    <Text style={styles.badgeText}>
                       {badgeCount}
                     </Text>
                   </View>
