@@ -126,7 +126,7 @@ export default function App() {
   }
 
   if (!user || !profileComplete) {
-    return <AuthStackNavigator />;
+    return <AuthStackNavigator initialRouteName={user && profileComplete === false ? 'ProfileCreationStep1' : 'Login'} />;
   }
 
   return (

@@ -33,10 +33,10 @@ const screenOptions: NativeStackNavigationOptions = {
   },
 };
 
-const AuthStackNavigator = () => {
+const AuthStackNavigator = ({ initialRouteName = 'Login' }: { initialRouteName?: keyof AuthStackParamList }) => {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login" screenOptions={screenOptions}>
+      <Stack.Navigator initialRouteName={initialRouteName} screenOptions={screenOptions}>
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Signup" component={SignupScreen} />
         <Stack.Screen name="ProfileCreationStep1" component={ProfileCreationStep1} />
