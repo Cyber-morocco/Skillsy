@@ -48,7 +48,7 @@ export default function App() {
       (docSnapshot) => {
         if (docSnapshot.exists()) {
           const data = docSnapshot.data();
-          setProfileComplete(data.profileComplete ?? true);
+          setProfileComplete(data.profileComplete === true);
         } else {
           setProfileComplete(false);
         }
@@ -126,7 +126,12 @@ export default function App() {
   }
 
   if (!user || !profileComplete) {
-    return <AuthStackNavigator initialRouteName={user && profileComplete === false ? 'ProfileCreationStep1' : 'Login'} />;
+    return (
+      <AuthStackNavigator
+        key={user?.uid || 'guest'}
+        initialRouteName={user && profileComplete === false ? 'ProfileCreationStep1' : 'Login'}
+      />
+    );
   }
 
   return (
