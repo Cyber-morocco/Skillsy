@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { authColors } from '../styles/authStyles';
+import { Review } from '../types';
 
 type Tab = 'upcoming' | 'pending' | 'past';
 
@@ -101,7 +102,7 @@ const DUMMY_PAST: AppointmentConfig[] = [
     }
 ];
 
-import { Review } from '../types';
+
 
 interface AppointmentsScreenProps {
     onViewProfile?: (user: any) => void;
@@ -110,6 +111,7 @@ interface AppointmentsScreenProps {
 }
 
 export default function AppointmentsScreen({ onViewProfile, onSubmitReview, reviewedUsers = [] }: AppointmentsScreenProps) {
+
     const [activeTab, setActiveTab] = useState<Tab>('upcoming');
     const [reviewModalVisible, setReviewModalVisible] = useState(false);
     const [selectedAppointment, setSelectedAppointment] = useState<AppointmentConfig | null>(null);
