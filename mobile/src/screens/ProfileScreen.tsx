@@ -40,7 +40,10 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [learnModalVisible, setLearnModalVisible] = useState(false);
   const [newLearnSubject, setNewLearnSubject] = useState('');
 
-
+  const [profileName, setProfileName] = useState('');
+  const [profileLocation, setProfileLocation] = useState('');
+  const [profileAbout, setProfileAbout] = useState('');
+  const [profileImage, setProfileImage] = useState<string | null>(null);
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [tempName, setTempName] = useState('');
@@ -142,11 +145,18 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
 
       await updateUserProfile({
         displayName: tempName,
-        'location.city': tempLocation,
+        location: {
+          ...userProfile?.location,
+          city: tempLocation,
+        },
         bio: tempAbout,
-        photoURL: finalImageUrl,
+        photoURL: finalImageUrl || undefined,
       });
 
+      setProfileName(tempName);
+      setProfileLocation(tempLocation);
+      setProfileAbout(tempAbout);
+      setProfileImage(finalImageUrl as string);
       setEditModalVisible(false);
       Alert.alert('Succes', 'Profiel bijgewerkt');
     } catch (error) {

@@ -1,8 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import * as ExpoLocation from 'expo-location';
-import { Location, GeocodingResult, Talent, UserProfile } from '../../types';
-
-import { mockTalents } from '../../mockdummies/markers';
+import { Location, GeocodingResult, Talent } from '../../types';
+import { subscribeToTalents } from '../../services/userService';
 import { CATEGORY_OPTIONS, DISTANCE_OPTIONS } from '../../constants/exploreMap';
 import { calculateDistance } from './distance';
 
@@ -44,8 +43,7 @@ const filterTalents = (
 };
 
 export const useExploreMap = () => {
-  const allTalents = mockTalents;
-
+  const [allTalents, setAllTalents] = useState<Talent[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [skillSearch, setSkillSearch] = useState('');
   const [selectedDistance, setSelectedDistance] = useState<number | null>(null);
@@ -56,6 +54,24 @@ export const useExploreMap = () => {
   const [searchType, setSearchType] = useState<'skill' | 'address'>('skill');
   const [focusTalent, setFocusTalent] = useState<{ id: string; lat: number; lng: number } | null>(null);
   const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToTalents((fetchedTalents) => {
+      const mappedTalents: Talent[] = fetchedTalents.map((u: any) => ({
+        id: u.id,
+        userId: u.id,
+        name: u.displayName || 'Onbekend',
+        lat: u.location?.lat || 0,
+        lng: u.location?.lng || 0,
+        shortBio: u.bio || '',
+        avatar: u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName || 'U'}`,
+        skills: u.skills || [], // If denormalized, or empty for now
+        isActive: true
+      }));
+      setAllTalents(mappedTalents);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Check if location permission is already granted on mount
   useEffect(() => {
@@ -71,7 +87,6 @@ export const useExploreMap = () => {
             lat: location.coords.latitude,
             lng: location.coords.longitude,
           };
-          console.log('Location loaded on mount:', newLocation);
           setUserLocation(newLocation);
         }
       } catch (error) {
@@ -179,17 +194,13 @@ export const useExploreMap = () => {
 
   const requestLocationPermission = async () => {
     try {
-      // If permission already granted, verify it's still valid and get location
       if (locationPermissionGranted) {
         const { status } = await ExpoLocation.getForegroundPermissionsAsync();
-
-        // If permission was revoked, silently reset state
         if (status !== 'granted') {
           setLocationPermissionGranted(false);
           return false;
         }
 
-        // Permission still valid, fetch location with Low accuracy for speed
         const location = await ExpoLocation.getCurrentPositionAsync({
           accuracy: ExpoLocation.Accuracy.Low,
           timeInterval: 5000,
@@ -205,16 +216,12 @@ export const useExploreMap = () => {
         return true;
       }
 
-      // Request permission (shows system dialog)
       const { status } = await ExpoLocation.requestForegroundPermissionsAsync();
-
-      // If user denied, silently reset without showing anything
       if (status !== 'granted') {
         setLocationPermissionGranted(false);
         return false;
       }
 
-      // Permission granted, fetch location
       setLocationPermissionGranted(true);
       const location = await ExpoLocation.getCurrentPositionAsync({
         accuracy: ExpoLocation.Accuracy.Low,
@@ -230,7 +237,6 @@ export const useExploreMap = () => {
       setUserLocation(newLocation);
       return true;
     } catch (error) {
-      // Silently handle any errors
       setLocationPermissionGranted(false);
       return false;
     }

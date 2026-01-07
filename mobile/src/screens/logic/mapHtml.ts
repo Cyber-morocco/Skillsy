@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { Location } from './types';
-import { Talent } from '../../mockdummies/markers';
+import { Talent } from '../../types';
 
 interface BuildMapHtmlArgs {
   userLocation: Location;

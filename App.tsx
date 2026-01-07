@@ -28,7 +28,6 @@ export default function App() {
   const [matchRequests, setMatchRequests] = useState<MatchRequest[]>([]);
   const [reviews, setReviews] = useState<{ [userId: string]: Review[] }>({});
   const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -168,16 +167,7 @@ export default function App() {
   if (!user || !profileComplete) {
     return (
       <AuthStackNavigator
-        initialRouteName="PrePagina"
-      />
-    );
-  }
-
-  if (showSplash) {
-    return (
-      <PrePagina
-        onLogin={() => setShowSplash(false)}
-        onSignup={() => setShowSplash(false)}
+        initialRouteName={user ? "ProfileCreationStep1" : "PrePagina"}
       />
     );
   }

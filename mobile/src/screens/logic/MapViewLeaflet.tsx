@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { buildMapHtml } from './mapHtml';
 import { Location } from './types';
-import { Talent } from '../../mockdummies/markers';
+import { Talent } from '../../types';
 import { exploreMapStyles as styles } from '../../styles/exploreMapStyles';
 
 interface MapViewLeafletProps {

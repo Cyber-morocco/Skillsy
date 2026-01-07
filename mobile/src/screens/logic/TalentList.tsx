@@ -1,6 +1,6 @@
 import React from 'react';
 import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { Talent } from '../../mockdummies/markers';
+import { Talent } from '../../types';
 import { exploreMapStyles as styles } from '../../styles/exploreMapStyles';
 
 interface TalentListProps {
