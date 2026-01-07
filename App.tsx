@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './mobile/src/config/firebase';
+import { Review } from './mobile/src/types';
 import {
   ExploreProfileScreen,
   Availability,
@@ -25,6 +26,8 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [reviews, setReviews] = useState<Record<string, Review[]>>({});
+  const [matchRequests, setMatchRequests] = useState<any[]>([]); // Using basic array for now
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -46,7 +49,8 @@ export default function App() {
       (docSnapshot) => {
         if (docSnapshot.exists()) {
           const data = docSnapshot.data();
-          setProfileComplete(data.profileComplete ?? true);
+          setProfileComplete(data.profileComplete === true);
+
         } else {
           setProfileComplete(false);
         }
@@ -61,6 +65,29 @@ export default function App() {
     return () => unsubscribe();
   }, [user]);
 
+  const handleAddReview = (review: Review, userId: string) => {
+    setReviews(prev => ({
+      ...prev,
+      [userId]: [review, ...(prev[userId] || [])]
+    }));
+  };
+
+  const handleSendMatch = (userId: string, userName: string) => {
+    // Simulation of sending a match
+    Alert.alert('Match verstuurd', `Je hebt een matchverzoek gestuurd naar ${userName}.`);
+  };
+
+  const handleRespondMatch = (matchId: string, status: 'accepted' | 'rejected') => {
+    setMatchRequests(prev => prev.filter(req => req.id !== matchId));
+    if (status === 'accepted') {
+      Alert.alert('Match geaccepteerd', 'Jullie kunnen nu chatten!');
+    }
+  };
+
+  const handleClearAllMatches = () => {
+    setMatchRequests([]);
+  };
+
   const renderScreen = () => {
     switch (activeScreen) {
       case 'availability':
@@ -72,18 +99,25 @@ export default function App() {
       case 'explore':
         return <ExploreMapScreen />;
       case 'appointments':
-        return <AppointmentsScreen onViewProfile={handleViewProfile} />;
+        return (
+          <AppointmentsScreen
+            onViewProfile={handleViewProfile}
+            onSubmitReview={handleAddReview}
+            reviewedUsers={Object.keys(reviews)}
+          />
+        );
       case 'messages':
-        return <ChatStackNavigator />;
+        return <ChatStackNavigator matchRequests={matchRequests} onRespondMatch={handleRespondMatch} onClearAllMatches={handleClearAllMatches} />;
       case 'profile':
         return <ProfileScreen onNavigate={handleNavigate} />;
       case 'exploreProfile':
         return (
           <ExploreProfileScreen
             user={selectedUser}
+            reviews={selectedUser ? reviews[selectedUser.id] : []}
+
             onBack={() => setActiveScreen(previousScreen)}
-            onMakeAppointment={() => setActiveScreen('appointments')}
-            onSendMessage={() => setActiveScreen('messages')}
+            onMatch={() => handleSendMatch(selectedUser?.id || 'unknown', selectedUser?.name || 'Unknown')}
           />
         );
       default:
@@ -110,7 +144,13 @@ export default function App() {
   }
 
   if (!user || !profileComplete) {
-    return <AuthStackNavigator />;
+    return (
+      <AuthStackNavigator
+        key={user?.uid || 'guest'}
+        initialRouteName={user && profileComplete === false ? 'ProfileCreationStep1' : 'Login'}
+      />
+    );
+
   }
 
   return (
