@@ -52,17 +52,25 @@ export interface Talent {
 export interface Conversation {
     id: string;
     participants: string[];
-    participantNames: { [userId: string]: string };
-    participantInitials: { [userId: string]: string };
-    participantColors: { [userId: string]: string };
-    lastMessage: string;
-    lastMessageTime: Date;
-    unreadCount: { [userId: string]: number };
+    participantInfo: {
+        [userId: string]: {
+            name: string;
+            initials: string;
+            avatarColor: string;
+            photoURL?: string;
+        }
+    };
+    lastMessage?: string;
+    lastMessageTime?: any;
+    unreadCount?: { [userId: string]: number };
+    updatedAt: any;
 }
 
 export interface Message {
     id: string;
-    text?: string; // Optional text if we ever re-add it
+    text: string;
+    senderId: string;
+    createdAt: any;
 }
 
 export interface MatchRequest {
@@ -70,9 +78,10 @@ export interface MatchRequest {
     fromUserId: string;
     fromUserName: string;
     fromUserAvatar?: string;
+    toUserId: string;
     status: 'pending' | 'accepted' | 'rejected';
     subject: string;
-    createdAt: Date;
+    createdAt: any;
 }
 
 export interface Appointment {
@@ -96,14 +105,21 @@ export interface Appointment {
 
 export interface Review {
     id: string;
-    reviewerName: string;
-    reviewerAvatar?: string;
-    rating: number; // Overall average
-    questions: {
-        q1: number;
-        q2: number;
-        q3: number;
-    };
-    createdAt: Date;
-    text?: string; // Optional text if we ever re-add it
+    userId: string;
+    fromName: string;
+    rating: number;
+    comment: string;
+    createdAt: any;
+}
+
+export interface Location {
+    lat: number;
+    lng: number;
+    address?: string;
+}
+
+export interface GeocodingResult {
+    lat: string;
+    lon: string;
+    display_name: string;
 }

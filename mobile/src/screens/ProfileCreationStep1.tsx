@@ -39,6 +39,7 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
     const [saving, setSaving] = useState(false);
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
     const handleLogout = async () => {
         try {
@@ -58,26 +59,38 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
         }
 
         try {
+            // Photon API is much faster and better suited for autocomplete
             const response = await fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&addressdetails=1&limit=5&countrycodes=be,nl`,
-                { headers: { 'User-Agent': 'Skillsy-App/1.0' } }
+                `https://photon.komoot.io/api/?q=${encodeURIComponent(text)}&limit=5`
             );
             const data = await response.json();
-            setSuggestions(data);
-            setShowSuggestions(data.length > 0);
+            setSuggestions(data.features || []);
+            setShowSuggestions((data.features || []).length > 0);
         } catch (error) {
-            console.error('Suggestion error:', error);
+            console.error('Photon API error:', error);
         }
     };
 
-    const selectSuggestion = (item: any) => {
-        const addr = item.address;
-        const streetName = addr.road || addr.pedestrian || addr.suburb || '';
-        const houseNumber = addr.house_number ? ` ${addr.house_number}` : '';
+    const selectSuggestion = (feature: any) => {
+        const { properties, geometry } = feature;
 
-        setStreet(`${streetName}${houseNumber}`);
-        setZipCode(addr.postcode || '');
-        setCity(addr.city || addr.town || addr.village || '');
+        // Extract address components from Photon GeoJSON
+        const streetName = properties.street || properties.name || '';
+        const houseNumber = properties.housenumber ? ` ${properties.housenumber}` : '';
+        const fullStreet = `${streetName}${houseNumber}`.trim();
+
+        setStreet(fullStreet);
+        setZipCode(properties.postcode || '');
+        setCity(properties.city || '');
+
+        // Store coordinates directly from the suggestion [lng, lat]
+        if (geometry && geometry.coordinates) {
+            setCoords({
+                lat: geometry.coordinates[1],
+                lng: geometry.coordinates[0]
+            });
+        }
+
         setSuggestions([]);
         setShowSuggestions(false);
     };
@@ -225,36 +238,34 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
 
                             <View style={{ zIndex: 1000 }}>
                                 <AppInput
-                                    label="Straatnaam"
-                                    placeholder="Bijv. Amsterdam Centrum"
+                                    label="Adres of Straat"
+                                    placeholder="Typ je adres..."
                                     value={street}
                                     onChangeText={searchAddress}
                                     onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                                 />
                                 {showSuggestions && (
-                                    <View style={{
-                                        backgroundColor: '#2a2b45',
-                                        borderRadius: 8,
-                                        marginTop: -8,
-                                        marginBottom: 16,
-                                        borderWidth: 1,
-                                        borderColor: 'rgba(255,255,255,0.1)',
-                                        overflow: 'hidden',
-                                        maxHeight: 200,
-                                    }}>
-                                        {suggestions.map((item, index) => (
-                                            <TouchableOpacity
-                                                key={index}
-                                                style={{
-                                                    padding: 12,
-                                                    borderBottomWidth: index === suggestions.length - 1 ? 0 : 1,
-                                                    borderBottomColor: 'rgba(255,255,255,0.05)',
-                                                }}
-                                                onPress={() => selectSuggestion(item)}
-                                            >
-                                                <Text style={{ color: '#fff', fontSize: 13 }}>{item.display_name}</Text>
-                                            </TouchableOpacity>
-                                        ))}
+                                    <View style={styles.autocompleteDropdown}>
+                                        {suggestions.map((item, index) => {
+                                            const { properties } = item;
+                                            const mainText = properties.street
+                                                ? `${properties.street}${properties.housenumber ? ' ' + properties.housenumber : ''}`
+                                                : properties.name;
+                                            const subText = `${properties.postcode || ''} ${properties.city || ''} ${properties.country || ''}`.trim();
+
+                                            return (
+                                                <TouchableOpacity
+                                                    key={index}
+                                                    style={styles.suggestionItem}
+                                                    onPress={() => selectSuggestion(item)}
+                                                >
+                                                    <Text style={styles.suggestionText}>{mainText}</Text>
+                                                    {subText ? (
+                                                        <Text style={styles.suggestionSubtext}>{subText}</Text>
+                                                    ) : null}
+                                                </TouchableOpacity>
+                                            );
+                                        })}
                                     </View>
                                 )}
                             </View>
@@ -302,9 +313,14 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
 
                                         setSaving(true);
                                         try {
-                                            const coords = await geocodeAddress(street, city, zipCode);
+                                            let finalCoords = coords;
 
-                                            if (!coords) {
+                                            // Fallback to geocoding if coords were not set by autocomplete
+                                            if (!finalCoords) {
+                                                finalCoords = await geocodeAddress(street, city, zipCode);
+                                            }
+
+                                            if (!finalCoords) {
                                                 Alert.alert(
                                                     'Adres niet gevonden',
                                                     'We konden dit adres niet verifiëren. Controleer of de straatnaam, postcode en stad correct zijn.'
@@ -328,8 +344,8 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                                                     street: street.trim(),
                                                     zipCode: zipCode.trim(),
                                                     city: city.trim(),
-                                                    lat: coords.lat,
-                                                    lng: coords.lng,
+                                                    lat: finalCoords.lat,
+                                                    lng: finalCoords.lng,
                                                 },
                                                 updatedAt: serverTimestamp(),
                                             });

@@ -18,14 +18,14 @@ export const authColors = {
 const sharedShadow =
   Platform.OS === 'ios'
     ? {
-        shadowColor: ACCENT,
-        shadowOpacity: 0.35,
-        shadowOffset: { width: 0, height: 18 },
-        shadowRadius: 28,
-      }
+      shadowColor: ACCENT,
+      shadowOpacity: 0.35,
+      shadowOffset: { width: 0, height: 18 },
+      shadowRadius: 28,
+    }
     : {
-        elevation: 12,
-      };
+      elevation: 12,
+    };
 
 export const authStyles = StyleSheet.create({
   safeArea: {
@@ -42,7 +42,7 @@ export const authStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   headingContainer: {
-  marginBottom: 32,
+    marginBottom: 32,
   },
   brandPill: {
     alignSelf: 'flex-start',
@@ -105,7 +105,7 @@ export const authStyles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 4,
-    backgroundColor: '#EA4335', 
+    backgroundColor: '#EA4335',
     marginRight: 10,
   },
   socialButtonText: {
@@ -225,6 +225,34 @@ export const authStyles = StyleSheet.create({
     lineHeight: 18,
     textAlign: 'center',
     marginTop: 18,
+  },
+  autocompleteDropdown: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: CARD,
+    borderRadius: 18,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.35)',
+    zIndex: 9999,
+    overflow: 'hidden',
+    ...sharedShadow,
+  },
+  suggestionItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(148, 163, 184, 0.15)',
+  },
+  suggestionText: {
+    color: TEXT_PRIMARY,
+    fontSize: 14,
+  },
+  suggestionSubtext: {
+    color: TEXT_SECONDARY,
+    fontSize: 12,
+    marginTop: 2,
   },
 });
 

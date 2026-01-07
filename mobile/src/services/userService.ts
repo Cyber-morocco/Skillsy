@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db, auth, storage } from '../config/firebase';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { Skill, LearnSkill, AvailabilityDay } from '../types';
+import { Skill, LearnSkill, AvailabilityDay, Review, UserProfile } from '../types';
 
 const getCurrentUserId = (): string => {
     const user = auth.currentUser;
@@ -27,6 +27,14 @@ export const subscribeToUserProfile = (
     onError?: (error: Error) => void
 ): Unsubscribe => {
     const userId = getCurrentUserId();
+    return subscribeToOtherUserProfile(userId, onProfileChange, onError);
+};
+
+export const subscribeToOtherUserProfile = (
+    userId: string,
+    onProfileChange: (profile: any) => void,
+    onError?: (error: Error) => void
+): Unsubscribe => {
     const userRef = doc(db, 'users', userId);
 
     return onSnapshot(
@@ -50,6 +58,14 @@ export const subscribeToSkills = (
     onError?: (error: Error) => void
 ): Unsubscribe => {
     const userId = getCurrentUserId();
+    return subscribeToOtherUserSkills(userId, onSkillsChange, onError);
+};
+
+export const subscribeToOtherUserSkills = (
+    userId: string,
+    onSkillsChange: (skills: Skill[]) => void,
+    onError?: (error: Error) => void
+): Unsubscribe => {
     const skillsRef = collection(db, 'users', userId, 'skills');
 
     return onSnapshot(
@@ -62,7 +78,7 @@ export const subscribeToSkills = (
             onSkillsChange(skills);
         },
         (error) => {
-            console.error('Error subscribing to skills:', error);
+            console.error('Error subscribing to user skills:', error);
             onError?.(error);
         }
     );
@@ -170,7 +186,30 @@ export const saveAvailability = async (days: AvailabilityDay[]): Promise<void> =
     });
 };
 
-export const updateUserProfile = async (updates: any): Promise<void> => {
+export const subscribeToOtherUserReviews = (
+    userId: string,
+    onReviewsChange: (reviews: Review[]) => void,
+    onError?: (error: Error) => void
+): Unsubscribe => {
+    const reviewsRef = collection(db, 'users', userId, 'reviews');
+
+    return onSnapshot(
+        reviewsRef,
+        (snapshot) => {
+            const reviews: Review[] = snapshot.docs.map((doc) => ({
+                id: doc.id,
+                ...doc.data(),
+            } as Review));
+            onReviewsChange(reviews);
+        },
+        (error) => {
+            console.error('Error subscribing to user reviews:', error);
+            onError?.(error);
+        }
+    );
+};
+
+export const updateUserProfile = async (updates: Partial<UserProfile>): Promise<void> => {
     const userId = getCurrentUserId();
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
@@ -181,24 +220,16 @@ export const updateUserProfile = async (updates: any): Promise<void> => {
 
 export const uploadProfileImage = async (uri: string): Promise<string> => {
     const userId = getCurrentUserId();
-
     const response = await fetch(uri);
     const blob = await response.blob();
-
-    const fileRef = ref(storage, `profile_images/${userId}`);
-    await uploadBytes(fileRef, blob);
-
-    return await getDownloadURL(fileRef);
+    const storageRef = ref(storage, `profiles/${userId}`);
+    await uploadBytes(storageRef, blob);
+    return getDownloadURL(storageRef);
 };
 
 export const deleteProfileImage = async (): Promise<void> => {
     const userId = getCurrentUserId();
-    const fileRef = ref(storage, `profile_images/${userId}`);
-    try {
-        await deleteObject(fileRef);
-    } catch (error: any) {
-        if (error.code !== 'storage/object-not-found') {
-            throw error;
-        }
-    }
+    const storageRef = ref(storage, `profiles/${userId}`);
+    await deleteObject(storageRef);
+    await updateUserProfile({ photoURL: "" });
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StatusBar,
   StyleSheet,
@@ -6,38 +6,69 @@ import {
   TouchableOpacity,
   View,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Review } from '../types';
+import {
+  subscribeToOtherUserProfile,
+  subscribeToOtherUserSkills,
+  subscribeToOtherUserReviews
+} from '../services/userService';
+import { UserProfile, Skill, Review } from '../types';
 
 interface ExploreProfileScreenProps {
-  user?: {
-    name?: string;
-    displayName?: string;
-    avatar?: string;
-    photoURL?: string;
-  };
-  reviews?: Review[];
+  userId: string;
   onBack?: () => void;
-  onMatch?: () => void;
+  onMakeAppointment?: () => void;
+  onSendMessage?: () => void;
 }
 
-const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, reviews = [], onBack, onMatch }) => {
-  const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews'>(
-    'vaardigheden',
-  );
+const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onBack, onMakeAppointment, onSendMessage }) => {
+  const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews'>('vaardigheden');
   const [liked, setLiked] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [skills, setSkills] = useState<Skill[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const displayUser = {
-    name: user?.name || user?.displayName || 'Thomas Berg',
-    avatar: user?.avatar || user?.photoURL || '',
-  };
+  useEffect(() => {
+    if (!userId) return;
 
+    setLoading(true);
+
+    const unsubscribeProfile = subscribeToOtherUserProfile(userId, (fetchedProfile) => {
+      setProfile(fetchedProfile);
+    });
+
+    const unsubscribeSkills = subscribeToOtherUserSkills(userId, (fetchedSkills) => {
+      setSkills(fetchedSkills);
+    });
+
+    const unsubscribeReviews = subscribeToOtherUserReviews(userId, (fetchedReviews) => {
+      setReviews(fetchedReviews);
+      setLoading(false);
+    });
+
+    return () => {
+      unsubscribeProfile();
+      unsubscribeSkills();
+      unsubscribeReviews();
+    };
+  }, [userId]);
+
+  if (loading) {
+    return (
+      <View style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#b832ff" />
+      </View>
+    );
+  }
+
+  const displayName = profile?.displayName || 'Laden...';
+  const avatar = profile?.photoURL || '';
   const averageRating = reviews.length > 0
-    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
-    : '4.8';
-
-  const sortedReviews = [...reviews].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+    : '0.0';
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -74,26 +105,26 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, revie
 
         <View style={styles.profileHeader}>
           <View style={styles.avatarWrapper}>
-            {displayUser.avatar ? (
-              <Image source={{ uri: displayUser.avatar }} style={styles.avatarCircle} />
+            {avatar ? (
+              <Image source={{ uri: avatar }} style={styles.avatarCircle} />
             ) : (
               <View style={styles.avatarCircle} />
             )}
           </View>
 
-          <Text style={styles.nameText}>{displayUser.name}</Text>
+          <Text style={styles.nameText}>{displayName}</Text>
 
           <View style={styles.locationRow}>
             <Text style={styles.locationIcon}>📍</Text>
-            <Text style={styles.locationText}>Oud-Zuid, Amsterdam</Text>
+            <Text style={styles.locationText}>{profile?.location?.city || 'Locatie onbekend'}</Text>
             <View style={styles.locationDot} />
-            <Text style={styles.locationText}>1.2 km</Text>
+            <Text style={styles.locationText}>-- km</Text>
           </View>
 
           <View style={styles.ratingRow}>
             <Text style={styles.ratingIcon}>⭐</Text>
             <Text style={styles.ratingValue}>{averageRating}</Text>
-            <Text style={styles.ratingReviews}>({reviews.length > 0 ? reviews.length : 18} reviews)</Text>
+            <Text style={styles.ratingReviews}>({reviews.length} reviews)</Text>
           </View>
         </View>
 
@@ -101,16 +132,23 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, revie
           <TouchableOpacity
             activeOpacity={0.9}
             style={styles.primaryButton}
-            onPress={onMatch}
+            onPress={onSendMessage}
           >
-            <Text style={styles.primaryButtonText}>Match</Text>
+            <Text style={styles.primaryButtonText}>Bericht sturen</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={styles.ghostButton}
+            onPress={onMakeAppointment}
+          >
+            <Text style={styles.ghostButtonText}>Afspraak maken</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Over Thomas</Text>
+          <Text style={styles.cardTitle}>Over {displayName}</Text>
           <Text style={styles.cardBody}>
-            Gepassioneerd leraar met jarenlange ervaring.
+            {profile?.bio || 'Geen biografie beschikbaar.'}
           </Text>
         </View>
 
@@ -154,37 +192,37 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ user, revie
 
         <View style={styles.tabContent}>
           {activeTab === 'vaardigheden' ? (
-            <Text style={styles.tabContentText}>Hier komen de vaardigheden.</Text>
-          ) : (
-            <View>
-              {sortedReviews.length > 0 ? (
-                sortedReviews.map((review) => (
-                  <View key={review.id} style={{ marginBottom: 16, borderBottomWidth: 1, borderBottomColor: '#f0f0f5', paddingBottom: 16 }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <Text style={{ fontWeight: '600', color: '#24253d' }}>{review.reviewerName}</Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Text style={{ fontSize: 13, fontWeight: '600', color: '#FCD34D', marginRight: 2 }}>{review.rating.toFixed(1)}</Text>
-                        <Text style={{ fontSize: 13, color: '#FCD34D' }}>★</Text>
-                      </View>
-                    </View>
-                    <Text style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>
-                      {review.createdAt.toLocaleDateString()}
-                    </Text>
-                    <View style={{ gap: 4 }}>
-                      <Text style={{ fontSize: 12, color: '#6b7280' }}>• Uitleg: {review.questions.q1}/5</Text>
-                      <Text style={{ fontSize: 12, color: '#6b7280' }}>• Afspraken: {review.questions.q2}/5</Text>
-                      <Text style={{ fontSize: 12, color: '#6b7280' }}>• Samenwerking: {review.questions.q3}/5</Text>
+            skills.length > 0 ? (
+              skills.map((skill) => (
+                <View key={skill.id} style={styles.skillItem}>
+                  <View style={styles.skillMain}>
+                    <Text style={styles.skillName}>{skill.subject}</Text>
+                    <View style={styles.levelBadge}>
+                      <Text style={styles.levelText}>{skill.level}</Text>
                     </View>
                   </View>
-                ))
-              ) : (
-                <Text style={styles.tabContentText}>Nog geen nieuwe reviews.</Text>
-              )}
-            </View>
+                  <Text style={styles.priceText}>{skill.price}</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.emptyText}>Geen vaardigheden opgegeven.</Text>
+            )
+          ) : (
+            reviews.length > 0 ? (
+              reviews.map((review) => (
+                <View key={review.id} style={styles.reviewItem}>
+                  <View style={styles.reviewHeader}>
+                    <Text style={styles.reviewName}>{review.fromName || 'Anoniem'}</Text>
+                    <Text style={styles.reviewRating}>⭐ {review.rating}</Text>
+                  </View>
+                  <Text style={styles.reviewComment}>{review.comment}</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.emptyText}>Nog geen reviews.</Text>
+            )
           )}
         </View>
-
-
       </View>
     </SafeAreaView>
   );
@@ -383,6 +421,48 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     marginTop: 12,
+    gap: 12,
+  },
+  skillItem: {
+    padding: 14,
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  skillMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  skillName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#24253d',
+  },
+  levelBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    backgroundColor: '#f0f0f5',
+    borderRadius: 6,
+  },
+  levelText: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: '#666',
+  },
+  priceText: {
+    fontSize: 13,
+    color: '#7c2cff',
+    fontWeight: '600',
+  },
+  reviewItem: {
     padding: 14,
     backgroundColor: '#ffffff',
     borderRadius: 12,
@@ -392,9 +472,31 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 1,
   },
-  tabContentText: {
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  reviewName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#24253d',
+  },
+  reviewRating: {
     fontSize: 13,
-    color: '#4a4b63',
+    color: '#fbbf24',
+  },
+  reviewComment: {
+    fontSize: 13,
+    color: '#666778',
+    lineHeight: 18,
+  },
+  emptyText: {
+    fontSize: 13,
+    color: '#9c9db0',
+    textAlign: 'center',
+    marginTop: 20,
+    fontStyle: 'italic',
   },
 });
 

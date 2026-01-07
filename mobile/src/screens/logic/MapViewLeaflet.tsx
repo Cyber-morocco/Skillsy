@@ -10,8 +10,8 @@ interface MapViewLeafletProps {
   userLocation: Location;
   radiusKm: number | null;
   talents: Talent[];
-  focusTalent?: { id: number; lat: number; lng: number } | null;
-  onTalentClick?: (id: number) => void;
+  focusTalent?: { id: string; lat: number; lng: number } | null;
+  onTalentClick?: (id: string) => void;
 }
 
 export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({

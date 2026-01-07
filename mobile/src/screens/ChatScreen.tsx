@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     StatusBar,
     Text,
@@ -13,25 +13,13 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { chatStyles as styles, chatColors } from '../styles/ChatStyle';
 import { ChatStackParamList } from '../navigation/ChatStack';
-import { MatchRequest } from '../types';
+import { MatchRequest, Conversation } from '../types';
+import { subscribeToChats } from '../services/chatService';
+import { auth } from '../config/firebase';
+import { Unsubscribe } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 
-type Contact = {
-    id: string;
-    name: string;
-    initials: string;
-    status: 'online' | 'offline';
-    lastSeen?: string;
-    avatarColor: string;
-};
 
-const CONTACTS: Contact[] = [
-    { id: '1', name: 'Iliés Mazouz', initials: 'IM', status: 'offline', lastSeen: 'gisteren', avatarColor: '#3B82F6' },
-    { id: '2', name: 'Yassine Eddouks', initials: 'YE', status: 'online', avatarColor: '#10B981' },
-    { id: '3', name: 'Safwane El Masaoudi', initials: 'SE', status: 'offline', lastSeen: '3 uur geleden', avatarColor: '#F59E0B' },
-    { id: '4', name: 'Adam Yousfi', initials: 'AY', status: 'online', avatarColor: '#EC4899' },
-    { id: '5', name: 'Imad Ben Ali', initials: 'IB', status: 'online', avatarColor: '#8B5CF6' },
-];
 
 interface ChatScreenProps {
     matchRequests?: MatchRequest[];
@@ -44,10 +32,23 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
     const [searchQuery, setSearchQuery] = useState('');
     const [matchesModalVisible, setMatchesModalVisible] = useState(false);
     const [selectedFilter, setSelectedFilter] = useState<string>('All');
+    const [conversations, setConversations] = useState<Conversation[]>([]);
 
-    const filteredContacts = CONTACTS.filter(contact =>
-        contact.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    useEffect(() => {
+        if (!auth.currentUser) return;
+
+        const unsubscribe = subscribeToChats((chats) => {
+            setConversations(chats);
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    const filteredConversations = conversations.filter(conv => {
+        const otherId = conv.participants.find(id => id !== auth.currentUser?.uid);
+        const otherInfo = otherId ? conv.participantInfo[otherId] : null;
+        return otherInfo?.name.toLowerCase().includes(searchQuery.toLowerCase());
+    });
 
     const pendingMatches = matchRequests.filter(m => m.status === 'pending');
 
@@ -57,35 +58,50 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
         ? pendingMatches
         : pendingMatches.filter(m => m.subject === selectedFilter);
 
-    const openConversation = (contact: Contact) => {
+    const openConversation = (conv: Conversation) => {
+        const otherId = conv.participants.find(id => id !== auth.currentUser?.uid);
+        const otherInfo = otherId ? conv.participantInfo[otherId] : null;
+        if (!otherId || !otherInfo) return;
+
         navigation.navigate('Conversation', {
-            contactId: contact.id,
-            contactName: contact.name,
-            contactInitials: contact.initials,
-            contactColor: contact.avatarColor,
+            chatId: conv.id,
+            contactId: otherId,
+            contactName: otherInfo.name,
+            contactInitials: otherInfo.initials,
+            contactColor: otherInfo.avatarColor,
         });
     };
 
-    const renderContact = ({ item }: { item: Contact }) => (
-        <TouchableOpacity
-            style={styles.contactItem}
-            activeOpacity={0.7}
-            onPress={() => openConversation(item)}
-        >
-            <View style={styles.avatarContainer}>
-                <View style={[styles.contactAvatar, { backgroundColor: item.avatarColor }]}>
-                    <Text style={styles.contactAvatarText}>{item.initials}</Text>
+    const renderContact = ({ item }: { item: Conversation }) => {
+        const otherId = item.participants.find(id => id !== auth.currentUser?.uid);
+        const otherInfo = otherId ? item.participantInfo[otherId] : null;
+        if (!otherId || !otherInfo) return null;
+
+        return (
+            <TouchableOpacity
+                style={styles.contactItem}
+                activeOpacity={0.7}
+                onPress={() => openConversation(item)}
+            >
+                <View style={styles.avatarContainer}>
+                    <View style={[styles.contactAvatar, { backgroundColor: otherInfo.avatarColor || '#6366f1' }]}>
+                        <Text style={styles.contactAvatarText}>{otherInfo.initials}</Text>
+                    </View>
                 </View>
-                {item.status === 'online' && <View style={styles.onlineIndicator} />}
-            </View>
-            <View style={styles.contactInfo}>
-                <Text style={styles.contactName}>{item.name}</Text>
-                <Text style={styles.contactStatus}>
-                    {item.status === 'online' ? 'Online' : `Laatst gezien ${item.lastSeen}`}
-                </Text>
-            </View>
-        </TouchableOpacity>
-    );
+                <View style={styles.contactInfo}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={styles.contactName}>{otherInfo.name}</Text>
+                        <Text style={[styles.contactStatus, { fontSize: 11 }]}>
+                            {item.lastMessageTime?.toDate ? item.lastMessageTime.toDate().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : ''}
+                        </Text>
+                    </View>
+                    <Text style={[styles.contactStatus, { marginTop: 2 }]} numberOfLines={1}>
+                        {item.lastMessage || 'Geen berichten'}
+                    </Text>
+                </View>
+            </TouchableOpacity>
+        );
+    };
 
     return (
         <View style={styles.safeArea}>
@@ -136,9 +152,9 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
                 </Text>
             </TouchableOpacity>
 
-            {filteredContacts.length > 0 ? (
+            {filteredConversations.length > 0 ? (
                 <FlatList
-                    data={filteredContacts}
+                    data={filteredConversations}
                     renderItem={renderContact}
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.contactsList}

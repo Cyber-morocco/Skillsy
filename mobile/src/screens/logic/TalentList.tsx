@@ -5,7 +5,7 @@ import { exploreMapStyles as styles } from '../../styles/exploreMapStyles';
 
 interface TalentListProps {
   talents: Talent[];
-  onPress: (id: number) => void;
+  onPress: (id: string) => void;
 }
 
 export const TalentList: React.FC<TalentListProps> = ({ talents, onPress }) => (
