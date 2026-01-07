@@ -147,14 +147,19 @@ export const subscribeToMessages = (
     });
 };
 
-export const sendMessage = async (chatId: string, text: string): Promise<void> => {
+export const sendMessage = async (chatId: string, text: string, metadata: Partial<Message> = {}): Promise<void> => {
     const userId = getCurrentUserId();
     const messagesRef = collection(db, 'chats', chatId, 'messages');
+
+    // Ensure type from metadata overrides default 'text'
+    const messageType = metadata.type || 'text';
 
     await addDoc(messagesRef, {
         text,
         senderId: userId,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        type: messageType,
+        ...metadata
     });
 
     // Update last message in chat doc
@@ -164,6 +169,11 @@ export const sendMessage = async (chatId: string, text: string): Promise<void> =
         lastMessageTime: serverTimestamp(),
         updatedAt: serverTimestamp()
     });
+};
+
+export const updateMessage = async (chatId: string, messageId: string, data: Partial<Message>): Promise<void> => {
+    const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
+    await updateDoc(messageRef, data);
 };
 export const deleteMatchRequest = async (matchId: string): Promise<void> => {
     const matchRef = doc(db, 'matches', matchId);
