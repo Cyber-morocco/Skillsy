@@ -256,3 +256,20 @@ export const deleteProfileImage = async (): Promise<void> => {
     await deleteObject(storageRef);
     await updateUserProfile({ photoURL: "" });
 };
+export const uploadVideo = async (uri: string, index: number): Promise<string> => {
+    const userId = getCurrentUserId();
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const storageRef = ref(storage, `videos/${userId}/promo_${index}.mp4`);
+    const metadata = {
+        contentType: blob.type || 'video/mp4',
+    };
+    await uploadBytes(storageRef, blob, metadata);
+    return getDownloadURL(storageRef);
+};
+
+export const deleteVideo = async (index: number): Promise<void> => {
+    const userId = getCurrentUserId();
+    const storageRef = ref(storage, `videos/${userId}/promo_${index}.mp4`);
+    await deleteObject(storageRef);
+};

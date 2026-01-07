@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, ScrollView, Alert, ActivityIndicator, Image, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, ScrollView, Alert, ActivityIndicator, Image, Platform, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
@@ -17,6 +17,8 @@ import {
   updateUserProfile,
   uploadProfileImage,
   deleteProfileImage,
+  uploadVideo,
+  deleteVideo,
 } from '../services/userService';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -184,6 +186,65 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             }
           },
         },
+      ]
+    );
+  };
+
+  const handleVideoPicker = async (index: number) => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['videos'],
+      allowsEditing: true,
+      quality: 1,
+      videoMaxDuration: 180,
+    });
+
+    if (!result.canceled) {
+      setSaving(true);
+      try {
+        const videoUrl = await uploadVideo(result.assets[0].uri, index);
+        const currentVideos = [...(userProfile?.promoVideos || [])];
+
+        while (currentVideos.length <= index) {
+          currentVideos.push('');
+        }
+
+        currentVideos[index] = videoUrl;
+        await updateUserProfile({ promoVideos: currentVideos });
+        Alert.alert('Succes', 'Video geüpload');
+      } catch (error) {
+        console.error('Error uploading video:', error);
+        Alert.alert('Fout', 'Kon video niet uploaden');
+      } finally {
+        setSaving(false);
+      }
+    }
+  };
+
+  const handleDeleteVideo = async (index: number) => {
+    Alert.alert(
+      'Video verwijderen',
+      'Weet je zeker dat je deze video wilt verwijderen?',
+      [
+        { text: 'Annuleren', style: 'cancel' },
+        {
+          text: 'Verwijderen',
+          style: 'destructive',
+          onPress: async () => {
+            setSaving(true);
+            try {
+              await deleteVideo(index);
+              const currentVideos = [...(userProfile?.promoVideos || [])];
+              currentVideos[index] = '';
+              await updateUserProfile({ promoVideos: currentVideos });
+              Alert.alert('Succes', 'Video verwijderd');
+            } catch (error) {
+              console.error('Error deleting video:', error);
+              Alert.alert('Fout', 'Kon video niet verwijderen');
+            } finally {
+              setSaving(false);
+            }
+          }
+        }
       ]
     );
   };
@@ -417,7 +478,69 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
         {activeTab === 'promoVideo' && (
           <View style={styles.sectionContainer}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Mijn Promo Video</Text>
+              <Text style={styles.sectionTitle}>Mijn Promo Video's</Text>
+            </View>
+
+            <View style={{ marginBottom: 20, backgroundColor: 'rgba(124, 58, 237, 0.1)', padding: 15, borderRadius: 12 }}>
+              <Text style={{ color: authColors.text, fontSize: 13, lineHeight: 18 }}>
+                Stel jezelf voor en vertel over je skills! Je kunt maximaal 3 video's van elk max 3 minuten uploaden.
+              </Text>
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              {[0, 1, 2].map((index) => {
+                const videoUrl = userProfile?.promoVideos?.[index];
+                const hasVideo = videoUrl && videoUrl !== '';
+
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => {
+                      if (hasVideo) {
+                        Linking.openURL(videoUrl).catch(err => {
+                          console.error('Error opening video URL:', err);
+                          Alert.alert('Fout', 'Kon de video niet openen');
+                        });
+                      } else {
+                        handleVideoPicker(index);
+                      }
+                    }}
+                    style={{
+                      flex: 1,
+                      aspectRatio: 9 / 16,
+                      backgroundColor: 'rgba(255,255,255,0.05)',
+                      borderRadius: 12,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      borderWidth: 1,
+                      borderColor: 'rgba(255,255,255,0.1)',
+                      borderStyle: hasVideo ? 'solid' : 'dashed',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {hasVideo ? (
+                      <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                        <Ionicons name="play-circle" size={40} color={authColors.accent} />
+                        <TouchableOpacity
+                          onPress={() => handleDeleteVideo(index)}
+                          style={{
+                            position: 'absolute',
+                            top: 5,
+                            right: 5,
+                            backgroundColor: 'rgba(0,0,0,0.5)',
+                            padding: 4,
+                            borderRadius: 12
+                          }}
+                        >
+                          <Ionicons name="close" size={16} color="#fff" />
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <Ionicons name="add" size={30} color={authColors.muted} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
         )}

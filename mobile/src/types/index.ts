@@ -28,6 +28,7 @@ export interface UserProfile {
         city?: string;
     };
     createdAt: any;
+    promoVideos?: string[];
 }
 
 export interface AvailabilityDay {
@@ -91,7 +92,7 @@ export interface Appointment {
     id: string;
     tutorId: string;
     studentId: string;
-    participantIds: string[]; 
+    participantIds: string[];
     tutorName?: string;
     tutorAvatar?: string;
     studentName?: string;
