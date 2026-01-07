@@ -3,9 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../navigation/AuthStack';
+
 
 const { width } = Dimensions.get('window');
 
@@ -19,8 +17,12 @@ const colors = {
     border: '#e2e8f0',
 };
 
-export default function PrePagina() {
-    const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
+interface PrePaginaProps {
+    onLogin?: () => void;
+    onSignup?: () => void;
+}
+
+export default function PrePagina({ onLogin, onSignup }: PrePaginaProps) {
 
     return (
         <SafeAreaView style={styles.container}>
@@ -46,14 +48,14 @@ export default function PrePagina() {
                 <View style={styles.authContainer}>
                     <TouchableOpacity
                         style={styles.primaryButton}
-                        onPress={() => navigation.navigate('Signup')}
+                        onPress={onSignup}
                     >
                         <Text style={styles.primaryButtonText}>Sign up</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         style={styles.secondaryButton}
-                        onPress={() => navigation.navigate('Login')}
+                        onPress={onLogin}
                     >
                         <Text style={styles.secondaryButtonText}>Log in</Text>
                     </TouchableOpacity>
@@ -78,7 +80,7 @@ export default function PrePagina() {
                         icon="heart-outline"
                         title="Vertrouwde community"
                         description="Beoordelingen en reviews voor een veilige ervaring"
-                        color="#ec4899" 
+                        color="#ec4899"
                         bgColor="#fce7f3"
                     />
                 </View>

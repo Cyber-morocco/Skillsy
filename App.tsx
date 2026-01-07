@@ -13,6 +13,7 @@ import {
   AppointmentsScreen,
   ProfileScreen
 } from './mobile/src/screens';
+import PrePagina from './mobile/src/screens/PrePagina';
 import BottomNavBar from './mobile/src/components/BottomNavBar';
 import ChatStackNavigator from './mobile/src/navigation/ChatStack';
 import AuthStackNavigator from './mobile/src/navigation/AuthStack';
@@ -26,6 +27,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [showSplash, setShowSplash] = useState(true);
   const [reviews, setReviews] = useState<Record<string, Review[]>>({});
   const [matchRequests, setMatchRequests] = useState<any[]>([]); // Using basic array for now
 
@@ -146,11 +148,18 @@ export default function App() {
   if (!user || !profileComplete) {
     return (
       <AuthStackNavigator
-        key={user?.uid || 'guest'}
-        initialRouteName={user && profileComplete === false ? 'ProfileCreationStep1' : 'Login'}
+        initialRouteName="PrePagina"
       />
     );
+  }
 
+  if (showSplash) {
+    return (
+      <PrePagina
+        onLogin={() => setShowSplash(false)}
+        onSignup={() => setShowSplash(false)}
+      />
+    );
   }
 
   return (
@@ -176,11 +185,9 @@ const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
   },
-
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
   },
 });
