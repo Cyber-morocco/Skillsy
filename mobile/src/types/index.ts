@@ -12,6 +12,30 @@ export interface LearnSkill {
     subject: string;
 }
 
+export type PostType = 'Vraag' | 'Succes' | 'Materiaal';
+
+export interface Post {
+    id: string;
+    userId: string;
+    userName: string;
+    userAvatar: string;
+    type: PostType;
+    content: string;
+    likes: string[];
+    commentCount: number;
+    createdAt: any;
+}
+
+export interface PostComment {
+    id: string;
+    postId: string;
+    userId: string;
+    userName: string;
+    userAvatar: string;
+    content: string;
+    createdAt: any;
+}
+
 export interface UserProfile {
     uid: string;
     displayName: string;
