@@ -167,6 +167,27 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
     }
   };
 
+  const handleLogout = () => {
+    Alert.alert(
+      'Uitloggen',
+      'Weet je zeker dat je wilt uitloggen?',
+      [
+        { text: 'Annuleren', style: 'cancel' },
+        {
+          text: 'Uitloggen',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut(auth);
+            } catch (error) {
+              Alert.alert('Fout', 'Kan niet uitloggen');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const AddSkill = () => {
     setModalVisible(true);
   };
@@ -257,10 +278,6 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
 
       <View style={styles.content}>
         <View style={styles.topRow}>
-          <TouchableOpacity style={styles.squareButton}>
-            <Ionicons name="arrow-back" size={20} color={authColors.text} />
-          </TouchableOpacity>
-
           <TouchableOpacity style={styles.squareButtonWide} onPress={() => onNavigate?.('availability')}>
             <Ionicons name="calendar-outline" size={18} color={authColors.text} />
             <Text style={styles.squareButtonText}>Beschikbaarheid</Text>
@@ -269,6 +286,10 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
           <TouchableOpacity style={styles.squareButtonWide} onPress={handleEditProfile}>
             <Ionicons name="create-outline" size={18} color={authColors.text} />
             <Text style={styles.squareButtonText}>Edit</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.squareButton} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={20} color="#ff4444" />
           </TouchableOpacity>
         </View>
 
@@ -560,34 +581,6 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
           </TouchableWithoutFeedback>
         </Modal>
 
-        <View style={styles.logoutContainer}>
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={() => {
-              Alert.alert(
-                'Uitloggen',
-                'Weet je zeker dat je wilt uitloggen?',
-                [
-                  { text: 'Annuleren', style: 'cancel' },
-                  {
-                    text: 'Uitloggen',
-                    style: 'destructive',
-                    onPress: async () => {
-                      try {
-                        await signOut(auth);
-                      } catch (error) {
-                        Alert.alert('Fout', 'Kan niet uitloggen');
-                      }
-                    },
-                  },
-                ]
-              );
-            }}
-          >
-            <Ionicons name="log-out-outline" size={20} color="#ff4444" />
-            <Text style={styles.logoutButtonText}>Uitloggen</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
