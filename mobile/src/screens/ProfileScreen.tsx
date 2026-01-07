@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { auth, } from '../config/firebase';
+import { authColors } from '../styles/authStyles';
 import { Skill, LearnSkill, SkillLevel, UserProfile } from '../types';
 import {
   subscribeToSkills,
@@ -120,17 +121,17 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   };
 
   const handleEditProfile = () => {
-    setTempName(userProfile?.displayName || profileName);
-    setTempLocation(userProfile?.location?.city || profileLocation);
-    setTempAbout(userProfile?.bio || profileAbout);
-    setTempImage(userProfile?.photoURL || profileImage);
+    setTempName(userProfile?.displayName || '');
+    setTempLocation(userProfile?.location?.city || '');
+    setTempAbout(userProfile?.bio || '');
+    setTempImage(userProfile?.photoURL || null);
     setEditModalVisible(true);
   };
 
   const saveProfile = async () => {
     setSaving(true);
     try {
-      let finalImageUrl = userProfile?.photoURL || profileImage;
+      let finalImageUrl = userProfile?.photoURL || null;
 
       if (tempImage === null) {
         if (userProfile?.photoURL) {
@@ -236,9 +237,9 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.headerBackground} />
-        <View style={[styles.content, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
-          <ActivityIndicator size="large" color="#b832ff" />
-          <Text style={{ marginTop: 16, color: '#fff', fontSize: 16 }}>Laden...</Text>
+        <View style={[styles.content, { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: authColors.background }]}>
+          <ActivityIndicator size="large" color={authColors.accent} />
+          <Text style={{ marginTop: 16, color: authColors.text, fontSize: 16 }}>Laden...</Text>
         </View>
       </SafeAreaView>
     );
@@ -257,25 +258,25 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
       <View style={styles.content}>
         <View style={styles.topRow}>
           <TouchableOpacity style={styles.squareButton}>
-            <Ionicons name="arrow-back" size={20} color="#24253d" />
+            <Ionicons name="arrow-back" size={20} color={authColors.text} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.squareButtonWide} onPress={() => onNavigate?.('availability')}>
-            <Ionicons name="calendar-outline" size={18} color="#24253d" />
+            <Ionicons name="calendar-outline" size={18} color={authColors.text} />
             <Text style={styles.squareButtonText}>Beschikbaarheid</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.squareButtonWide} onPress={handleEditProfile}>
-            <Ionicons name="create-outline" size={18} color="#24253d" />
+            <Ionicons name="create-outline" size={18} color={authColors.text} />
             <Text style={styles.squareButtonText}>Edit</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.profileInfo}>
           <View style={styles.profileImageContainer}>
-            {(userProfile?.photoURL || profileImage) ? (
+            {userProfile?.photoURL ? (
               <Image
-                source={{ uri: (userProfile?.photoURL || profileImage) as string }}
+                source={{ uri: userProfile.photoURL }}
                 style={styles.profileImage}
               />
             ) : (
@@ -285,25 +286,25 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             )}
           </View>
 
-          <Text style={styles.nameText}>{userProfile?.displayName || profileName}</Text>
+          <Text style={styles.nameText}>{userProfile?.displayName || 'Naamloos'}</Text>
 
           <View style={styles.locationContainer}>
             <Ionicons name="location-outline" size={16} color="rgba(255,255,255,0.9)" />
             <Text style={styles.locationText}>
-              {userProfile?.location?.city || userProfile?.location?.address || profileLocation}
+              {userProfile?.location?.city || userProfile?.location?.address || 'Geen locatie'}
             </Text>
           </View>
 
           <View style={styles.reviewsContainer}>
             <Ionicons name="star" size={16} color="#FFD700" />
-            <Text style={styles.reviewsText}>4.9 (15 reviews)</Text>
+            <Text style={styles.reviewsText}>Nieuw profiel</Text>
             <Text style={styles.punt}>•</Text>
             <Ionicons name="laptop-outline" size={16} color="rgba(255,255,255,0.9)" />
             <Text style={styles.reviewsText}>Lid sinds {formatDate(userProfile?.createdAt)}</Text>
           </View>
 
           <Text style={styles.aboutText}>
-            {userProfile?.bio || profileAbout}
+            {userProfile?.bio || 'Geen beschrijving beschikbaar.'}
           </Text>
 
           <View style={styles.tabsContainer}>
@@ -341,7 +342,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Wat ik kan aanleren</Text>
               <TouchableOpacity onPress={AddSkill} style={styles.plusButton}>
-                <Ionicons name="add" size={20} color="#24253d" />
+                <Ionicons name="add" size={20} color={authColors.text} />
               </TouchableOpacity>
             </View>
 
@@ -369,7 +370,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
               <Text style={styles.sectionTitle}>Wat ik wil leren</Text>
 
               <TouchableOpacity onPress={AddLearnSkill} style={styles.plusButton}>
-                <Ionicons name="add" size={20} color="#24253d" />
+                <Ionicons name="add" size={20} color={authColors.text} />
               </TouchableOpacity>
             </View>
             {learnSkills.map((skill) => (
@@ -500,7 +501,10 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                   onChangeText={setTempLocation}
                 />
 
-                <Text style={styles.inputLabel}>Over mij</Text>
+                <View style={styles.labelContainer}>
+                  <Text style={styles.inputLabel}>Over mij</Text>
+                  <Text style={styles.charCount}>{tempAbout?.length || 0}/175</Text>
+                </View>
                 <TextInput
                   style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
                   placeholder="Vertel iets over jezelf..."
@@ -508,6 +512,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                   onChangeText={setTempAbout}
                   multiline={true}
                   numberOfLines={4}
+                  maxLength={175}
                 />
 
                 <Text style={styles.inputLabel}>Profielfoto</Text>
@@ -523,11 +528,11 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                   </View>
                   <View style={styles.imageButtons}>
                     <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
-                      <Ionicons name="image-outline" size={20} color="#24253d" />
+                      <Ionicons name="image-outline" size={20} color={authColors.text} />
                       <Text style={styles.imagePickerButtonText}>Galerij</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.imagePickerButton} onPress={takePhoto}>
-                      <Ionicons name="camera-outline" size={20} color="#24253d" />
+                      <Ionicons name="camera-outline" size={20} color={authColors.text} />
                       <Text style={styles.imagePickerButtonText}>Camera</Text>
                     </TouchableOpacity>
                     {(tempImage || userProfile?.photoURL) && (
@@ -591,10 +596,11 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f6f6f9',
+    backgroundColor: authColors.accent,
   },
   scrollView: {
     flex: 1,
+    backgroundColor: authColors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -603,12 +609,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     width: '100%',
-    height: 430,
-    backgroundColor: '#b832ff',
+    height: 0,
+    backgroundColor: authColors.accent,
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 10,
   },
   topRow: {
     flexDirection: 'row',
@@ -620,42 +626,49 @@ const styles = StyleSheet.create({
     height: 44,
     minWidth: 44,
     borderRadius: 12,
-    backgroundColor: '#fff',
+    backgroundColor: authColors.card,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.25)',
   },
   squareButtonWide: {
     flex: 1,
     height: 44,
     borderRadius: 12,
-    backgroundColor: '#fff',
+    backgroundColor: authColors.card,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.25)',
   },
   squareButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#24253d',
+    color: authColors.text,
   },
   profileInfo: {
     alignItems: 'center',
     marginTop: 20,
+    width: '100%',
   },
   profileImageContainer: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#fff',
+    backgroundColor: authColors.card,
     overflow: 'hidden',
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.2)',
   },
   profileImage: {
     width: '100%',
@@ -664,14 +677,14 @@ const styles = StyleSheet.create({
   profileImagePlaceholder: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#f0f0f5',
+    backgroundColor: authColors.card,
     alignItems: 'center',
     justifyContent: 'center',
   },
   nameText: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#fff',
+    color: authColors.text,
     marginTop: 12,
   },
   locationContainer: {
@@ -682,7 +695,7 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 16,
-    color: 'rgba(255,255,255,0.9)',
+    color: authColors.muted,
   },
   reviewsContainer: {
     flexDirection: 'row',
@@ -692,41 +705,45 @@ const styles = StyleSheet.create({
   },
   reviewsText: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
+    color: authColors.muted,
     fontWeight: '500',
   },
   punt: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.6)',
+    color: authColors.muted,
+    opacity: 0.6,
   },
   aboutText: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
+    color: authColors.text,
     textAlign: 'center',
-    marginTop: 16,
+    marginTop: 10,
     lineHeight: 20,
     paddingHorizontal: 20,
+    opacity: 0.9,
   },
   tabsContainer: {
     flexDirection: 'row',
-    marginTop: 24,
-    width: '100%',
-    paddingHorizontal: 10,
+    marginTop: 5,
+    paddingTop: 18,
+    backgroundColor: authColors.background,
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: 'rgba(148, 163, 184, 0.1)',
   },
   tabItem: {
     flex: 1,
     alignItems: 'center',
-    paddingBottom: 16,
+    paddingBottom: 15,
   },
   tabText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#999',
+    color: authColors.muted,
   },
   tabTextActive: {
-    color: '#b832ff',
+    color: authColors.accent,
     fontWeight: '700',
   },
   tabButtonActive: {
@@ -734,7 +751,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: 40,
     height: 3,
-    backgroundColor: '#b832ff',
+    backgroundColor: authColors.accent,
     borderRadius: 1.5,
   },
   sectionContainer: {
@@ -752,25 +769,29 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#24253d',
+    color: authColors.text,
   },
   plusButton: {
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: '#f0f0f5',
+    backgroundColor: authColors.card,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.25)',
   },
   skillCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
+    backgroundColor: authColors.card,
     paddingVertical: 16,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.15)',
   },
   skillInfo: {
     flex: 1,
@@ -784,62 +805,69 @@ const styles = StyleSheet.create({
   skillSubject: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#24253d',
+    color: authColors.text,
   },
   levelBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    backgroundColor: '#f0f0f5',
+    backgroundColor: 'rgba(124, 58, 237, 0.15)',
     borderRadius: 6,
   },
   levelText: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#666',
+    color: authColors.accent,
   },
   priceText: {
     fontSize: 14,
-    color: '#888',
+    color: authColors.muted,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'flex-start',
     paddingTop: 60,
     paddingHorizontal: 20,
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: authColors.card,
     borderRadius: 24,
     padding: 24,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.25)',
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: '700',
     marginBottom: 20,
     textAlign: 'center',
-    color: '#24253d',
+    color: authColors.text,
   },
   inputLabel: {
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,
-    color: '#24253d',
+    color: authColors.text,
+  },
+  labelContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  charCount: {
+    fontSize: 12,
+    color: authColors.muted,
   },
   input: {
-    backgroundColor: '#f6f6f9',
-    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 15,
     padding: 16,
     fontSize: 16,
     marginBottom: 16,
+    color: authColors.text,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.3)',
   },
   levelSelector: {
     flexDirection: 'row',
@@ -851,17 +879,18 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e1e1e1',
+    borderColor: 'rgba(148, 163, 184, 0.3)',
     alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
   },
   levelOptionActive: {
-    backgroundColor: '#b832ff',
-    borderColor: '#b832ff',
+    backgroundColor: authColors.accent,
+    borderColor: authColors.accent,
   },
   levelOptionText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: authColors.muted,
   },
   levelOptionTextActive: {
     color: '#fff',
@@ -874,20 +903,22 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     borderRadius: 16,
-    backgroundColor: '#f6f6f9',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.2)',
   },
   saveButton: {
     flex: 1,
     padding: 16,
     borderRadius: 16,
-    backgroundColor: '#b832ff',
+    backgroundColor: authColors.accent,
     alignItems: 'center',
   },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#666',
+    color: authColors.muted,
   },
   saveButtonText: {
     fontSize: 16,
@@ -899,7 +930,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
     marginBottom: 20,
-    backgroundColor: '#f6f6f9',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     padding: 12,
     borderRadius: 16,
   },
@@ -908,7 +939,9 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     overflow: 'hidden',
-    backgroundColor: '#fff',
+    backgroundColor: authColors.card,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   tempImage: {
     width: '100%',
@@ -922,23 +955,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e1e1e1',
+    borderColor: 'rgba(148, 163, 184, 0.3)',
   },
   imagePickerButtonText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#24253d',
+    color: authColors.text,
   },
   logoutContainer: {
     paddingHorizontal: 20,
     paddingVertical: 30,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: 'rgba(148, 163, 184, 0.1)',
     marginTop: 20,
   },
   logoutButton: {
@@ -948,7 +981,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 16,
     borderRadius: 16,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 68, 68, 0.1)',
     borderWidth: 1,
     borderColor: '#ff4444',
   },
