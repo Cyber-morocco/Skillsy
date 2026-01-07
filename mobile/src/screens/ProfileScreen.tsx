@@ -40,10 +40,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [learnModalVisible, setLearnModalVisible] = useState(false);
   const [newLearnSubject, setNewLearnSubject] = useState('');
 
-  const [profileName, setProfileName] = useState('Sophie Bakker');
-  const [profileLocation, setProfileLocation] = useState('Centrum, Amsterdam');
-  const [profileAbout, setProfileAbout] = useState('Gepassioneerd lerares met een liefde voor talen en koken.');
-  const [profileImage, setProfileImage] = useState<string | null>(null);
+
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [tempName, setTempName] = useState('');
@@ -121,17 +118,17 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   };
 
   const handleEditProfile = () => {
-    setTempName(userProfile?.displayName || profileName);
-    setTempLocation(userProfile?.location?.city || profileLocation);
-    setTempAbout(userProfile?.bio || profileAbout);
-    setTempImage(userProfile?.photoURL || profileImage);
+    setTempName(userProfile?.displayName || '');
+    setTempLocation(userProfile?.location?.city || '');
+    setTempAbout(userProfile?.bio || '');
+    setTempImage(userProfile?.photoURL || null);
     setEditModalVisible(true);
   };
 
   const saveProfile = async () => {
     setSaving(true);
     try {
-      let finalImageUrl = userProfile?.photoURL || profileImage;
+      let finalImageUrl = userProfile?.photoURL || null;
 
       if (tempImage === null) {
         if (userProfile?.photoURL) {
@@ -150,10 +147,6 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
         photoURL: finalImageUrl,
       });
 
-      setProfileName(tempName);
-      setProfileLocation(tempLocation);
-      setProfileAbout(tempAbout);
-      setProfileImage(finalImageUrl);
       setEditModalVisible(false);
       Alert.alert('Succes', 'Profiel bijgewerkt');
     } catch (error) {
@@ -271,9 +264,9 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
 
         <View style={styles.profileInfo}>
           <View style={styles.profileImageContainer}>
-            {(userProfile?.photoURL || profileImage) ? (
+            {userProfile?.photoURL ? (
               <Image
-                source={{ uri: (userProfile?.photoURL || profileImage) as string }}
+                source={{ uri: userProfile.photoURL }}
                 style={styles.profileImage}
               />
             ) : (
@@ -283,25 +276,25 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             )}
           </View>
 
-          <Text style={styles.nameText}>{userProfile?.displayName || profileName}</Text>
+          <Text style={styles.nameText}>{userProfile?.displayName || 'Naamloos'}</Text>
 
           <View style={styles.locationContainer}>
             <Ionicons name="location-outline" size={16} color="rgba(255,255,255,0.9)" />
             <Text style={styles.locationText}>
-              {userProfile?.location?.city || userProfile?.location?.address || profileLocation}
+              {userProfile?.location?.city || userProfile?.location?.address || 'Geen locatie'}
             </Text>
           </View>
 
           <View style={styles.reviewsContainer}>
             <Ionicons name="star" size={16} color="#FFD700" />
-            <Text style={styles.reviewsText}>4.9 (15 reviews)</Text>
+            <Text style={styles.reviewsText}>Nieuw profiel</Text>
             <Text style={styles.punt}>•</Text>
             <Ionicons name="laptop-outline" size={16} color="rgba(255,255,255,0.9)" />
             <Text style={styles.reviewsText}>Lid sinds {formatDate(userProfile?.createdAt)}</Text>
           </View>
 
           <Text style={styles.aboutText}>
-            {userProfile?.bio || profileAbout}
+            {userProfile?.bio || 'Geen beschrijving beschikbaar.'}
           </Text>
 
           <View style={styles.tabsContainer}>
