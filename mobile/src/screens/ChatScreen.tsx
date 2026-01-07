@@ -103,6 +103,14 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
         );
     };
 
+    const handleRespondWithClose = async (matchId: string, status: 'accepted' | 'rejected') => {
+        await onRespondMatch?.(matchId, status);
+        // If we want to stay in the modal, we don't close it, but if we accepted, maybe we want to see the new chat?
+        if (status === 'accepted') {
+            setMatchesModalVisible(false);
+        }
+    };
+
     return (
         <View style={styles.safeArea}>
             <StatusBar barStyle="light-content" />
@@ -111,7 +119,7 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
                 <Text style={styles.headerTitle}>Messages</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     <View style={styles.userAvatar}>
-                        <Text style={styles.avatarText}>U</Text>
+                        <Text style={styles.avatarText}>{auth.currentUser?.displayName?.charAt(0) || 'U'}</Text>
                     </View>
                 </View>
             </View>
@@ -242,10 +250,10 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
                                             </View>
                                         </View>
                                         <View style={{ flexDirection: 'row', gap: 12 }}>
-                                            <TouchableOpacity onPress={() => onRespondMatch?.(match.id, 'rejected')}>
+                                            <TouchableOpacity onPress={() => handleRespondWithClose(match.id, 'rejected')}>
                                                 <Ionicons name="close-circle" size={32} color="#EF4444" />
                                             </TouchableOpacity>
-                                            <TouchableOpacity onPress={() => onRespondMatch?.(match.id, 'accepted')}>
+                                            <TouchableOpacity onPress={() => handleRespondWithClose(match.id, 'accepted')}>
                                                 <Ionicons name="checkmark-circle" size={32} color="#10B981" />
                                             </TouchableOpacity>
                                         </View>

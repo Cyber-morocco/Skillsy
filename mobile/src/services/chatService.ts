@@ -10,6 +10,8 @@ import {
     orderBy,
     Unsubscribe,
     getDoc,
+    getDocs,
+    deleteDoc,
     Timestamp,
     setDoc
 } from 'firebase/firestore';
@@ -162,4 +164,21 @@ export const sendMessage = async (chatId: string, text: string): Promise<void> =
         lastMessageTime: serverTimestamp(),
         updatedAt: serverTimestamp()
     });
+};
+export const deleteMatchRequest = async (matchId: string): Promise<void> => {
+    const matchRef = doc(db, 'matches', matchId);
+    await deleteDoc(matchRef);
+};
+
+export const clearAllMatchRequests = async (userId: string, subject?: string): Promise<void> => {
+    const matchesRef = collection(db, 'matches');
+    let q = query(matchesRef, where('toUserId', '==', userId), where('status', '==', 'pending'));
+
+    if (subject && subject !== 'All') {
+        q = query(q, where('subject', '==', subject));
+    }
+
+    const snapshot = await getDocs(q);
+    const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
 };

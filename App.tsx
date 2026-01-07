@@ -14,9 +14,9 @@ import PrePagina from './mobile/src/screens/PrePagina';
 import BottomNavBar from './mobile/src/components/BottomNavBar';
 import ChatStackNavigator from './mobile/src/navigation/ChatStack';
 import AuthStackNavigator from './mobile/src/navigation/AuthStack';
-import { subscribeToMatchRequests, sendMatchRequest, respondToMatchRequest } from './mobile/src/services/chatService';
+import { subscribeToMatchRequests, sendMatchRequest, respondToMatchRequest, subscribeToChats, clearAllMatchRequests } from './mobile/src/services/chatService';
 import { Unsubscribe } from 'firebase/firestore';
-import { MatchRequest, Review } from './mobile/src/types';
+import { MatchRequest, Review, Conversation } from './mobile/src/types';
 
 type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability' | 'exploreProfile' | 'availabilitySpecificDates';
 
@@ -26,6 +26,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
   const [matchRequests, setMatchRequests] = useState<MatchRequest[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [reviews, setReviews] = useState<{ [userId: string]: Review[] }>({});
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
@@ -67,11 +68,18 @@ export default function App() {
   useEffect(() => {
     if (!user || !profileComplete) return;
 
-    const unsubscribe = subscribeToMatchRequests((requests) => {
+    const unsubscribeMatches = subscribeToMatchRequests((requests) => {
       setMatchRequests(requests);
     });
 
-    return () => unsubscribe();
+    const unsubscribeChats = subscribeToChats((chats) => {
+      setConversations(chats);
+    });
+
+    return () => {
+      unsubscribeMatches();
+      unsubscribeChats();
+    };
   }, [user, profileComplete]);
 
   const handleAddReview = (review: Review, userId: string) => {
@@ -82,6 +90,17 @@ export default function App() {
   };
 
   const handleSendMatch = async (userId: string, userName: string) => {
+    // Check if a conversation already exists
+    const existingChat = conversations.find(conv =>
+      conv.participants.includes(userId)
+    );
+
+    if (existingChat) {
+      // If chat exists, just go to messages
+      setActiveScreen('messages');
+      return;
+    }
+
     try {
       await sendMatchRequest(userId, userName, 'Samen leren');
       Alert.alert('Match verstuurd', `Je hebt een matchverzoek gestuurd naar ${userName}.`);
@@ -103,8 +122,13 @@ export default function App() {
     }
   };
 
-  const handleClearAllMatches = () => {
-    setMatchRequests([]);
+  const handleClearAllMatches = async (subject?: string) => {
+    try {
+      await clearAllMatchRequests(auth.currentUser?.uid || '', subject);
+    } catch (error) {
+      console.error('Clear matches error:', error);
+      Alert.alert('Fout', 'Kon matchverzoeken niet verwijderen.');
+    }
   };
 
   const handleViewProfile = (user: any) => {

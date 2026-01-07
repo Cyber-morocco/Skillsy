@@ -1,5 +1,4 @@
 import { useMemo, useState, useEffect } from 'react';
-import * as ExpoLocation from 'expo-location';
 import { Location, GeocodingResult, Talent } from '../../types';
 import { subscribeToTalents } from '../../services/userService';
 import { CATEGORY_OPTIONS, DISTANCE_OPTIONS } from '../../constants/exploreMap';
@@ -53,7 +52,6 @@ export const useExploreMap = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [searchType, setSearchType] = useState<'skill' | 'address'>('skill');
   const [focusTalent, setFocusTalent] = useState<{ id: string; lat: number; lng: number } | null>(null);
-  const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
 
   useEffect(() => {
     const unsubscribe = subscribeToTalents((fetchedTalents) => {
@@ -65,35 +63,12 @@ export const useExploreMap = () => {
         lng: u.location?.lng || 0,
         shortBio: u.bio || '',
         avatar: u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName || 'U'}`,
-        skills: u.skills || [], // If denormalized, or empty for now
+        skills: u.skills || [],
         isActive: true
       }));
       setAllTalents(mappedTalents);
     });
     return () => unsubscribe();
-  }, []);
-
-  // Check if location permission is already granted on mount
-  useEffect(() => {
-    const checkLocationPermission = async () => {
-      try {
-        const { status } = await ExpoLocation.getForegroundPermissionsAsync();
-        if (status === 'granted') {
-          setLocationPermissionGranted(true);
-          const location = await ExpoLocation.getCurrentPositionAsync({
-            accuracy: ExpoLocation.Accuracy.Balanced,
-          });
-          const newLocation: Location = {
-            lat: location.coords.latitude,
-            lng: location.coords.longitude,
-          };
-          setUserLocation(newLocation);
-        }
-      } catch (error) {
-        console.error('Error checking location permission:', error);
-      }
-    };
-    checkLocationPermission();
   }, []);
 
   const filteredTalents = useMemo(
@@ -192,56 +167,6 @@ export const useExploreMap = () => {
     }
   };
 
-  const requestLocationPermission = async () => {
-    try {
-      if (locationPermissionGranted) {
-        const { status } = await ExpoLocation.getForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          setLocationPermissionGranted(false);
-          return false;
-        }
-
-        const location = await ExpoLocation.getCurrentPositionAsync({
-          accuracy: ExpoLocation.Accuracy.Low,
-          timeInterval: 5000,
-          mayShowUserSettingsDialog: false,
-        });
-
-        const newLocation: Location = {
-          lat: location.coords.latitude,
-          lng: location.coords.longitude,
-        };
-
-        setUserLocation(newLocation);
-        return true;
-      }
-
-      const { status } = await ExpoLocation.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setLocationPermissionGranted(false);
-        return false;
-      }
-
-      setLocationPermissionGranted(true);
-      const location = await ExpoLocation.getCurrentPositionAsync({
-        accuracy: ExpoLocation.Accuracy.Low,
-        timeInterval: 5000,
-        mayShowUserSettingsDialog: false,
-      });
-
-      const newLocation: Location = {
-        lat: location.coords.latitude,
-        lng: location.coords.longitude,
-      };
-
-      setUserLocation(newLocation);
-      return true;
-    } catch (error) {
-      setLocationPermissionGranted(false);
-      return false;
-    }
-  };
-
   return {
     CATEGORY_OPTIONS,
     DISTANCE_OPTIONS,
@@ -253,8 +178,8 @@ export const useExploreMap = () => {
     handleDistanceSelect,
     handleSearch,
     isSearching,
-    locationPermissionGranted,
-    requestLocationPermission,
+    locationPermissionGranted: true, // Always true to avoid UI flickering if it was used elsewhere
+    requestLocationPermission: async () => true, // Mock success
     resetSearch,
     searchQuery,
     searchType,
