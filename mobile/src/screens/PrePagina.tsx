@@ -3,28 +3,31 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../navigation/AuthStack';
+
 
 const { width } = Dimensions.get('window');
 
 const colors = {
     primary: '#6366f1',
-    secondary: '#fff',
-    background: '#ffffff',
-    text: '#1e293b',
-    textMuted: '#64748b',
+    secondary: '#1e293b',
+    background: '#0B1021',
+    text: '#f8fafc',
+    textMuted: '#94a3b8',
     accent: '#a855f7',
-    border: '#e2e8f0',
+    border: '#334155',
+    card: '#1e293b',
 };
 
-export default function PrePagina() {
-    const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
+interface PrePaginaProps {
+    onLogin?: () => void;
+    onSignup?: () => void;
+}
+
+export default function PrePagina({ onLogin, onSignup }: PrePaginaProps) {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar style="dark" />
+            <StatusBar style="light" />
             <ScrollView contentContainerStyle={styles.scrollContent}>
 
                 <View style={styles.header}>
@@ -46,14 +49,14 @@ export default function PrePagina() {
                 <View style={styles.authContainer}>
                     <TouchableOpacity
                         style={styles.primaryButton}
-                        onPress={() => navigation.navigate('Signup')}
+                        onPress={onSignup}
                     >
                         <Text style={styles.primaryButtonText}>Sign up</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         style={styles.secondaryButton}
-                        onPress={() => navigation.navigate('Login')}
+                        onPress={onLogin}
                     >
                         <Text style={styles.secondaryButtonText}>Log in</Text>
                     </TouchableOpacity>
@@ -65,21 +68,21 @@ export default function PrePagina() {
                         title="Lokaal leren"
                         description="Vind experts in je eigen buurt en maak persoonlijk contact"
                         color="#a855f7"
-                        bgColor="#f3e8ff"
+                        bgColor="rgba(168, 85, 247, 0.15)"
                     />
                     <FeatureItem
                         icon="swap-horizontal-outline"
                         title="Vaardigheden ruilen"
                         description="Ruil je kennis of betaal voor een les - jij beslist"
                         color="#3b82f6"
-                        bgColor="#dbeafe"
+                        bgColor="rgba(59, 130, 246, 0.15)"
                     />
                     <FeatureItem
                         icon="heart-outline"
                         title="Vertrouwde community"
                         description="Beoordelingen en reviews voor een veilige ervaring"
-                        color="#ec4899" 
-                        bgColor="#fce7f3"
+                        color="#ec4899"
+                        bgColor="rgba(236, 72, 153, 0.15)"
                     />
                 </View>
 
@@ -122,12 +125,12 @@ const styles = StyleSheet.create({
     newBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f5f3ff',
+        backgroundColor: 'rgba(168, 85, 247, 0.15)',
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 100,
         borderWidth: 1,
-        borderColor: '#d8b4fe',
+        borderColor: colors.accent,
         marginBottom: 24,
     },
     newBadgeText: {
@@ -172,7 +175,7 @@ const styles = StyleSheet.create({
         fontWeight: '700',
     },
     secondaryButton: {
-        backgroundColor: '#fff',
+        backgroundColor: 'transparent',
         paddingVertical: 16,
         borderRadius: 16,
         alignItems: 'center',
@@ -190,7 +193,7 @@ const styles = StyleSheet.create({
         marginBottom: 40,
     },
     featureItem: {
-        backgroundColor: '#fff',
+        backgroundColor: colors.card,
         padding: 20,
         borderRadius: 20,
         borderWidth: 1,
@@ -220,7 +223,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         width: '100%',
-        backgroundColor: '#fff',
+        backgroundColor: colors.card,
         borderRadius: 24,
         padding: 20,
         borderWidth: 1,

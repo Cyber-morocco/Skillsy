@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authColors, authStyles as styles } from '../styles/authStyles';
 import { AppInput } from '../components/AppInput';
@@ -99,6 +100,12 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.headingContainer}>
+            <TouchableOpacity
+              onPress={() => navigation?.navigate ? navigation.navigate('PrePagina') : null}
+              style={{ position: 'absolute', left: 24, top: 24, zIndex: 10 }}
+            >
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
             <View style={styles.brandPill}>
               <Text style={styles.brandPillText}>Skillsy</Text>
             </View>

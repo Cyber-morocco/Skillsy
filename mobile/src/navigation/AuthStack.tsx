@@ -35,12 +35,18 @@ const screenOptions: NativeStackNavigationOptions = {
   },
 };
 
-const AuthStackNavigator = ({ initialRouteName = 'Login' }: { initialRouteName?: keyof AuthStackParamList }) => {
+const AuthStackNavigator = ({ initialRouteName = 'PrePagina' }: { initialRouteName?: keyof AuthStackParamList }) => {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="PrePagina" screenOptions={screenOptions}>
-        <Stack.Screen name="PrePagina" component={PrePagina} />
       <Stack.Navigator initialRouteName={initialRouteName} screenOptions={screenOptions}>
+        <Stack.Screen name="PrePagina">
+          {(props) => (
+            <PrePagina
+              onLogin={() => props.navigation.navigate('Login')}
+              onSignup={() => props.navigation.navigate('Signup')}
+            />
+          )}
+        </Stack.Screen>
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Signup" component={SignupScreen} />
         <Stack.Screen name="ProfileCreationStep1" component={ProfileCreationStep1} />

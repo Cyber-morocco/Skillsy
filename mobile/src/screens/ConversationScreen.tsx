@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     StatusBar,
     Text,
@@ -12,6 +12,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { conversationStyles as styles, conversationColors } from '../styles/ConversationStyle';
 import ScheduleMatchScreen from './ScheduleMatchScreen';
+import { subscribeToMessages, sendMessage as sendFirebaseMessage } from '../services/chatService';
+import { auth } from '../config/firebase';
+import { Message as FirebaseMessage } from '../types';
+import { Unsubscribe } from 'firebase/firestore';
 
 type Message = {
     id: string;
@@ -23,6 +27,8 @@ type Message = {
 type ConversationProps = {
     route?: {
         params?: {
+            chatId: string;
+            contactId: string;
             contactName: string;
             contactInitials: string;
             contactColor: string;
@@ -39,25 +45,38 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
     const contactInitials = route?.params?.contactInitials || 'C';
     const contactColor = route?.params?.contactColor || '#7C3AED';
     const contactSubtitle = route?.params?.contactSubtitle || '';
+    const chatId = route?.params?.chatId;
 
     const [messageText, setMessageText] = useState('');
     const [showScheduleMatch, setShowScheduleMatch] = useState(false);
-    const [messages, setMessages] = useState<Message[]>([
-        { id: '1', text: 'Hallo! Hoe gaat het?', sender: 'other', time: '10:30' },
-        { id: '2', text: 'Goed! En met jou?', sender: 'me', time: '10:32' },
-        { id: '3', text: 'Prima, bedankt voor het vragen!', sender: 'other', time: '10:33' },
-    ]);
+    const [messages, setMessages] = useState<any[]>([]);
 
-    const sendMessage = () => {
-        if (messageText.trim()) {
-            const newMessage: Message = {
-                id: Date.now().toString(),
-                text: messageText,
-                sender: 'me',
-                time: new Date().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }),
-            };
-            setMessages([...messages, newMessage]);
-            setMessageText('');
+    useEffect(() => {
+        if (!chatId) return;
+
+        const unsubscribe = subscribeToMessages(chatId, (newMessages) => {
+            // Map Firebase messages to the format expected by the UI
+            const formattedMessages = newMessages.map(m => ({
+                id: m.id,
+                text: m.text,
+                sender: m.senderId === auth.currentUser?.uid ? 'me' as const : 'other' as const,
+                time: m.createdAt?.toDate ? m.createdAt.toDate().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '',
+            }));
+            setMessages(formattedMessages);
+        });
+
+        return () => unsubscribe();
+    }, [chatId]);
+
+    const sendMessage = async () => {
+        if (messageText.trim() && chatId) {
+            try {
+                const text = messageText.trim();
+                setMessageText(''); // Clear input early for better UX
+                await sendFirebaseMessage(chatId, text);
+            } catch (error) {
+                console.error('Send message error:', error);
+            }
         }
     };
 

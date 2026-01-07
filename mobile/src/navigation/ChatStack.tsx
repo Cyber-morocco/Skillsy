@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 import ChatScreen from '../screens/ChatScreen';
@@ -7,6 +7,7 @@ import ConversationScreen from '../screens/ConversationScreen';
 export type ChatStackParamList = {
     ChatList: undefined;
     Conversation: {
+        chatId: string;
         contactId: string;
         contactName: string;
         contactInitials: string;

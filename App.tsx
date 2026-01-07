@@ -3,31 +3,32 @@ import { View, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './mobile/src/config/firebase';
-import { Review } from './mobile/src/types';
-import {
-  ExploreProfileScreen,
-  Availability,
-  AvailabilitySpecificDates,
-  HomePage,
-  ExploreMapScreen,
-  AppointmentsScreen,
-  ProfileScreen
-} from './mobile/src/screens';
+import HomePage from './mobile/src/screens/HomePage';
+import ExploreMapScreen from './mobile/src/screens/ExploreMapScreen';
+import AppointmentsScreen from './mobile/src/screens/AppointmentsScreen';
+import ProfileScreen from './mobile/src/screens/ProfileScreen';
+import ExploreProfileScreen from './mobile/src/screens/ExploreProfileScreen';
+import Availability from './mobile/src/screens/Availability';
+import AvailabilitySpecificDates from './mobile/src/screens/Availability_SpecificDates';
+import PrePagina from './mobile/src/screens/PrePagina';
 import BottomNavBar from './mobile/src/components/BottomNavBar';
 import ChatStackNavigator from './mobile/src/navigation/ChatStack';
 import AuthStackNavigator from './mobile/src/navigation/AuthStack';
+import { subscribeToMatchRequests, sendMatchRequest, respondToMatchRequest } from './mobile/src/services/chatService';
+import { Unsubscribe } from 'firebase/firestore';
+import { MatchRequest, Review } from './mobile/src/types';
 
 type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability' | 'exploreProfile' | 'availabilitySpecificDates';
 
 export default function App() {
   const [activeScreen, setActiveScreen] = useState<NavName>('home');
-  const [previousScreen, setPreviousScreen] = useState<NavName>('home');
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
+  const [matchRequests, setMatchRequests] = useState<MatchRequest[]>([]);
+  const [reviews, setReviews] = useState<{ [userId: string]: Review[] }>({});
   const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [reviews, setReviews] = useState<Record<string, Review[]>>({});
-  const [matchRequests, setMatchRequests] = useState<any[]>([]); // Using basic array for now
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -49,8 +50,7 @@ export default function App() {
       (docSnapshot) => {
         if (docSnapshot.exists()) {
           const data = docSnapshot.data();
-          setProfileComplete(data.profileComplete === true);
-
+          setProfileComplete(data.profileComplete ?? false);
         } else {
           setProfileComplete(false);
         }
@@ -65,27 +65,52 @@ export default function App() {
     return () => unsubscribe();
   }, [user]);
 
+  useEffect(() => {
+    if (!user || !profileComplete) return;
+
+    const unsubscribe = subscribeToMatchRequests((requests) => {
+      setMatchRequests(requests);
+    });
+
+    return () => unsubscribe();
+  }, [user, profileComplete]);
+
   const handleAddReview = (review: Review, userId: string) => {
-    setReviews(prev => ({
+    setReviews((prev: { [key: string]: Review[] }) => ({
       ...prev,
       [userId]: [review, ...(prev[userId] || [])]
     }));
   };
 
-  const handleSendMatch = (userId: string, userName: string) => {
-    // Simulation of sending a match
-    Alert.alert('Match verstuurd', `Je hebt een matchverzoek gestuurd naar ${userName}.`);
+  const handleSendMatch = async (userId: string, userName: string) => {
+    try {
+      await sendMatchRequest(userId, userName, 'Samen leren');
+      Alert.alert('Match verstuurd', `Je hebt een matchverzoek gestuurd naar ${userName}.`);
+    } catch (error) {
+      console.error('Send match error:', error);
+      Alert.alert('Fout', 'Kon matchverzoek niet versturen.');
+    }
   };
 
-  const handleRespondMatch = (matchId: string, status: 'accepted' | 'rejected') => {
-    setMatchRequests(prev => prev.filter(req => req.id !== matchId));
-    if (status === 'accepted') {
-      Alert.alert('Match geaccepteerd', 'Jullie kunnen nu chatten!');
+  const handleRespondMatch = async (matchId: string, status: 'accepted' | 'rejected') => {
+    try {
+      await respondToMatchRequest(matchId, status);
+      if (status === 'accepted') {
+        Alert.alert('Match geaccepteerd', 'Jullie kunnen nu chatten!');
+      }
+    } catch (error) {
+      console.error('Respond match error:', error);
+      Alert.alert('Fout', 'Kon niet reageren op matchverzoek.');
     }
   };
 
   const handleClearAllMatches = () => {
     setMatchRequests([]);
+  };
+
+  const handleViewProfile = (user: any) => {
+    setSelectedUser(user);
+    setActiveScreen('exploreProfile');
   };
 
   const renderScreen = () => {
@@ -97,7 +122,7 @@ export default function App() {
       case 'home':
         return <HomePage onViewProfile={handleViewProfile} />;
       case 'explore':
-        return <ExploreMapScreen />;
+        return <ExploreMapScreen onViewProfile={handleViewProfile} />;
       case 'appointments':
         return (
           <AppointmentsScreen
@@ -113,11 +138,14 @@ export default function App() {
       case 'exploreProfile':
         return (
           <ExploreProfileScreen
-            user={selectedUser}
-            reviews={selectedUser ? reviews[selectedUser.id] : []}
-
-            onBack={() => setActiveScreen(previousScreen)}
-            onMatch={() => handleSendMatch(selectedUser?.id || 'unknown', selectedUser?.name || 'Unknown')}
+            userId={selectedUser?.uid || selectedUser?.userId}
+            onBack={() => setActiveScreen('home')}
+            onMakeAppointment={() => setActiveScreen('appointments')}
+            onSendMessage={() => {
+              if (selectedUser?.uid || selectedUser?.userId) {
+                handleSendMatch(selectedUser.uid || selectedUser.userId, selectedUser.name || selectedUser.displayName);
+              }
+            }}
           />
         );
       default:
@@ -129,13 +157,7 @@ export default function App() {
     setActiveScreen(screen);
   };
 
-  const handleViewProfile = (user: any) => {
-    setSelectedUser(user);
-    setPreviousScreen(activeScreen);
-    setActiveScreen('exploreProfile');
-  };
-
-  if (loading) {
+  if (loading || (user && profileComplete === null)) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#6366f1" />
@@ -146,11 +168,18 @@ export default function App() {
   if (!user || !profileComplete) {
     return (
       <AuthStackNavigator
-        key={user?.uid || 'guest'}
-        initialRouteName={user && profileComplete === false ? 'ProfileCreationStep1' : 'Login'}
+        initialRouteName="PrePagina"
       />
     );
+  }
 
+  if (showSplash) {
+    return (
+      <PrePagina
+        onLogin={() => setShowSplash(false)}
+        onSignup={() => setShowSplash(false)}
+      />
+    );
   }
 
   return (
@@ -160,7 +189,7 @@ export default function App() {
         activeScreen={
           activeScreen === 'exploreProfile'
             ? 'home'
-            : (activeScreen === 'availabilitySpecificDates' ? 'availability' : activeScreen as any)
+            : (activeScreen === 'availabilitySpecificDates' ? 'availability' : activeScreen)
         }
         onNavigate={handleNavigate}
       />
@@ -176,7 +205,6 @@ const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
   },
-
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

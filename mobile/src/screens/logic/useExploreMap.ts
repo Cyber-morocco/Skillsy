@@ -1,9 +1,10 @@
 import { useMemo, useState, useEffect } from 'react';
 import * as ExpoLocation from 'expo-location';
-import { mockTalents, Talent } from '../../mockdummies/markers';
+import { Location, GeocodingResult, Talent, UserProfile } from '../../types';
+
+import { mockTalents } from '../../mockdummies/markers';
 import { CATEGORY_OPTIONS, DISTANCE_OPTIONS } from '../../constants/exploreMap';
 import { calculateDistance } from './distance';
-import { Location, GeocodingResult } from './types';
 
 const DEFAULT_LOCATION: Location = { lat: 52.3676, lng: 4.9041 };
 
@@ -53,7 +54,7 @@ export const useExploreMap = () => {
   const [userLocation, setUserLocation] = useState<Location>(DEFAULT_LOCATION);
   const [isSearching, setIsSearching] = useState(false);
   const [searchType, setSearchType] = useState<'skill' | 'address'>('skill');
-  const [focusTalent, setFocusTalent] = useState<{ id: number; lat: number; lng: number } | null>(null);
+  const [focusTalent, setFocusTalent] = useState<{ id: string; lat: number; lng: number } | null>(null);
   const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
 
   // Check if location permission is already granted on mount
@@ -181,38 +182,38 @@ export const useExploreMap = () => {
       // If permission already granted, verify it's still valid and get location
       if (locationPermissionGranted) {
         const { status } = await ExpoLocation.getForegroundPermissionsAsync();
-        
+
         // If permission was revoked, silently reset state
         if (status !== 'granted') {
           setLocationPermissionGranted(false);
           return false;
         }
-        
+
         // Permission still valid, fetch location with Low accuracy for speed
         const location = await ExpoLocation.getCurrentPositionAsync({
           accuracy: ExpoLocation.Accuracy.Low,
           timeInterval: 5000,
           mayShowUserSettingsDialog: false,
         });
-        
+
         const newLocation: Location = {
           lat: location.coords.latitude,
           lng: location.coords.longitude,
         };
-        
+
         setUserLocation(newLocation);
         return true;
       }
-      
+
       // Request permission (shows system dialog)
       const { status } = await ExpoLocation.requestForegroundPermissionsAsync();
-      
+
       // If user denied, silently reset without showing anything
       if (status !== 'granted') {
         setLocationPermissionGranted(false);
         return false;
       }
-      
+
       // Permission granted, fetch location
       setLocationPermissionGranted(true);
       const location = await ExpoLocation.getCurrentPositionAsync({
@@ -220,12 +221,12 @@ export const useExploreMap = () => {
         timeInterval: 5000,
         mayShowUserSettingsDialog: false,
       });
-      
+
       const newLocation: Location = {
         lat: location.coords.latitude,
         lng: location.coords.longitude,
       };
-      
+
       setUserLocation(newLocation);
       return true;
     } catch (error) {
