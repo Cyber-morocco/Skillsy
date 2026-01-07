@@ -16,7 +16,15 @@ export type ChatStackParamList = {
 
 const Stack = createNativeStackNavigator<ChatStackParamList>();
 
-function ChatStackNavigator() {
+import { MatchRequest } from '../types';
+
+interface ChatStackProps {
+    matchRequests?: MatchRequest[];
+    onRespondMatch?: (matchId: string, status: 'accepted' | 'rejected') => void;
+    onClearAllMatches?: (subject?: string) => void;
+}
+
+function ChatStackNavigator({ matchRequests, onRespondMatch, onClearAllMatches }: ChatStackProps) {
     return (
         <NavigationContainer>
             <Stack.Navigator
@@ -24,7 +32,9 @@ function ChatStackNavigator() {
                     headerShown: false,
                 }}
             >
-                <Stack.Screen name="ChatList" component={ChatScreen} />
+                <Stack.Screen name="ChatList">
+                    {props => <ChatScreen {...props} matchRequests={matchRequests} onRespondMatch={onRespondMatch} onClearAllMatches={onClearAllMatches} />}
+                </Stack.Screen>
                 <Stack.Screen name="Conversation" component={ConversationScreen} />
             </Stack.Navigator>
         </NavigationContainer>

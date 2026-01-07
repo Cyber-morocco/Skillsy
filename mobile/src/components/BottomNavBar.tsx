@@ -18,61 +18,23 @@ interface BottomNavBarProps {
 }
 
 const NAV_ITEMS: NavBarItem[] = [
-  {
-    name: 'home',
-    label: 'Home',
-    icon: 'home',
-    type: 'ionicons',
-  },
-  {
-    name: 'explore',
-    label: 'Ontdekken',
-    icon: 'map-marker',
-    type: 'material',
-  },
-  {
-    name: 'appointments',
-    label: 'Afspraken',
-    icon: 'calendar',
-    type: 'ionicons',
-  },
-  {
-    name: 'messages',
-    label: 'Berichten',
-    icon: 'chatbubble',
-    type: 'ionicons',
-  },
-  {
-    name: 'profile',
-    label: 'Profiel',
-    icon: 'person',
-    type: 'ionicons',
-  },
+  { name: 'home', label: 'Home', icon: 'home', type: 'ionicons' },
+  { name: 'explore', label: 'Ontdekken', icon: 'map-marker', type: 'material' },
+  { name: 'appointments', label: 'Afspraken', icon: 'calendar', type: 'ionicons' },
+  { name: 'messages', label: 'Berichten', icon: 'chatbubble', type: 'ionicons' },
+  { name: 'profile', label: 'Profiel', icon: 'person', type: 'ionicons' },
 ];
 
+function renderIcon(item: NavBarItem, isActive: boolean) {
+  const size = isActive ? 28 : 22;
+  const color = isActive ? '#FFFFFF' : '#9AA4B2';
+  if (item.type === 'material') {
+    return <MaterialCommunityIcons name={item.icon as any} size={size} color={color} />;
+  }
+  return <Ionicons name={item.icon as any} size={size} color={color} />;
+}
+
 export default function BottomNavBar({ activeScreen, onNavigate, badges }: BottomNavBarProps) {
-  const renderIcon = (item: NavBarItem, isActive: boolean) => {
-    const size = isActive ? 30 : 24;
-    const color = isActive ? '#FFFFFF' : '#9CA3AF';
-
-    if (item.type === 'material') {
-      return (
-        <MaterialCommunityIcons
-          name={item.icon as any}
-          size={size}
-          color={color}
-        />
-      );
-    }
-    return (
-      <Ionicons
-        name={item.icon as any}
-        size={size}
-        color={color}
-      />
-    );
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.navBar}>
@@ -93,13 +55,10 @@ export default function BottomNavBar({ activeScreen, onNavigate, badges }: Botto
                   {renderIcon(item, isActive)}
                 </View>
                 {badgeCount > 0 && (
-                  <View
-                    style={[
-                      styles.badge,
-                      isActive ? styles.badgeActive : styles.badgeInactive,
-                    ]}
-                  >
-                    <Text style={styles.badgeText}>{badgeCount}</Text>
+                  <View style={[styles.badge, isActive ? styles.badgeActive : styles.badgeInactive]}>
+                    <Text style={styles.badgeText}>
+                      {badgeCount}
+                    </Text>
                   </View>
                 )}
               </View>

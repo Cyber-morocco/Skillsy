@@ -62,10 +62,17 @@ export interface Conversation {
 
 export interface Message {
     id: string;
-    text: string;
-    senderId: string;
-    timestamp: Date;
-    read: boolean;
+    text?: string; // Optional text if we ever re-add it
+}
+
+export interface MatchRequest {
+    id: string;
+    fromUserId: string;
+    fromUserName: string;
+    fromUserAvatar?: string;
+    status: 'pending' | 'accepted' | 'rejected';
+    subject: string;
+    createdAt: Date;
 }
 
 export interface Appointment {
@@ -85,4 +92,18 @@ export interface Appointment {
     tutorPhone?: string;
     tutorEmail?: string;
     createdAt: Date;
+}
+
+export interface Review {
+    id: string;
+    reviewerName: string;
+    reviewerAvatar?: string;
+    rating: number; // Overall average
+    questions: {
+        q1: number;
+        q2: number;
+        q3: number;
+    };
+    createdAt: Date;
+    text?: string; // Optional text if we ever re-add it
 }

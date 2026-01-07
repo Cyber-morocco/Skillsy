@@ -10,7 +10,8 @@ import {
     serverTimestamp,
     Unsubscribe,
 } from 'firebase/firestore';
-import { db, auth } from '../config/firebase';
+import { db, auth, storage } from '../config/firebase';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { Skill, LearnSkill, AvailabilityDay } from '../types';
 
 const getCurrentUserId = (): string => {
@@ -167,4 +168,37 @@ export const saveAvailability = async (days: AvailabilityDay[]): Promise<void> =
         days,
         updatedAt: serverTimestamp(),
     });
+};
+
+export const updateUserProfile = async (updates: any): Promise<void> => {
+    const userId = getCurrentUserId();
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+        ...updates,
+        updatedAt: serverTimestamp(),
+    });
+};
+
+export const uploadProfileImage = async (uri: string): Promise<string> => {
+    const userId = getCurrentUserId();
+
+    const response = await fetch(uri);
+    const blob = await response.blob();
+
+    const fileRef = ref(storage, `profile_images/${userId}`);
+    await uploadBytes(fileRef, blob);
+
+    return await getDownloadURL(fileRef);
+};
+
+export const deleteProfileImage = async (): Promise<void> => {
+    const userId = getCurrentUserId();
+    const fileRef = ref(storage, `profile_images/${userId}`);
+    try {
+        await deleteObject(fileRef);
+    } catch (error: any) {
+        if (error.code !== 'storage/object-not-found') {
+            throw error;
+        }
+    }
 };
