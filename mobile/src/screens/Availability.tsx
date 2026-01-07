@@ -88,7 +88,7 @@ const Availability: React.FC<AvailabilityProps> = ({ onNavigate }) => {
     setPicker({ ...picker, visible: false });
   };
 
-  const handleSave = async () => {
+  const handleSave = async () => { // stuurt naar DB  
     setSaving(true);
     try {
       await saveAvailability(days);
