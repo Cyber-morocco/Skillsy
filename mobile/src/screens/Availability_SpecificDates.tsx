@@ -182,6 +182,11 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
             setDatePickerVisible(false);
             if (!selected || activeIndex === null || !dates[activeIndex]) return;
             handleUpdateDate(dates[activeIndex].id, { date: selected });
+            if (!selected) return;
+            if (activeIndex === null || !dates[activeIndex]) return; 
+            const copy = [...dates];
+            copy[activeIndex].date = selected;
+            setDates(copy);
           }}
         />
       )}
