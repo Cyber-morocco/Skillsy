@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authColors, authStyles as styles } from '../styles/authStyles';
-import { addSkill } from '../services/userService';
+import { addSkills } from '../services/userService';
 import { Skill } from '../types';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -66,15 +66,13 @@ const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
     const handleNext = async () => {
         setSaving(true);
         try {
-            const promises = Array.from(selectedSkills).map(subject => {
-                return addSkill({
-                    subject,
-                    level: 'Beginner',
-                    price: 'Op aanvraag'
-                });
-            });
+            const skills = Array.from(selectedSkills).map(subject => ({
+                subject,
+                level: 'Beginner' as const,
+                price: 'Op aanvraag'
+            }));
 
-            await Promise.all(promises);
+            await addSkills(skills);
             navigation.navigate('ProfileCreationStep3');
         } catch (error) {
             console.error(error);

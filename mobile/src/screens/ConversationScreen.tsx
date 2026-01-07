@@ -128,11 +128,11 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                         tutorName: auth.currentUser?.displayName || 'Tutor',
                         tutorAvatar: auth.currentUser?.photoURL || '',
                         studentName: contactName,
-                        studentAvatar: '', 
+                        studentAvatar: '',
                         title: 'Afspraak',
                         subtitle: `Met ${contactName}`,
                         date: message.appointmentDate,
-                        time: '10:00 - 11:00', 
+                        time: '10:00 - 11:00',
                         location: 'fysiek',
                         initials: contactInitials,
                         status: 'confirmed'
@@ -147,6 +147,7 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
     if (showScheduleMatch) {
         return (
             <ScheduleMatchScreen
+                contactId={route?.params?.contactId || ''}
                 contactName={contactName}
                 contactInitials={contactInitials}
                 contactColor={contactColor}
@@ -175,34 +176,50 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
 
                     {item.appointmentStatus === 'pending' ? (
                         item.sender === 'other' ? (
-                            <View style={{ flexDirection: 'row', gap: 10, marginTop: 5 }}>
+                            <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
                                 <TouchableOpacity
-                                    style={{ flex: 1, backgroundColor: '#10B981', padding: 8, borderRadius: 8, alignItems: 'center' }}
+                                    style={{ flex: 1, backgroundColor: '#10B981', padding: 10, borderRadius: 8, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
                                     onPress={() => handleRespondAppointment(item.id, 'accepted')}
                                 >
-                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>Accepteren</Text>
+                                    <Ionicons name="checkmark-circle" size={16} color="white" style={{ marginRight: 4 }} />
+                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>Accepteren</Text>
                                 </TouchableOpacity>
                                 <TouchableOpacity
-                                    style={{ flex: 1, backgroundColor: '#EF4444', padding: 8, borderRadius: 8, alignItems: 'center' }}
+                                    style={{ flex: 1, backgroundColor: '#EF4444', padding: 10, borderRadius: 8, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
                                     onPress={() => handleRespondAppointment(item.id, 'rejected')}
                                 >
-                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>Weigeren</Text>
+                                    <Ionicons name="close-circle" size={16} color="white" style={{ marginRight: 4 }} />
+                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>Weigeren</Text>
                                 </TouchableOpacity>
                             </View>
                         ) : (
-                            <View style={{ marginTop: 5 }}>
-                                <Text style={{ fontSize: 12, fontStyle: 'italic', color: 'rgba(255,255,255,0.7)' }}>Wachten op reactie...</Text>
+                            <View style={{ marginTop: 8, padding: 10, backgroundColor: 'rgba(251, 191, 36, 0.2)', borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                <Ionicons name="time-outline" size={16} color="#FBBF24" style={{ marginRight: 6 }} />
+                                <Text style={{ fontSize: 13, color: '#FBBF24', fontWeight: '600' }}>Wachten op reactie...</Text>
                             </View>
                         )
                     ) : (
-                        <View style={{ marginTop: 5, padding: 8, backgroundColor: 'rgba(0,0,0,0.1)', borderRadius: 8 }}>
+                        <View style={{
+                            marginTop: 8,
+                            padding: 10,
+                            backgroundColor: item.appointmentStatus === 'accepted' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                            borderRadius: 8,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            <Ionicons
+                                name={item.appointmentStatus === 'accepted' ? 'checkmark-circle' : 'close-circle'}
+                                size={18}
+                                color={item.appointmentStatus === 'accepted' ? '#10B981' : '#EF4444'}
+                                style={{ marginRight: 6 }}
+                            />
                             <Text style={{
-                                color: item.sender === 'me' ? '#fff' : '#000',
-                                textAlign: 'center',
-                                fontStyle: 'italic',
-                                fontSize: 12
+                                color: item.appointmentStatus === 'accepted' ? '#10B981' : '#EF4444',
+                                fontWeight: '600',
+                                fontSize: 13
                             }}>
-                                {item.appointmentStatus === 'accepted' ? 'Afspraak geaccepteerd' : 'Afspraak geweigerd'}
+                                {item.appointmentStatus === 'accepted' ? '✓ Afspraak geaccepteerd!' : '✕ Afspraak geweigerd'}
                             </Text>
                         </View>
                     )}
@@ -231,7 +248,8 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
     return (
         <KeyboardAvoidingView
             style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
         >
             <StatusBar barStyle="light-content" />
             <View style={styles.header}>

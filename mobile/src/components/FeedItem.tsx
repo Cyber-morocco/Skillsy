@@ -2,23 +2,16 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { authColors } from '../styles/authStyles';
+import { Post, PostType } from '../types';
+import { auth } from '../config/firebase';
 
-export type PostType = 'Vraag' | 'Succes' | 'Materiaal';
+export { PostType };
 
 interface FeedItemProps {
-    post: {
-        id: string;
-        user: {
-            name: string;
-            avatar: string;
-        };
-        date: string;
-        type: PostType;
-        content: string;
-        likes: number;
-        comments: number;
-    };
+    post: Post;
     onUserPress?: () => void;
+    onLike?: () => void;
+    onComment?: () => void;
 }
 
 const getTypeColor = (type: PostType) => {
@@ -34,16 +27,23 @@ const getTypeColor = (type: PostType) => {
     }
 };
 
-const FeedItem: React.FC<FeedItemProps> = ({ post, onUserPress }) => {
+const formatDate = (timestamp: any) => {
+    if (!timestamp) return 'Zojuist';
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+    return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+};
+
+const FeedItem: React.FC<FeedItemProps> = ({ post, onUserPress, onLike, onComment }) => {
+    const isLiked = post.likes?.includes(auth.currentUser?.uid || '');
+
     return (
         <View style={styles.container}>
-
             <View style={styles.header}>
                 <TouchableOpacity style={styles.userInfo} onPress={onUserPress}>
-                    <Image source={{ uri: post.user.avatar }} style={styles.avatar} />
+                    <Image source={{ uri: post.userAvatar }} style={styles.avatar} />
                     <View>
-                        <Text style={styles.userName}>{post.user.name}</Text>
-                        <Text style={styles.date}>{post.date}</Text>
+                        <Text style={styles.userName}>{post.userName}</Text>
+                        <Text style={styles.date}>{formatDate(post.createdAt)}</Text>
                     </View>
                 </TouchableOpacity>
                 <View style={[styles.badge, { borderColor: getTypeColor(post.type) }]}>
@@ -53,17 +53,30 @@ const FeedItem: React.FC<FeedItemProps> = ({ post, onUserPress }) => {
                 </View>
             </View>
 
-
             <Text style={styles.content}>{post.content}</Text>
 
+            {post.imageURL && (
+                <Image
+                    source={{ uri: post.imageURL }}
+                    style={styles.postImage}
+                    resizeMode="cover"
+                />
+            )}
+
             <View style={styles.footer}>
-                <TouchableOpacity style={styles.interaction}>
-                    <Ionicons name="heart-outline" size={20} color={authColors.muted} />
-                    <Text style={styles.interactionText}>{post.likes}</Text>
+                <TouchableOpacity style={styles.interaction} onPress={onLike}>
+                    <Ionicons
+                        name={isLiked ? "heart" : "heart-outline"}
+                        size={20}
+                        color={isLiked ? "#EF4444" : authColors.muted}
+                    />
+                    <Text style={[styles.interactionText, isLiked && { color: "#EF4444" }]}>
+                        {post.likes?.length || 0}
+                    </Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.interaction}>
+                <TouchableOpacity style={styles.interaction} onPress={onComment}>
                     <Ionicons name="chatbubble-outline" size={20} color={authColors.muted} />
-                    <Text style={styles.interactionText}>{post.comments}</Text>
+                    <Text style={styles.interactionText}>{post.commentCount || 0}</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -120,6 +133,12 @@ const styles = StyleSheet.create({
         color: authColors.text,
         fontSize: 15,
         lineHeight: 22,
+        marginBottom: 16,
+    },
+    postImage: {
+        width: '100%',
+        height: 200,
+        borderRadius: 12,
         marginBottom: 16,
     },
     footer: {

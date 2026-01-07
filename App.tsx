@@ -13,6 +13,7 @@ import AvailabilitySpecificDates from './mobile/src/screens/Availability_Specifi
 import PrePagina from './mobile/src/screens/PrePagina';
 import BottomNavBar from './mobile/src/components/BottomNavBar';
 import ChatStackNavigator from './mobile/src/navigation/ChatStack';
+import AppointmentStackNavigator from './mobile/src/navigation/AppointmentStack';
 import AuthStackNavigator from './mobile/src/navigation/AuthStack';
 import { subscribeToMatchRequests, sendMatchRequest, respondToMatchRequest, subscribeToChats, clearAllMatchRequests } from './mobile/src/services/chatService';
 import { Unsubscribe } from 'firebase/firestore';
@@ -147,13 +148,7 @@ export default function App() {
       case 'explore':
         return <ExploreMapScreen onViewProfile={handleViewProfile} />;
       case 'appointments':
-        return (
-          <AppointmentsScreen
-            onViewProfile={handleViewProfile}
-            onSubmitReview={handleAddReview}
-            reviewedUsers={Object.keys(reviews)}
-          />
-        );
+        return <AppointmentStackNavigator />;
       case 'messages':
         return <ChatStackNavigator matchRequests={matchRequests} onRespondMatch={handleRespondMatch} onClearAllMatches={handleClearAllMatches} />;
       case 'profile':

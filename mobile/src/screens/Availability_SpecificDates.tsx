@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -8,8 +8,16 @@ import {
   StyleSheet,
   Platform,
   Modal,
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import {
+  subscribeToSpecificDates,
+  addSpecificDate,
+  updateSpecificDate,
+  deleteSpecificDate
+} from '../services/userService';
 
 const purple = '#A020F0';
 
@@ -24,6 +32,7 @@ type Props = {
 };
 
 type SpecificDate = {
+  id: string;
   date: Date;
   start: string;
   end: string;
@@ -31,6 +40,7 @@ type SpecificDate = {
 
 const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
   const [dates, setDates] = useState<SpecificDate[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
 
@@ -44,16 +54,53 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
     field: 'start',
   });
 
-  const addDate = () => {
-    setDates([
-      ...dates,
-      { date: new Date(), start: '08:00', end: '22:00' },
-    ]);
+  useEffect(() => {
+    try {
+      const unsubscribe = subscribeToSpecificDates((fetched) => {
+        setDates(fetched as SpecificDate[]);
+        setLoading(false);
+      });
+      return () => unsubscribe();
+    } catch (error) {
+      console.error('Error subscribing to specific dates:', error);
+      setLoading(false);
+    }
+  }, []);
+
+  const handleAddDate = async () => {
+    try {
+      await addSpecificDate(new Date(), '08:00', '22:00');
+    } catch (error) {
+      console.error('Error adding date:', error);
+      Alert.alert('Fout', 'Kon de datum niet toevoegen.');
+    }
   };
 
-  const handleSave = () => {
-    console.log('Specifieke datums:', dates);
+  const handleDeleteDate = async (id: string) => {
+    try {
+      await deleteSpecificDate(id);
+    } catch (error) {
+      console.error('Error deleting date:', error);
+      Alert.alert('Fout', 'Kon de datum niet verwijderen.');
+    }
   };
+
+  const handleUpdateDate = async (id: string, updates: Partial<{ date: Date, start: string, end: string }>) => {
+    try {
+      await updateSpecificDate(id, updates);
+    } catch (error) {
+      console.error('Error updating date:', error);
+      Alert.alert('Fout', 'Kon de datum niet bijwerken.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={purple} />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -77,13 +124,13 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
 
         <View style={styles.addCard}>
           <Text style={styles.addLabel}>Specifieke datums</Text>
-          <TouchableOpacity onPress={addDate}>
+          <TouchableOpacity onPress={handleAddDate}>
             <Text style={styles.addAction}>+ Voeg toe</Text>
           </TouchableOpacity>
         </View>
 
         {dates.map((item, i) => (
-          <View key={i} style={styles.dateCard}>
+          <View key={item.id} style={styles.dateCard}>
             <View style={styles.dateHeader}>
               <TouchableOpacity
                 onPress={() => {
@@ -96,13 +143,7 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => {
-                  const copy = [...dates];
-                  copy.splice(i, 1);
-                  setDates(copy);
-                }}
-              >
+              <TouchableOpacity onPress={() => handleDeleteDate(item.id)}>
                 <Text style={styles.remove}>× Verwijder</Text>
               </TouchableOpacity>
             </View>
@@ -130,9 +171,6 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
             </View>
           </View>
         ))}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Opslaan</Text>
-        </TouchableOpacity>
       </ScrollView>
 
       {datePickerVisible && activeIndex !== null && (
@@ -142,29 +180,28 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           onChange={(event: any, selected?: Date) => {
             setDatePickerVisible(false);
-            if (!selected) return;
-            const copy = [...dates];
-            copy[activeIndex].date = selected;
-            setDates(copy);
+            if (!selected || activeIndex === null) return;
+            handleUpdateDate(dates[activeIndex].id, { date: selected });
           }}
         />
       )}
+
       <Modal visible={timePicker.visible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {TIMES.map(t => (
-              <TouchableOpacity
-                key={t}
-                onPress={() => {
-                  const copy = [...dates];
-                  copy[timePicker.index][timePicker.field] = t;
-                  setDates(copy);
-                  setTimePicker({ ...timePicker, visible: false });
-                }}
-              >
-                <Text style={styles.modalOption}>{t}</Text>
-              </TouchableOpacity>
-            ))}
+            <ScrollView style={{ maxHeight: 300 }}>
+              {TIMES.map(t => (
+                <TouchableOpacity
+                  key={t}
+                  onPress={() => {
+                    handleUpdateDate(dates[timePicker.index].id, { [timePicker.field]: t });
+                    setTimePicker({ ...timePicker, visible: false });
+                  }}
+                >
+                  <Text style={styles.modalOption}>{t}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
 
             <TouchableOpacity
               style={styles.modalClose}
