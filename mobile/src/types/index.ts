@@ -91,19 +91,24 @@ export interface Appointment {
     id: string;
     tutorId: string;
     studentId: string;
+    participantIds: string[]; 
+    tutorName?: string;
+    tutorAvatar?: string;
+    studentName?: string;
+    studentAvatar?: string;
     title: string;
     subtitle: string;
     date: string;
     time: string;
     location: 'fysiek' | 'online';
-    status: 'confirmed' | 'pending' | 'cancelled';
+    status: 'confirmed' | 'pending' | 'cancelled' | 'completed';
     initials: string;
     fee?: number;
     address?: string;
     description?: string;
     tutorPhone?: string;
     tutorEmail?: string;
-    createdAt: Date;
+    createdAt: any;
 }
 
 export interface Review {

@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -12,97 +11,17 @@ import {
     KeyboardAvoidingView,
     Platform,
     TouchableWithoutFeedback,
-    Keyboard
+    Keyboard,
+    RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { authColors } from '../styles/authStyles';
-import { Review } from '../types';
+import { Review, Appointment } from '../types';
+import { subscribeToAppointments, updateAppointmentStatus } from '../services/appointmentService';
+import { auth } from '../config/firebase';
 
 type Tab = 'upcoming' | 'pending' | 'past';
-
-interface AppointmentConfig {
-    id: string;
-    subject: string;
-    personName: string;
-    date: string;
-    time: string;
-    location: string;
-    locationType: 'Fysiek' | 'Online';
-    price?: string;
-    swapRequest?: string;
-    status: 'Bevestigd' | 'In afwachting' | 'Voltooid' | 'Geannuleerd';
-    avatarUrl?: string;
-}
-
-const DUMMY_UPCOMING: AppointmentConfig[] = [
-    {
-        id: '1',
-        subject: 'Frans',
-        personName: 'Met Emma Janssen',
-        date: '18 november 2024',
-        time: '10:00 - 11:00',
-        locationType: 'Fysiek',
-        location: 'Fysiek',
-        status: 'Bevestigd',
-    },
-    {
-        id: '2',
-        subject: 'Programmeren',
-        personName: 'met Thomas Berg',
-        date: '15 november 2024',
-        time: '10:00 - 11:00',
-        locationType: 'Online',
-        location: 'Online',
-        price: 'Vergoeding: €30',
-        status: 'Bevestigd',
-        avatarUrl: 'https://i.pravatar.cc/150?u=Thomas'
-    }
-];
-
-const DUMMY_PENDING: AppointmentConfig[] = [
-    {
-        id: '3',
-        subject: 'Spaanse les',
-        personName: 'met Lisa Vermeer',
-        date: '18 november 2024',
-        time: '16:00 - 17:00',
-        locationType: 'Fysiek',
-        location: 'West, Amsterdam',
-        price: 'Vergoeding: €22',
-        status: 'In afwachting',
-        avatarUrl: 'https://i.pravatar.cc/150?u=Lisa'
-    }
-];
-
-const DUMMY_PAST: AppointmentConfig[] = [
-    {
-        id: '4',
-        subject: 'Kookles',
-        personName: 'met Peter Visser',
-        date: '2 november 2024',
-        time: '19:00 - 20:30',
-        locationType: 'Fysiek',
-        location: 'Oud-Zuid, Amsterdam',
-        swapRequest: 'Ruil voor: Yogales',
-        status: 'Voltooid',
-        avatarUrl: 'https://i.pravatar.cc/150?u=Peter'
-    },
-    {
-        id: '5',
-        subject: 'Frans les',
-        personName: 'met Maria Santos',
-        date: '28 oktober 2024',
-        time: '15:00 - 16:00',
-        locationType: 'Fysiek',
-        location: 'Centrum, Amsterdam',
-        price: '€25',
-        status: 'Voltooid',
-        avatarUrl: 'https://i.pravatar.cc/150?u=Maria'
-    }
-];
-
-
 
 interface AppointmentsScreenProps {
     onViewProfile?: (user: any) => void;
@@ -114,21 +33,45 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
 
     const [activeTab, setActiveTab] = useState<Tab>('upcoming');
     const [reviewModalVisible, setReviewModalVisible] = useState(false);
-    const [selectedAppointment, setSelectedAppointment] = useState<AppointmentConfig | null>(null);
-
+    const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+    const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [ratings, setRatings] = useState({
         q1: 0,
         q2: 0,
         q3: 0
     });
 
+    useEffect(() => {
+        const currentUser = auth.currentUser;
+        if (!currentUser) return;
+
+        const unsubscribe = subscribeToAppointments(currentUser.uid, (data) => {
+            setAppointments(data);
+        });
+
+        return () => unsubscribe();
+    }, []);
+
+    const upcomingAppointments = appointments.filter(a => a.status === 'confirmed');
+    const pendingAppointments = appointments.filter(a => a.status === 'pending');
+    const pastAppointments = appointments.filter(a => a.status === 'completed' || a.status === 'cancelled');
+
     const COUNTS = {
-        upcoming: DUMMY_UPCOMING.length,
-        pending: DUMMY_PENDING.length,
-        past: DUMMY_PAST.length
+        upcoming: upcomingAppointments.length,
+        pending: pendingAppointments.length,
+        past: pastAppointments.length
     };
 
-    const handleOpenReview = (item: AppointmentConfig) => {
+    const handleUpdateStatus = async (id: string, status: 'confirmed' | 'cancelled' | 'completed') => {
+        try {
+            await updateAppointmentStatus(id, status);
+        } catch (error) {
+            console.error('Update status error:', error);
+            Alert.alert('Fout', 'Kon status niet bijwerken.');
+        }
+    };
+
+    const handleOpenReview = (item: Appointment) => {
         setSelectedAppointment(item);
         setRatings({ q1: 0, q2: 0, q3: 0 });
         setReviewModalVisible(true);
@@ -144,14 +87,17 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
 
         const newReview: Review = {
             id: Date.now().toString(),
-            reviewerName: 'Jij (Huidige Gebruiker)',
+            userId: selectedAppointment?.tutorId || '', // Assuming review is for tutor
+            fromName: auth.currentUser?.displayName || 'Gebruiker',
             rating: averageRating,
-            questions: ratings,
+            comment: 'Review via afspraken', // Or add comment input
             createdAt: new Date(),
         };
 
+        const targetName = selectedAppointment?.tutorName || 'Persoon';
+
         if (selectedAppointment && onSubmitReview) {
-            onSubmitReview(newReview, selectedAppointment.personName);
+            onSubmitReview(newReview, selectedAppointment.tutorId); // Pass ID instead of name ideally, but keeping sig
         }
 
         Alert.alert('Bedankt!', 'Je beoordeling is verstuurd.');
@@ -182,25 +128,30 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
 
     const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'Bevestigd':
-                return { bg: 'rgba(34, 197, 94, 0.15)', text: '#4ade80' };
-            case 'In afwachting':
-                return { bg: 'rgba(234, 179, 8, 0.15)', text: '#facc15' };
-            case 'Voltooid':
-                return { bg: 'rgba(148, 163, 184, 0.15)', text: '#94a3b8' };
+            case 'confirmed':
+                return { bg: 'rgba(34, 197, 94, 0.15)', text: '#4ade80', label: 'Bevestigd' };
+            case 'pending':
+                return { bg: 'rgba(234, 179, 8, 0.15)', text: '#facc15', label: 'In afwachting' };
+            case 'completed':
+                return { bg: 'rgba(148, 163, 184, 0.15)', text: '#94a3b8', label: 'Voltooid' };
+            case 'cancelled':
+                return { bg: 'rgba(239, 68, 68, 0.15)', text: '#f87171', label: 'Geannuleerd' };
             default:
-                return { bg: 'rgba(148, 163, 184, 0.15)', text: authColors.muted };
+                return { bg: 'rgba(148, 163, 184, 0.15)', text: authColors.muted, label: status };
         }
     };
 
-    const renderCard = (item: AppointmentConfig, type: Tab) => {
+    const renderCard = (item: Appointment, type: Tab) => {
         const statusStyle = getStatusStyle(item.status);
+        const isMe = item.studentId === auth.currentUser?.uid;
+        const otherName = isMe ? item.tutorName : item.studentName;
+        const otherAvatar = isMe ? item.tutorAvatar : item.studentAvatar;
 
         const dummyUser = {
-            id: item.personName,
-            displayName: item.personName.replace(/^(met|Met)\s+/, ''),
-            photoURL: item.avatarUrl,
-            bio: 'Docent bij Skillsy',
+            id: isMe ? item.tutorId : item.studentId,
+            displayName: otherName,
+            photoURL: otherAvatar,
+            bio: 'Gebruiker bij Skillsy',
             location: { city: 'Amsterdam' }
         };
 
@@ -213,17 +164,17 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                     >
                         <View style={styles.avatarContainer}>
                             <Image
-                                source={{ uri: item.avatarUrl || `https://ui-avatars.com/api/?name=${item.personName.split(' ').slice(1).join('+')}&background=random` }}
+                                source={{ uri: otherAvatar || `https://ui-avatars.com/api/?name=${otherName?.split(' ').join('+')}&background=random` }}
                                 style={styles.avatar}
                             />
                         </View>
                         <View style={styles.headerInfo}>
-                            <Text style={styles.subjectText}>{item.subject}</Text>
-                            <Text style={styles.personText}>{item.personName}</Text>
+                            <Text style={styles.subjectText}>{item.title}</Text>
+                            <Text style={styles.personText}>{item.subtitle}</Text>
                         </View>
                     </TouchableOpacity>
                     <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-                        <Text style={[styles.statusText, { color: statusStyle.text }]}>{item.status}</Text>
+                        <Text style={[styles.statusText, { color: statusStyle.text }]}>{statusStyle.label}</Text>
                     </View>
                 </View>
 
@@ -240,50 +191,61 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                         <Ionicons name="location-outline" size={16} color={authColors.muted} style={styles.icon} />
                         <Text style={styles.detailText}>{item.location}</Text>
                     </View>
-
-                    {item.swapRequest && (
-                        <View style={[styles.priceContainer, { backgroundColor: 'rgba(192, 132, 252, 0.15)' }]}>
-                            <Text style={[styles.priceText, { color: '#c084fc' }]}>{item.swapRequest}</Text>
-                        </View>
-                    )}
-                    {item.price && !item.swapRequest && (
+                    {item.fee && (
                         <View style={styles.priceContainer}>
-                            <Text style={styles.priceText}>{item.price}</Text>
+                            <Text style={styles.priceText}>€{item.fee}</Text>
                         </View>
                     )}
                 </View>
 
                 {type === 'upcoming' && (
-                    <TouchableOpacity style={styles.outlineButton}>
-                        <Text style={styles.outlineButtonText}>Annuleren</Text>
-                    </TouchableOpacity>
+                    <View style={{ gap: 10 }}>
+                        <TouchableOpacity
+                            style={styles.outlineButton}
+                            onPress={() => handleUpdateStatus(item.id, 'cancelled')}
+                        >
+                            <Text style={styles.outlineButtonText}>Annuleren</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.solidButton}
+                            onPress={() => handleUpdateStatus(item.id, 'completed')}
+                        >
+                            <Text style={styles.solidButtonText}>Afronden</Text>
+                        </TouchableOpacity>
+                    </View>
                 )}
 
                 {type === 'pending' && (
                     <View style={{ flexDirection: 'row', gap: 12 }}>
-                        <TouchableOpacity style={[styles.outlineButton, { flex: 1 }]}>
+                        <TouchableOpacity
+                            style={[styles.outlineButton, { flex: 1 }]}
+                            onPress={() => handleUpdateStatus(item.id, 'cancelled')}
+                        >
                             <Text style={styles.outlineButtonText}>Afwijzen</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={[styles.solidButton, { flex: 1 }]}>
+                        <TouchableOpacity
+                            style={[styles.solidButton, { flex: 1 }]}
+                            onPress={() => handleUpdateStatus(item.id, 'confirmed')}
+                        >
                             <Text style={styles.solidButtonText}>Accepteren</Text>
                         </TouchableOpacity>
                     </View>
                 )}
 
-                {type === 'past' && (
+                {type === 'past' && item.status === 'completed' && (
                     <TouchableOpacity
                         style={[
                             styles.outlineButton,
-                            reviewedUsers.includes(item.personName) && { backgroundColor: 'rgba(148, 163, 184, 0.1)', borderColor: 'transparent' }
+                            reviewedUsers.includes(item.tutorId) && { backgroundColor: 'rgba(148, 163, 184, 0.1)', borderColor: 'transparent' }
                         ]}
-                        onPress={() => !reviewedUsers.includes(item.personName) && handleOpenReview(item)}
-                        disabled={reviewedUsers.includes(item.personName)}
+                        onPress={() => !reviewedUsers.includes(item.tutorId) && handleOpenReview(item)}
+                        disabled={reviewedUsers.includes(item.tutorId)}
                     >
                         <Text style={[
                             styles.outlineButtonText,
-                            reviewedUsers.includes(item.personName) && { color: authColors.muted }
+                            reviewedUsers.includes(item.tutorId) && { color: authColors.muted }
                         ]}>
-                            {reviewedUsers.includes(item.personName) ? 'Beoordeeld' : 'Beoordeling achterlaten'}
+                            {reviewedUsers.includes(item.tutorId) ? 'Beoordeeld' : 'Beoordeling achterlaten'}
                         </Text>
                     </TouchableOpacity>
                 )}
@@ -323,13 +285,16 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                 {renderTab('past', 'Voorbij')}
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                {activeTab === 'upcoming' && DUMMY_UPCOMING.map(item => renderCard(item, 'upcoming'))}
-                {activeTab === 'pending' && DUMMY_PENDING.map(item => renderCard(item, 'pending'))}
-                {activeTab === 'past' && DUMMY_PAST.map(item => renderCard(item, 'past'))}
+            <ScrollView contentContainerStyle={styles.scrollContent} refreshControl={<RefreshControl refreshing={false} />}>
+                {activeTab === 'upcoming' && upcomingAppointments.length === 0 && (
+                    <Text style={{ textAlign: 'center', color: authColors.muted, marginTop: 20 }}>Geen aankomende afspraken</Text>
+                )}
+                {activeTab === 'upcoming' && upcomingAppointments.map(item => renderCard(item, 'upcoming'))}
+
+                {activeTab === 'pending' && pendingAppointments.map(item => renderCard(item, 'pending'))}
+                {activeTab === 'past' && pastAppointments.map(item => renderCard(item, 'past'))}
             </ScrollView>
 
-            {/* REVIEW MODAL */}
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -350,10 +315,10 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
 
                             <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 24 }}>
                                 <Text style={styles.modalTitle}>
-                                    Beoordeel {selectedAppointment?.personName.replace(/^(met|Met)\s+/, '')}
+                                    Beoordeel {selectedAppointment?.tutorName?.replace(/^(met|Met)\s+/, '')}
                                 </Text>
                                 <Text style={styles.modalSubtitle}>
-                                    {selectedAppointment?.subject}
+                                    {selectedAppointment?.title}
                                 </Text>
 
                                 {renderQuestionStars('q1', 'Was de uitleg duidelijk en aangepast aan jouw niveau?')}

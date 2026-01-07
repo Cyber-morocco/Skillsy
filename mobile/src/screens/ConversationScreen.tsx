@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { conversationStyles as styles, conversationColors } from '../styles/ConversationStyle';
 import ScheduleMatchScreen from './ScheduleMatchScreen';
 import { subscribeToMessages, sendMessage as sendFirebaseMessage, updateMessage } from '../services/chatService';
+import { createAppointment } from '../services/appointmentService';
 import { auth } from '../config/firebase';
 import { Message as FirebaseMessage } from '../types';
 import { Unsubscribe } from 'firebase/firestore';
@@ -22,6 +23,7 @@ type Message = {
     text: string;
     sender: 'me' | 'other';
     time: string;
+    senderId: string;
     type?: 'text' | 'appointmentRequest';
     appointmentDate?: string;
     appointmentStatus?: 'pending' | 'accepted' | 'rejected';
@@ -58,13 +60,13 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
         if (!chatId) return;
 
         const unsubscribe = subscribeToMessages(chatId, (newMessages) => {
-            
+
             const formattedMessages = newMessages.map(m => {
-                
                 return {
                     id: m.id,
                     text: m.text,
                     sender: m.senderId === auth.currentUser?.uid ? 'me' as const : 'other' as const,
+                    senderId: m.senderId,
                     time: m.createdAt?.toDate ? m.createdAt.toDate().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '',
                     type: m.type || (m.appointmentDate ? 'appointmentRequest' : 'text'),
                     appointmentDate: m.appointmentDate,
@@ -81,7 +83,7 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
         if (messageText.trim() && chatId) {
             try {
                 const text = messageText.trim();
-                setMessageText(''); 
+                setMessageText('');
                 await sendFirebaseMessage(chatId, text);
             } catch (error) {
                 console.error('Send message error:', error);
@@ -115,6 +117,28 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
         if (!chatId) return;
         try {
             await updateMessage(chatId, messageId, { appointmentStatus: status });
+
+            if (status === 'accepted') {
+                const message = messages.find(m => m.id === messageId);
+                if (message && message.appointmentDate) {
+                    await createAppointment({
+                        tutorId: auth.currentUser?.uid || '',
+                        studentId: message.senderId,
+                        participantIds: [auth.currentUser?.uid || '', message.senderId],
+                        tutorName: auth.currentUser?.displayName || 'Tutor',
+                        tutorAvatar: auth.currentUser?.photoURL || '',
+                        studentName: contactName,
+                        studentAvatar: '', 
+                        title: 'Afspraak',
+                        subtitle: `Met ${contactName}`,
+                        date: message.appointmentDate,
+                        time: '10:00 - 11:00', 
+                        location: 'fysiek',
+                        initials: contactInitials,
+                        status: 'confirmed'
+                    });
+                }
+            }
         } catch (error) {
             console.error('Error updating appointment:', error);
         }
