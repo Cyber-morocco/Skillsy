@@ -25,7 +25,7 @@ const filterTalents = (
     }
 
     if (selectedCategories.length > 0) {
-      const talentSkillNames = talent.skills.map((s) => s.name.toLowerCase());
+      const talentSkillNames = (talent.skillNames || []).map(s => s.toLowerCase());
       const hasMatchingCategory = selectedCategories.some((category) =>
         talentSkillNames.some((skill) => skill.includes(category.toLowerCase()))
       );
@@ -33,7 +33,8 @@ const filterTalents = (
     }
 
     if (searchTerm) {
-      const hasMatchingSkill = talent.skills.some((skill) => skill.name.toLowerCase().includes(searchTerm));
+      const talentSkillNames = (talent.skillNames || []).map(s => s.toLowerCase());
+      const hasMatchingSkill = talentSkillNames.some((skill) => skill.includes(searchTerm));
       if (!hasMatchingSkill) return false;
     }
 
@@ -63,7 +64,7 @@ export const useExploreMap = () => {
         lng: u.location?.lng || 0,
         shortBio: u.bio || '',
         avatar: u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName || 'U'}`,
-        skills: u.skills || [],
+        skillNames: u.skillNames || [],
         isActive: true
       }));
       setAllTalents(mappedTalents);

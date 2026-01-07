@@ -1,54 +1,79 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
     StatusBar,
     Text,
     View,
     TouchableOpacity,
     ScrollView,
+    Alert,
+    ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { appointmentDetailStyles as styles } from '../styles/AppointmentDetailStyles';
-
-export interface AppointmentData {
-    id: string;
-    title: string;
-    subtitle: string;
-    date: string;
-    time: string;
-    location: 'fysiek' | 'online';
-    status: 'confirmed' | 'pending';
-    avatar?: string;
-    initials: string;
-    fee?: number;
-    address?: string;
-    description?: string;
-    tutorPhone?: string;
-    tutorEmail?: string;
-}
+import { Appointment } from '../types';
+import { updateAppointmentStatus } from '../services/appointmentService';
 
 interface AppointmentDetailScreenProps {
-    appointment: AppointmentData;
-    onBack: () => void;
-    onCancel?: () => void;
-    onReschedule?: () => void;
+    route?: {
+        params: {
+            appointment: Appointment;
+        }
+    };
+    navigation?: any;
+    // Keeping these for potential direct use, but we'll prioritize route.params
+    appointment?: Appointment;
+    onBack?: () => void;
 }
 
 export default function AppointmentDetailScreen({
-    appointment,
-    onBack,
-    onCancel,
-    onReschedule,
+    route,
+    navigation,
+    appointment: directAppointment,
+    onBack: directOnBack,
 }: AppointmentDetailScreenProps) {
+    const appointment = route?.params?.appointment || directAppointment;
+    const [cancelling, setCancelling] = useState(false);
+
+    if (!appointment) {
+        return (
+            <SafeAreaView style={styles.safeArea}>
+                <Text style={{ color: '#fff', textAlign: 'center', marginTop: 50 }}>Geen afspraak gegevens gevonden.</Text>
+            </SafeAreaView>
+        );
+    }
+
+    const handleBack = () => {
+        if (navigation) {
+            navigation.goBack();
+        } else if (directOnBack) {
+            directOnBack();
+        }
+    };
+
+    const handleCancel = async () => {
+        setCancelling(true);
+        try {
+            await updateAppointmentStatus(appointment.id, 'cancelled');
+            Alert.alert('Geannuleerd', 'De afspraak is geannuleerd.');
+            handleBack();
+        } catch (error) {
+            console.error('Error cancelling appointment:', error);
+            Alert.alert('Fout', 'Kon de afspraak niet annuleren.');
+        } finally {
+            setCancelling(false);
+        }
+    };
+
     const isConfirmed = appointment.status === 'confirmed';
-    const isPast = !onCancel && !onReschedule;
+    const isPast = appointment.status === 'completed' || appointment.status === 'cancelled';
 
     return (
         <SafeAreaView style={styles.safeArea}>
             <StatusBar barStyle="light-content" />
 
             <View style={styles.header}>
-                <TouchableOpacity onPress={onBack} style={styles.backButton}>
+                <TouchableOpacity onPress={handleBack} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={20} color="#F8FAFC" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Afspraak details</Text>
@@ -67,13 +92,17 @@ export default function AppointmentDetailScreen({
                         </View>
                         <View style={[
                             styles.statusBadge,
-                            isPast ? styles.statusConfirmed : (isConfirmed ? styles.statusConfirmed : styles.statusPending)
+                            appointment.status === 'confirmed' ? styles.statusConfirmed :
+                                appointment.status === 'pending' ? styles.statusPending : styles.statusPast
                         ]}>
                             <Text style={[
                                 styles.statusText,
-                                isPast ? styles.statusConfirmedText : (isConfirmed ? styles.statusConfirmedText : styles.statusPendingText)
+                                appointment.status === 'confirmed' ? styles.statusConfirmedText :
+                                    appointment.status === 'pending' ? styles.statusPendingText : styles.statusPastText
                             ]}>
-                                {isPast ? 'Voltooid' : (isConfirmed ? 'Bevestigd' : 'In afwachting')}
+                                {appointment.status === 'confirmed' ? 'Bevestigd' :
+                                    appointment.status === 'pending' ? 'In afwachting' :
+                                        appointment.status === 'completed' ? 'Voltooid' : 'Geannuleerd'}
                             </Text>
                         </View>
                     </View>
@@ -138,24 +167,29 @@ export default function AppointmentDetailScreen({
 
                 {!isPast && (
                     <View style={styles.actionsSection}>
-                        {onReschedule && (
-                            <TouchableOpacity
-                                style={styles.rescheduleButton}
-                                onPress={onReschedule}
-                                activeOpacity={0.8}
-                            >
-                                <Text style={styles.rescheduleButtonText}>Verzetten</Text>
-                            </TouchableOpacity>
-                        )}
-                        {onCancel && (
-                            <TouchableOpacity
-                                style={styles.cancelButton}
-                                onPress={onCancel}
-                                activeOpacity={0.8}
-                            >
+                        <TouchableOpacity
+                            style={styles.rescheduleButton}
+                            onPress={() => Alert.alert('Verzetten', 'Deze functie komt binnenkort.')}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.rescheduleButtonText}>Verzetten</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={[styles.cancelButton, cancelling && { opacity: 0.6 }]}
+                            onPress={() => Alert.alert('Annuleren', 'Weet je zeker dat je deze afspraak wilt annuleren?', [
+                                { text: 'Nee' },
+                                { text: 'Ja', onPress: handleCancel }
+                            ])}
+                            activeOpacity={0.8}
+                            disabled={cancelling}
+                        >
+                            {cancelling ? (
+                                <ActivityIndicator size="small" color="#EF4444" />
+                            ) : (
                                 <Text style={styles.cancelButtonText}>Annuleren</Text>
-                            </TouchableOpacity>
-                        )}
+                            )}
+                        </TouchableOpacity>
                     </View>
                 )}
 

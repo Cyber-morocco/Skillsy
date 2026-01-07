@@ -69,7 +69,8 @@ export interface Talent {
     avatar: string;
     lat: number;
     lng: number;
-    skills: { name: string }[];
+    skills?: { name: string }[];
+    skillNames?: string[];
     isActive: boolean;
 }
 
@@ -115,7 +116,7 @@ export interface Appointment {
     id: string;
     tutorId: string;
     studentId: string;
-    participantIds: string[]; 
+    participantIds: string[];
     tutorName?: string;
     tutorAvatar?: string;
     studentName?: string;

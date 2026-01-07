@@ -147,6 +147,7 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
     if (showScheduleMatch) {
         return (
             <ScheduleMatchScreen
+                contactId={route?.params?.contactId || ''}
                 contactName={contactName}
                 contactInitials={contactInitials}
                 contactColor={contactColor}

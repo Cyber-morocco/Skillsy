@@ -1,37 +1,41 @@
 import {
     collection,
-    addDoc,
-    updateDoc,
-    doc,
     query,
     where,
-    orderBy,
     onSnapshot,
+    addDoc,
     serverTimestamp,
+    doc,
+    updateDoc,
     Unsubscribe,
+    orderBy,
     Timestamp
 } from 'firebase/firestore';
 import { db, auth } from '../config/firebase';
 import { Appointment } from '../types';
 
-export const createAppointment = async (appointmentData: Partial<Appointment>): Promise<string> => {
+/**
+ * Create a new appointment
+ */
+export const createAppointment = async (appointmentData: Omit<Appointment, 'id' | 'createdAt'>): Promise<string> => {
     const appointmentsRef = collection(db, 'appointments');
     const docRef = await addDoc(appointmentsRef, {
         ...appointmentData,
-        status: 'confirmed', 
         createdAt: serverTimestamp()
     });
     return docRef.id;
 };
 
-export const subscribeToAppointments = (
-    userId: string,
-    onUpdate: (appointments: Appointment[]) => void
-): Unsubscribe => {
-    
+/**
+ * Subscribe to appointments for the current user
+ * Returns appointments where the user is a participant
+ */
+export const subscribeToAppointments = (userId: string, onUpdate: (appointments: Appointment[]) => void): Unsubscribe => {
+    const appointmentsRef = collection(db, 'appointments');
     const q = query(
-        collection(db, 'appointments'),
-        where('participantIds', 'array-contains', userId)
+        appointmentsRef,
+        where('participantIds', 'array-contains', userId),
+        orderBy('date', 'asc')
     );
 
     return onSnapshot(q, (snapshot) => {
@@ -40,19 +44,20 @@ export const subscribeToAppointments = (
             return {
                 id: doc.id,
                 ...data,
-                createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate() : data.createdAt
+                // Handle complex types if necessary
             } as Appointment;
         });
-
-        appointments.sort((a, b) => {
-            return (a.date > b.date) ? 1 : -1;
-        });
-
         onUpdate(appointments);
     });
 };
 
-export const updateAppointmentStatus = async (appointmentId: string, status: 'confirmed' | 'pending' | 'cancelled' | 'completed'): Promise<void> => {
+/**
+ * Update appointment status
+ */
+export const updateAppointmentStatus = async (appointmentId: string, status: Appointment['status']): Promise<void> => {
     const appointmentRef = doc(db, 'appointments', appointmentId);
-    await updateDoc(appointmentRef, { status });
+    await updateDoc(appointmentRef, {
+        status,
+        updatedAt: serverTimestamp()
+    });
 };
