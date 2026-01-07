@@ -180,7 +180,7 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           onChange={(event: any, selected?: Date) => {
             setDatePickerVisible(false);
-            if (!selected || activeIndex === null) return;
+            if (!selected || activeIndex === null || !dates[activeIndex]) return;
             handleUpdateDate(dates[activeIndex].id, { date: selected });
           }}
         />
