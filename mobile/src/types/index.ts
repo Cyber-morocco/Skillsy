@@ -71,6 +71,9 @@ export interface Message {
     text: string;
     senderId: string;
     createdAt: any;
+    type?: 'text' | 'appointmentRequest';
+    appointmentDate?: string;
+    appointmentStatus?: 'pending' | 'accepted' | 'rejected';
 }
 
 export interface MatchRequest {

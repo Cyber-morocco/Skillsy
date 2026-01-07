@@ -105,7 +105,6 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
 
     const handleRespondWithClose = async (matchId: string, status: 'accepted' | 'rejected') => {
         await onRespondMatch?.(matchId, status);
-        // If we want to stay in the modal, we don't close it, but if we accepted, maybe we want to see the new chat?
         if (status === 'accepted') {
             setMatchesModalVisible(false);
         }

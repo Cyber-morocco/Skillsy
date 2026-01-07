@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { conversationStyles as styles, conversationColors } from '../styles/ConversationStyle';
 import ScheduleMatchScreen from './ScheduleMatchScreen';
-import { subscribeToMessages, sendMessage as sendFirebaseMessage } from '../services/chatService';
+import { subscribeToMessages, sendMessage as sendFirebaseMessage, updateMessage } from '../services/chatService';
 import { auth } from '../config/firebase';
 import { Message as FirebaseMessage } from '../types';
 import { Unsubscribe } from 'firebase/firestore';
@@ -22,6 +22,9 @@ type Message = {
     text: string;
     sender: 'me' | 'other';
     time: string;
+    type?: 'text' | 'appointmentRequest';
+    appointmentDate?: string;
+    appointmentStatus?: 'pending' | 'accepted' | 'rejected';
 };
 
 type ConversationProps = {
@@ -55,13 +58,19 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
         if (!chatId) return;
 
         const unsubscribe = subscribeToMessages(chatId, (newMessages) => {
-            // Map Firebase messages to the format expected by the UI
-            const formattedMessages = newMessages.map(m => ({
-                id: m.id,
-                text: m.text,
-                sender: m.senderId === auth.currentUser?.uid ? 'me' as const : 'other' as const,
-                time: m.createdAt?.toDate ? m.createdAt.toDate().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '',
-            }));
+            
+            const formattedMessages = newMessages.map(m => {
+                
+                return {
+                    id: m.id,
+                    text: m.text,
+                    sender: m.senderId === auth.currentUser?.uid ? 'me' as const : 'other' as const,
+                    time: m.createdAt?.toDate ? m.createdAt.toDate().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '',
+                    type: m.type || (m.appointmentDate ? 'appointmentRequest' : 'text'),
+                    appointmentDate: m.appointmentDate,
+                    appointmentStatus: m.appointmentStatus,
+                };
+            });
             setMessages(formattedMessages);
         });
 
@@ -72,7 +81,7 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
         if (messageText.trim() && chatId) {
             try {
                 const text = messageText.trim();
-                setMessageText(''); // Clear input early for better UX
+                setMessageText(''); 
                 await sendFirebaseMessage(chatId, text);
             } catch (error) {
                 console.error('Send message error:', error);
@@ -84,6 +93,33 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
         setShowScheduleMatch(true);
     };
 
+    const handleMatchRequest = async (day: string) => {
+        if (!chatId) return;
+
+        const currentUserName = auth.currentUser?.displayName || 'Ik';
+        const text = `${currentUserName} verzoekt om op ${day} een afspraak te nemen`;
+
+        try {
+            await sendFirebaseMessage(chatId, text, {
+                type: 'appointmentRequest',
+                appointmentDate: day,
+                appointmentStatus: 'pending'
+            });
+            setShowScheduleMatch(false);
+        } catch (error) {
+            console.error('Error sending appointment request:', error);
+        }
+    };
+
+    const handleRespondAppointment = async (messageId: string, status: 'accepted' | 'rejected') => {
+        if (!chatId) return;
+        try {
+            await updateMessage(chatId, messageId, { appointmentStatus: status });
+        } catch (error) {
+            console.error('Error updating appointment:', error);
+        }
+    };
+
     if (showScheduleMatch) {
         return (
             <ScheduleMatchScreen
@@ -92,24 +128,81 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                 contactColor={contactColor}
                 contactSubtitle={contactSubtitle}
                 onBack={() => setShowScheduleMatch(false)}
+                onMatch={handleMatchRequest}
             />
         );
     }
 
-    const renderMessage = ({ item }: { item: Message }) => (
-        <View style={[
-            styles.messageBubble,
-            item.sender === 'me' ? styles.myMessage : styles.otherMessage
-        ]}>
-            <Text style={[
-                styles.messageText,
-                item.sender === 'me' ? styles.myMessageText : styles.otherMessageText
+    const renderMessage = ({ item }: { item: Message }) => {
+        if (item.type === 'appointmentRequest' || (item.appointmentDate && item.appointmentStatus)) {
+            return (
+                <View style={[
+                    styles.messageBubble,
+                    item.sender === 'me' ? styles.myMessage : styles.otherMessage,
+                    { minWidth: 250 }
+                ]}>
+                    <Text style={[
+                        styles.messageText,
+                        item.sender === 'me' ? styles.myMessageText : styles.otherMessageText,
+                        { fontWeight: '600', marginBottom: 8 }
+                    ]}>
+                        {item.text}
+                    </Text>
+
+                    {item.appointmentStatus === 'pending' ? (
+                        item.sender === 'other' ? (
+                            <View style={{ flexDirection: 'row', gap: 10, marginTop: 5 }}>
+                                <TouchableOpacity
+                                    style={{ flex: 1, backgroundColor: '#10B981', padding: 8, borderRadius: 8, alignItems: 'center' }}
+                                    onPress={() => handleRespondAppointment(item.id, 'accepted')}
+                                >
+                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>Accepteren</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={{ flex: 1, backgroundColor: '#EF4444', padding: 8, borderRadius: 8, alignItems: 'center' }}
+                                    onPress={() => handleRespondAppointment(item.id, 'rejected')}
+                                >
+                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>Weigeren</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <View style={{ marginTop: 5 }}>
+                                <Text style={{ fontSize: 12, fontStyle: 'italic', color: 'rgba(255,255,255,0.7)' }}>Wachten op reactie...</Text>
+                            </View>
+                        )
+                    ) : (
+                        <View style={{ marginTop: 5, padding: 8, backgroundColor: 'rgba(0,0,0,0.1)', borderRadius: 8 }}>
+                            <Text style={{
+                                color: item.sender === 'me' ? '#fff' : '#000',
+                                textAlign: 'center',
+                                fontStyle: 'italic',
+                                fontSize: 12
+                            }}>
+                                {item.appointmentStatus === 'accepted' ? 'Afspraak geaccepteerd' : 'Afspraak geweigerd'}
+                            </Text>
+                        </View>
+                    )}
+
+                    <Text style={styles.messageTime}>{item.time}</Text>
+                </View>
+            );
+        }
+
+        return (
+            <View style={[
+                styles.messageBubble,
+                item.sender === 'me' ? styles.myMessage : styles.otherMessage
             ]}>
-                {item.text}
-            </Text>
-            <Text style={styles.messageTime}>{item.time}</Text>
-        </View>
-    );
+                <Text style={[
+                    styles.messageText,
+                    item.sender === 'me' ? styles.myMessageText : styles.otherMessageText
+                ]}>
+                    {item.text}
+                </Text>
+                <Text style={styles.messageTime}>{item.time}</Text>
+            </View>
+        );
+    };
 
     return (
         <KeyboardAvoidingView
