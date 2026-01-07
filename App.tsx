@@ -78,7 +78,7 @@ export default function App() {
       case 'profile':
         return <ProfileScreen onNavigate={handleNavigate} />;
       case 'exploreProfile':
-        return ( 
+        return (
           <ExploreProfileScreen
             user={selectedUser}
             onBack={() => setActiveScreen(previousScreen)}

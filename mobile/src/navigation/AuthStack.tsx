@@ -15,6 +15,7 @@ import {
   ProfileCreationStep2,
   ProfileCreationStep3,
 } from '../screens';
+import PrePagina from '../screens/PrePagina';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -22,6 +23,7 @@ export type AuthStackParamList = {
   ProfileCreationStep1: undefined;
   ProfileCreationStep2: undefined;
   ProfileCreationStep3: undefined;
+  PrePagina: undefined;
 };
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -36,7 +38,8 @@ const screenOptions: NativeStackNavigationOptions = {
 const AuthStackNavigator = () => {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login" screenOptions={screenOptions}>
+      <Stack.Navigator initialRouteName="PrePagina" screenOptions={screenOptions}>
+        <Stack.Screen name="PrePagina" component={PrePagina} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Signup" component={SignupScreen} />
         <Stack.Screen name="ProfileCreationStep1" component={ProfileCreationStep1} />

@@ -3,6 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { AuthStackParamList } from '../navigation/AuthStack';
 
 const { width } = Dimensions.get('window');
 
@@ -17,6 +20,8 @@ const colors = {
 };
 
 export default function PrePagina() {
+    const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
+
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar style="dark" />
@@ -39,11 +44,17 @@ export default function PrePagina() {
                 </View>
 
                 <View style={styles.authContainer}>
-                    <TouchableOpacity style={styles.primaryButton}>
+                    <TouchableOpacity
+                        style={styles.primaryButton}
+                        onPress={() => navigation.navigate('Signup')}
+                    >
                         <Text style={styles.primaryButtonText}>Sign up</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.secondaryButton}>
+                    <TouchableOpacity
+                        style={styles.secondaryButton}
+                        onPress={() => navigation.navigate('Login')}
+                    >
                         <Text style={styles.secondaryButtonText}>Log in</Text>
                     </TouchableOpacity>
                 </View>
@@ -67,9 +78,26 @@ export default function PrePagina() {
                         icon="heart-outline"
                         title="Vertrouwde community"
                         description="Beoordelingen en reviews voor een veilige ervaring"
-                        color="#ec4899"
+                        color="#ec4899" 
                         bgColor="#fce7f3"
                     />
+                </View>
+
+                <View style={styles.statsContainer}>
+                    <View style={styles.statItem}>
+                        <Text style={styles.statValue}>1,200+</Text>
+                        <Text style={styles.statLabel}>Actieve {'\n'}gebruikers</Text>
+                    </View>
+                    <View style={styles.statDivider} />
+                    <View style={styles.statItem}>
+                        <Text style={styles.statValue}>350+</Text>
+                        <Text style={styles.statLabel}>Vaardigheden</Text>
+                    </View>
+                    <View style={styles.statDivider} />
+                    <View style={styles.statItem}>
+                        <Text style={styles.statValue}>5,000+</Text>
+                        <Text style={styles.statLabel}>Sessies {'\n'}voltooid</Text>
+                    </View>
                 </View>
 
             </ScrollView>
