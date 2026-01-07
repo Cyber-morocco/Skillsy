@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, ScrollView, Alert, ActivityIndicator, Image, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, ScrollView, Alert, ActivityIndicator, Image, Platform, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
@@ -17,6 +17,8 @@ import {
   updateUserProfile,
   uploadProfileImage,
   deleteProfileImage,
+  uploadVideo,
+  deleteVideo,
 } from '../services/userService';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -25,7 +27,7 @@ interface ProfileScreenProps {
 }
 
 export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
-  const [activeTab, setActiveTab] = useState<'skills' | 'wilLeren' | 'reviews'>('skills');
+  const [activeTab, setActiveTab] = useState<'skills' | 'wilLeren' | 'promoVideo' | 'reviews'>('skills');
   const [skills, setSkills] = useState<Skill[]>([]);
   const [learnSkills, setLearnSkills] = useState<LearnSkill[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -167,6 +169,86 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
     }
   };
 
+  const handleLogout = () => {
+    Alert.alert(
+      'Uitloggen',
+      'Weet je zeker dat je wilt uitloggen?',
+      [
+        { text: 'Annuleren', style: 'cancel' },
+        {
+          text: 'Uitloggen',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut(auth);
+            } catch (error) {
+              Alert.alert('Fout', 'Kan niet uitloggen');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleVideoPicker = async (index: number) => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['videos'],
+      allowsEditing: true,
+      quality: 1,
+      videoMaxDuration: 180,
+    });
+
+    if (!result.canceled) {
+      setSaving(true);
+      try {
+        const videoUrl = await uploadVideo(result.assets[0].uri, index);
+        const currentVideos = [...(userProfile?.promoVideos || [])];
+
+        while (currentVideos.length <= index) {
+          currentVideos.push('');
+        }
+
+        currentVideos[index] = videoUrl;
+        await updateUserProfile({ promoVideos: currentVideos });
+        Alert.alert('Succes', 'Video geüpload');
+      } catch (error) {
+        console.error('Error uploading video:', error);
+        Alert.alert('Fout', 'Kon video niet uploaden');
+      } finally {
+        setSaving(false);
+      }
+    }
+  };
+
+  const handleDeleteVideo = async (index: number) => {
+    Alert.alert(
+      'Video verwijderen',
+      'Weet je zeker dat je deze video wilt verwijderen?',
+      [
+        { text: 'Annuleren', style: 'cancel' },
+        {
+          text: 'Verwijderen',
+          style: 'destructive',
+          onPress: async () => {
+            setSaving(true);
+            try {
+              await deleteVideo(index);
+              const currentVideos = [...(userProfile?.promoVideos || [])];
+              currentVideos[index] = '';
+              await updateUserProfile({ promoVideos: currentVideos });
+              Alert.alert('Succes', 'Video verwijderd');
+            } catch (error) {
+              console.error('Error deleting video:', error);
+              Alert.alert('Fout', 'Kon video niet verwijderen');
+            } finally {
+              setSaving(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const AddSkill = () => {
     setModalVisible(true);
   };
@@ -257,10 +339,6 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
 
       <View style={styles.content}>
         <View style={styles.topRow}>
-          <TouchableOpacity style={styles.squareButton}>
-            <Ionicons name="arrow-back" size={20} color={authColors.text} />
-          </TouchableOpacity>
-
           <TouchableOpacity style={styles.squareButtonWide} onPress={() => onNavigate?.('availability')}>
             <Ionicons name="calendar-outline" size={18} color={authColors.text} />
             <Text style={styles.squareButtonText}>Beschikbaarheid</Text>
@@ -269,6 +347,10 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
           <TouchableOpacity style={styles.squareButtonWide} onPress={handleEditProfile}>
             <Ionicons name="create-outline" size={18} color={authColors.text} />
             <Text style={styles.squareButtonText}>Edit</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.squareButton} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={20} color="#ff4444" />
           </TouchableOpacity>
         </View>
 
@@ -320,6 +402,13 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 Wil leren
               </Text>
               {activeTab === 'wilLeren' && <View style={styles.tabButtonActive} />}
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => setActiveTab('promoVideo')} style={styles.tabItem}>
+              <Text style={[styles.tabText, activeTab === 'promoVideo' && styles.tabTextActive]}>
+                Promo video
+              </Text>
+              {activeTab === 'promoVideo' && <View style={styles.tabButtonActive} />}
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => setActiveTab('reviews')} style={styles.tabItem}>
@@ -383,6 +472,76 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}
+          </View>
+        )}
+
+        {activeTab === 'promoVideo' && (
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Mijn Promo Video's</Text>
+            </View>
+
+            <View style={{ marginBottom: 20, backgroundColor: 'rgba(124, 58, 237, 0.1)', padding: 15, borderRadius: 12 }}>
+              <Text style={{ color: authColors.text, fontSize: 13, lineHeight: 18 }}>
+                Stel jezelf voor en vertel over je skills! Je kunt maximaal 3 video's van elk max 3 minuten uploaden.
+              </Text>
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              {[0, 1, 2].map((index) => {
+                const videoUrl = userProfile?.promoVideos?.[index];
+                const hasVideo = videoUrl && videoUrl !== '';
+
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => {
+                      if (hasVideo) {
+                        Linking.openURL(videoUrl).catch(err => {
+                          console.error('Error opening video URL:', err);
+                          Alert.alert('Fout', 'Kon de video niet openen');
+                        });
+                      } else {
+                        handleVideoPicker(index);
+                      }
+                    }}
+                    style={{
+                      flex: 1,
+                      aspectRatio: 9 / 16,
+                      backgroundColor: 'rgba(255,255,255,0.05)',
+                      borderRadius: 12,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      borderWidth: 1,
+                      borderColor: 'rgba(255,255,255,0.1)',
+                      borderStyle: hasVideo ? 'solid' : 'dashed',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {hasVideo ? (
+                      <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                        <Ionicons name="play-circle" size={40} color={authColors.accent} />
+                        <TouchableOpacity
+                          onPress={() => handleDeleteVideo(index)}
+                          style={{
+                            position: 'absolute',
+                            top: 5,
+                            right: 5,
+                            backgroundColor: 'rgba(0,0,0,0.5)',
+                            padding: 4,
+                            borderRadius: 12
+                          }}
+                        >
+                          <Ionicons name="close" size={16} color="#fff" />
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <Ionicons name="add" size={30} color={authColors.muted} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
         )}
 
@@ -560,34 +719,6 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
           </TouchableWithoutFeedback>
         </Modal>
 
-        <View style={styles.logoutContainer}>
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={() => {
-              Alert.alert(
-                'Uitloggen',
-                'Weet je zeker dat je wilt uitloggen?',
-                [
-                  { text: 'Annuleren', style: 'cancel' },
-                  {
-                    text: 'Uitloggen',
-                    style: 'destructive',
-                    onPress: async () => {
-                      try {
-                        await signOut(auth);
-                      } catch (error) {
-                        Alert.alert('Fout', 'Kan niet uitloggen');
-                      }
-                    },
-                  },
-                ]
-              );
-            }}
-          >
-            <Ionicons name="log-out-outline" size={20} color="#ff4444" />
-            <Text style={styles.logoutButtonText}>Uitloggen</Text>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -728,7 +859,7 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     backgroundColor: authColors.background,
     marginHorizontal: -20,
-    paddingHorizontal: 20,
+    paddingHorizontal: 5,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(148, 163, 184, 0.1)',
   },
@@ -738,7 +869,7 @@ const styles = StyleSheet.create({
     paddingBottom: 15,
   },
   tabText: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '600',
     color: authColors.muted,
   },

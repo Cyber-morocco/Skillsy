@@ -53,6 +53,7 @@ export interface UserProfile {
         city?: string;
     };
     createdAt: any;
+    promoVideos?: string[];
 }
 
 export interface AvailabilityDay {

@@ -7,8 +7,11 @@ import {
   View,
   Image,
   ActivityIndicator,
+  ScrollView,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Video, ResizeMode } from 'expo-av';
 import {
   subscribeToOtherUserProfile,
   subscribeToOtherUserSkills,
@@ -16,16 +19,7 @@ import {
 } from '../services/userService';
 import { UserProfile, Skill, Review } from '../types';
 
-const colors = {
-  primary: '#6366f1',
-  secondary: '#1e293b',
-  background: '#0B1021',
-  text: '#f8fafc',
-  textMuted: '#94a3b8',
-  accent: '#a855f7',
-  border: '#334155',
-  card: '#1e293b',
-};
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface ExploreProfileScreenProps {
   userId: string;
@@ -35,7 +29,7 @@ interface ExploreProfileScreenProps {
 }
 
 const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onBack, onMakeAppointment, onSendMessage }) => {
-  const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews'>('vaardigheden');
+  const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews' | 'videos'>('vaardigheden');
   const [liked, setLiked] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [skills, setSkills] = useState<Skill[]>([]);
@@ -192,9 +186,27 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
               Reviews
             </Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => setActiveTab('videos')}
+            style={[
+              styles.tabButton,
+              activeTab === 'videos' && styles.tabButtonActive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'videos' && styles.tabTextActive,
+              ]}
+            >
+              Video's
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.tabContent}>
+        <ScrollView style={styles.tabContent}>
           {activeTab === 'vaardigheden' ? (
             skills.length > 0 ? (
               skills.map((skill) => (
@@ -211,7 +223,7 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
             ) : (
               <Text style={styles.emptyText}>Geen vaardigheden opgegeven.</Text>
             )
-          ) : (
+          ) : activeTab === 'reviews' ? (
             reviews.length > 0 ? (
               reviews.map((review) => (
                 <View key={review.id} style={styles.reviewItem}>
@@ -225,8 +237,26 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
             ) : (
               <Text style={styles.emptyText}>Nog geen reviews.</Text>
             )
+          ) : (
+            // Videos tab
+            profile?.promoVideos && profile.promoVideos.length > 0 ? (
+              profile.promoVideos.map((videoUrl, index) => (
+                <View key={index} style={styles.videoContainer}>
+                  <Video
+                    source={{ uri: videoUrl }}
+                    style={styles.video}
+                    useNativeControls
+                    resizeMode={ResizeMode.CONTAIN}
+                    isLooping={false}
+                  />
+                  <Text style={styles.videoLabel}>Promo video {index + 1}</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.emptyText}>Geen video's beschikbaar.</Text>
+            )
           )}
-        </View>
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
@@ -510,6 +540,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 20,
     fontStyle: 'italic',
+  },
+  videoContainer: {
+    marginBottom: 20,
+    backgroundColor: '#000',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  video: {
+    width: '100%',
+    height: 200,
+  },
+  videoLabel: {
+    fontSize: 12,
+    color: '#666778',
+    textAlign: 'center',
+    paddingVertical: 8,
+    backgroundColor: '#ffffff',
   },
 });
 
