@@ -25,7 +25,7 @@ interface ProfileScreenProps {
 }
 
 export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
-  const [activeTab, setActiveTab] = useState<'skills' | 'wilLeren' | 'reviews'>('skills');
+  const [activeTab, setActiveTab] = useState<'skills' | 'wilLeren' | 'promoVideo' | 'reviews'>('skills');
   const [skills, setSkills] = useState<Skill[]>([]);
   const [learnSkills, setLearnSkills] = useState<LearnSkill[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -343,6 +343,13 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
               {activeTab === 'wilLeren' && <View style={styles.tabButtonActive} />}
             </TouchableOpacity>
 
+            <TouchableOpacity onPress={() => setActiveTab('promoVideo')} style={styles.tabItem}>
+              <Text style={[styles.tabText, activeTab === 'promoVideo' && styles.tabTextActive]}>
+                Promo video
+              </Text>
+              {activeTab === 'promoVideo' && <View style={styles.tabButtonActive} />}
+            </TouchableOpacity>
+
             <TouchableOpacity onPress={() => setActiveTab('reviews')} style={styles.tabItem}>
               <Text style={[styles.tabText, activeTab === 'reviews' && styles.tabTextActive]}>
                 Reviews
@@ -404,6 +411,14 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 </TouchableOpacity>
               </TouchableOpacity>
             ))}
+          </View>
+        )}
+
+        {activeTab === 'promoVideo' && (
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Mijn Promo Video</Text>
+            </View>
           </View>
         )}
 
@@ -721,7 +736,7 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     backgroundColor: authColors.background,
     marginHorizontal: -20,
-    paddingHorizontal: 20,
+    paddingHorizontal: 5,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(148, 163, 184, 0.1)',
   },
@@ -731,7 +746,7 @@ const styles = StyleSheet.create({
     paddingBottom: 15,
   },
   tabText: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '600',
     color: authColors.muted,
   },
