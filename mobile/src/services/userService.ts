@@ -209,6 +209,29 @@ export const subscribeToOtherUserReviews = (
     );
 };
 
+export const subscribeToTalents = (
+    onTalentsChange: (talents: any[]) => void,
+    onError?: (error: Error) => void
+): Unsubscribe => {
+    const usersRef = collection(db, 'users');
+    // We can't easily query for subcollections in all users with a single listener for now,
+    // so we'll fetch users and their skills would need separate fetching or be denormalized.
+    // For the map, we need lat/lng and basic info which is in the user doc.
+    return onSnapshot(
+        usersRef,
+        (snapshot) => {
+            const talents = snapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter((u: any) => u.profileComplete && u.location && u.location.lat && u.location.lng);
+            onTalentsChange(talents);
+        },
+        (error) => {
+            console.error('Error subscribing to talents:', error);
+            onError?.(error);
+        }
+    );
+};
+
 export const updateUserProfile = async (updates: Partial<UserProfile>): Promise<void> => {
     const userId = getCurrentUserId();
     const userRef = doc(db, 'users', userId);

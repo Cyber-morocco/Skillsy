@@ -39,9 +39,9 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [learnModalVisible, setLearnModalVisible] = useState(false);
   const [newLearnSubject, setNewLearnSubject] = useState('');
 
-  const [profileName, setProfileName] = useState('Sophie Bakker');
-  const [profileLocation, setProfileLocation] = useState('Centrum, Amsterdam');
-  const [profileAbout, setProfileAbout] = useState('Gepassioneerd lerares met een liefde voor talen en koken.');
+  const [profileName, setProfileName] = useState('');
+  const [profileLocation, setProfileLocation] = useState('');
+  const [profileAbout, setProfileAbout] = useState('');
   const [profileImage, setProfileImage] = useState<string | null>(null);
 
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -144,15 +144,18 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
 
       await updateUserProfile({
         displayName: tempName,
-        'location.city': tempLocation,
+        location: {
+          ...userProfile?.location,
+          city: tempLocation,
+        },
         bio: tempAbout,
-        photoURL: finalImageUrl,
+        photoURL: finalImageUrl || undefined,
       });
 
       setProfileName(tempName);
       setProfileLocation(tempLocation);
       setProfileAbout(tempAbout);
-      setProfileImage(finalImageUrl);
+      setProfileImage(finalImageUrl as string);
       setEditModalVisible(false);
       Alert.alert('Succes', 'Profiel bijgewerkt');
     } catch (error) {
