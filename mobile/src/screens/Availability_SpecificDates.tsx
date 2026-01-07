@@ -86,6 +86,7 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
           <View key={i} style={styles.dateCard}>
             <View style={styles.dateHeader}>
               <TouchableOpacity
+                style={styles.dateButton}
                 onPress={() => {
                   setActiveIndex(i);
                   setDatePickerVisible(true);
@@ -222,8 +223,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#eee',
   },
-  dateHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  dateText: { fontWeight: '600' },
+  dateHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  dateButton: {
+    backgroundColor: '#f3e8ff',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: purple,
+  },
+  dateText: {
+    fontWeight: '700',
+    fontSize: 18,
+    color: purple,
+  },
   remove: { color: 'red', fontWeight: '600' },
 
   timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
