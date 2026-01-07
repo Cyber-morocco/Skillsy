@@ -21,6 +21,7 @@ export interface Post {
     userAvatar: string;
     type: PostType;
     content: string;
+    imageURL?: string;
     likes: string[];
     commentCount: number;
     createdAt: any;

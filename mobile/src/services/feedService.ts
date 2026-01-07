@@ -12,7 +12,8 @@ import {
     Unsubscribe,
     increment
 } from 'firebase/firestore';
-import { db, auth } from '../config/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, auth, storage } from '../config/firebase';
 import { Post, PostType, PostComment } from '../types';
 
 /**
@@ -32,11 +33,31 @@ export const subscribeToPosts = (onUpdate: (posts: Post[]) => void): Unsubscribe
 };
 
 /**
- * Create a new post
+ * Upload an image to Firebase Storage and return the download URL
  */
-export const createPost = async (type: PostType, content: string): Promise<void> => {
+const uploadPostImage = async (imageUri: string, userId: string): Promise<string> => {
+    const response = await fetch(imageUri);
+    const blob = await response.blob();
+
+    const filename = `posts/${userId}/${Date.now()}.jpg`;
+    const storageRef = ref(storage, filename);
+
+    await uploadBytes(storageRef, blob);
+    return await getDownloadURL(storageRef);
+};
+
+/**
+ * Create a new post with optional image
+ */
+export const createPost = async (type: PostType, content: string, imageUri?: string): Promise<void> => {
     const user = auth.currentUser;
     if (!user) throw new Error('User not authenticated');
+
+    let imageURL: string | undefined;
+
+    if (imageUri) {
+        imageURL = await uploadPostImage(imageUri, user.uid);
+    }
 
     const postsRef = collection(db, 'posts');
     await addDoc(postsRef, {
@@ -45,6 +66,7 @@ export const createPost = async (type: PostType, content: string): Promise<void>
         userAvatar: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'U'}`,
         type,
         content,
+        ...(imageURL && { imageURL }),
         likes: [],
         commentCount: 0,
         createdAt: serverTimestamp()

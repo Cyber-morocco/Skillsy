@@ -31,9 +31,9 @@ export default function HomePage({ onViewProfile }: HomePageProps) {
     return () => unsubscribe();
   }, []);
 
-  const handleCreatePost = async (newPost: { type: PostType; content: string }) => {
+  const handleCreatePost = async (newPost: { type: PostType; content: string; imageUri?: string }) => {
     try {
-      await createPost(newPost.type, newPost.content);
+      await createPost(newPost.type, newPost.content, newPost.imageUri);
       setIsModalVisible(false);
     } catch (error) {
       console.error('Error creating post:', error);

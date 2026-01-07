@@ -5,6 +5,8 @@ import { authColors } from '../styles/authStyles';
 import { Post, PostType } from '../types';
 import { auth } from '../config/firebase';
 
+export { PostType };
+
 interface FeedItemProps {
     post: Post;
     onUserPress?: () => void;
@@ -52,6 +54,14 @@ const FeedItem: React.FC<FeedItemProps> = ({ post, onUserPress, onLike, onCommen
             </View>
 
             <Text style={styles.content}>{post.content}</Text>
+
+            {post.imageURL && (
+                <Image
+                    source={{ uri: post.imageURL }}
+                    style={styles.postImage}
+                    resizeMode="cover"
+                />
+            )}
 
             <View style={styles.footer}>
                 <TouchableOpacity style={styles.interaction} onPress={onLike}>
@@ -123,6 +133,12 @@ const styles = StyleSheet.create({
         color: authColors.text,
         fontSize: 15,
         lineHeight: 22,
+        marginBottom: 16,
+    },
+    postImage: {
+        width: '100%',
+        height: 200,
+        borderRadius: 12,
         marginBottom: 16,
     },
     footer: {
