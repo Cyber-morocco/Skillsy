@@ -21,6 +21,16 @@ import { UserProfile, Skill, Review } from '../types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+const colors = {
+  background: '#050816',
+  card: '#101936',
+  primary: '#7C3AED',
+  text: '#F8FAFC',
+  textMuted: '#94A3B8',
+  border: 'rgba(148, 163, 184, 0.25)',
+  accent: '#7C3AED',
+};
+
 interface ExploreProfileScreenProps {
   userId: string;
   onBack?: () => void;
