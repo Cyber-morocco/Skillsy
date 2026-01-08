@@ -157,6 +157,14 @@ export const subscribeToLearnSkills = (
     onError?: (error: Error) => void
 ): Unsubscribe => {
     const userId = getCurrentUserId();
+    return subscribeToOtherUserLearnSkills(userId, onSkillsChange, onError);
+};
+
+export const subscribeToOtherUserLearnSkills = (
+    userId: string,
+    onSkillsChange: (skills: LearnSkill[]) => void,
+    onError?: (error: Error) => void
+): Unsubscribe => {
     const skillsRef = collection(db, 'users', userId, 'learnSkills');
 
     return onSnapshot(

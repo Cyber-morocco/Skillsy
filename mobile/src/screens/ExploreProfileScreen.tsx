@@ -15,9 +15,10 @@ import { Video, ResizeMode } from 'expo-av';
 import {
   subscribeToOtherUserProfile,
   subscribeToOtherUserSkills,
-  subscribeToOtherUserReviews
+  subscribeToOtherUserReviews,
+  subscribeToOtherUserLearnSkills
 } from '../services/userService';
-import { UserProfile, Skill, Review } from '../types';
+import { UserProfile, Skill, Review, LearnSkill } from '../types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -39,10 +40,11 @@ interface ExploreProfileScreenProps {
 }
 
 const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onBack, onMakeAppointment, onSendMessage }) => {
-  const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews' | 'videos'>('vaardigheden');
+  const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews' | 'wilLeren' | 'videos'>('vaardigheden');
   const [liked, setLiked] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [learnSkills, setLearnSkills] = useState<LearnSkill[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,6 +61,10 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
       setSkills(fetchedSkills);
     });
 
+    const unsubscribeLearnSkills = subscribeToOtherUserLearnSkills(userId, (fetchedLearnSkills) => {
+      setLearnSkills(fetchedLearnSkills);
+    });
+
     const unsubscribeReviews = subscribeToOtherUserReviews(userId, (fetchedReviews) => {
       setReviews(fetchedReviews);
       setLoading(false);
@@ -67,6 +73,7 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
     return () => {
       unsubscribeProfile();
       unsubscribeSkills();
+      unsubscribeLearnSkills();
       unsubscribeReviews();
     };
   }, [userId]);
@@ -199,6 +206,24 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
 
           <TouchableOpacity
             activeOpacity={0.9}
+            onPress={() => setActiveTab('wilLeren')}
+            style={[
+              styles.tabButton,
+              activeTab === 'wilLeren' && styles.tabButtonActive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'wilLeren' && styles.tabTextActive,
+              ]}
+            >
+              Wil leren
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.9}
             onPress={() => setActiveTab('videos')}
             style={[
               styles.tabButton,
@@ -232,6 +257,18 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
               ))
             ) : (
               <Text style={styles.emptyText}>Geen vaardigheden opgegeven.</Text>
+            )
+          ) : activeTab === 'wilLeren' ? (
+            learnSkills.length > 0 ? (
+              learnSkills.map((skill) => (
+                <View key={skill.id} style={styles.skillItem}>
+                  <View style={styles.skillMain}>
+                    <Text style={styles.skillName}>{skill.subject}</Text>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.emptyText}>Geen leerdoelen opgegeven.</Text>
             )
           ) : activeTab === 'reviews' ? (
             reviews.length > 0 ? (
@@ -453,7 +490,7 @@ const styles = StyleSheet.create({
   },
   tabRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 6,
     marginTop: 18,
   },
   tabButton: {
