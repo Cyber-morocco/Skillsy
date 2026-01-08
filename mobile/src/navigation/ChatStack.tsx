@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 import ChatScreen from '../screens/ChatScreen';
 import ConversationScreen from '../screens/ConversationScreen';
+import ExploreProfileScreen from '../screens/ExploreProfileScreen';
 
 export type ChatStackParamList = {
     ChatList: undefined;
@@ -12,6 +13,9 @@ export type ChatStackParamList = {
         contactName: string;
         contactInitials: string;
         contactColor: string;
+    };
+    ExploreProfile: {
+        userId: string;
     };
 };
 
@@ -35,6 +39,15 @@ function ChatStackNavigator({ matchRequests }: ChatStackProps) {
                     {props => <ChatScreen {...props} matchRequests={matchRequests} />}
                 </Stack.Screen>
                 <Stack.Screen name="Conversation" component={ConversationScreen} />
+                <Stack.Screen name="ExploreProfile">
+                    {props => (
+                        <ExploreProfileScreen
+                            userId={props.route.params.userId}
+                            onBack={() => props.navigation.goBack()}
+                            onSendMessage={() => props.navigation.goBack()}
+                        />
+                    )}
+                </Stack.Screen>
             </Stack.Navigator>
         </NavigationContainer>
     );

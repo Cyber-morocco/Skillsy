@@ -19,7 +19,12 @@ import {
   deleteSpecificDate
 } from '../services/userService';
 
-const purple = '#A020F0';
+const purple = '#7C3AED'; // Updated to match other screens
+const background = '#050816';
+const card = '#101936';
+const text = '#F8FAFC';
+const muted = '#94A3B8';
+const border = 'rgba(148, 163, 184, 0.25)';
 
 const TIMES = [
   '08:00', '09:00', '10:00', '11:00', '12:00',
@@ -183,7 +188,7 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
             if (!selected || activeIndex === null || !dates[activeIndex]) return;
             handleUpdateDate(dates[activeIndex].id, { date: selected });
             if (!selected) return;
-            if (activeIndex === null || !dates[activeIndex]) return; 
+            if (activeIndex === null || !dates[activeIndex]) return;
             const copy = [...dates];
             copy[activeIndex].date = selected;
             setDates(copy);
@@ -224,10 +229,10 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
 export default AvailabilitySpecificDates;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: background },
 
-  headerTitle: { marginTop: 15, fontSize: 24, fontWeight: '700', marginHorizontal: 20 },
-  headerSub: { color: '#777', marginHorizontal: 20, marginBottom: 20 },
+  headerTitle: { marginTop: 15, fontSize: 24, fontWeight: '700', marginHorizontal: 20, color: text },
+  headerSub: { color: muted, marginHorizontal: 20, marginBottom: 20 },
 
   tabs: { flexDirection: 'row', marginHorizontal: 20, marginBottom: 16 },
   tab: {
@@ -235,24 +240,25 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: border,
     alignItems: 'center',
+    backgroundColor: card,
   },
   activeTab: { backgroundColor: purple, borderColor: purple },
-  tabText: { color: '#333', fontWeight: '500' },
+  tabText: { color: muted, fontWeight: '500' },
   activeTabText: { color: '#fff', fontWeight: '600' },
 
   addCard: {
     marginHorizontal: 20,
     padding: 14,
     borderRadius: 12,
-    backgroundColor: '#fafafa',
+    backgroundColor: card,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: border,
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  addLabel: { fontWeight: '600' },
+  addLabel: { fontWeight: '600', color: text },
   addAction: { color: purple, fontWeight: '700' },
 
   dateCard: {
@@ -260,18 +266,25 @@ const styles = StyleSheet.create({
     marginTop: 12,
     padding: 14,
     borderRadius: 12,
-    backgroundColor: '#fff',
+    backgroundColor: card,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: border,
   },
   dateHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  dateText: { fontWeight: '600' },
-  remove: { color: 'red', fontWeight: '600' },
+  dateText: { fontWeight: '600', color: text },
+  remove: { color: '#EF4444', fontWeight: '600' },
 
   timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
-  timeBox: { width: '48%', backgroundColor: '#f2f2f2', padding: 12, borderRadius: 10 },
-  timeLabel: { fontSize: 13, color: '#777' },
-  timeValue: { fontSize: 16, fontWeight: '700' },
+  timeBox: {
+    width: '48%',
+    backgroundColor: background,
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: border,
+  },
+  timeLabel: { fontSize: 13, color: muted },
+  timeValue: { fontSize: 16, fontWeight: '700', color: text },
 
   saveButton: {
     marginHorizontal: 20,
@@ -289,15 +302,17 @@ const styles = StyleSheet.create({
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
     width: '75%',
-    backgroundColor: '#fff',
+    backgroundColor: card,
     borderRadius: 12,
     padding: 18,
+    borderWidth: 1,
+    borderColor: border,
   },
   modalOption: {
     fontSize: 18,
