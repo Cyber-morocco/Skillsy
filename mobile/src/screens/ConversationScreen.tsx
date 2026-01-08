@@ -42,6 +42,7 @@ type ConversationProps = {
     };
     navigation?: {
         goBack: () => void;
+        navigate: (screen: string, params?: any) => void;
     };
 };
 
@@ -270,13 +271,23 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                 <TouchableOpacity onPress={() => navigation?.goBack()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
                 </TouchableOpacity>
-                <View style={[styles.contactAvatar, { backgroundColor: contactColor }]}>
-                    <Text style={styles.contactInitials}>{contactInitials}</Text>
-                </View>
-                <View style={styles.headerInfo}>
-                    <Text style={styles.contactName}>{contactName}</Text>
-                    <Text style={styles.contactStatus}>{contactSubtitle || 'Online'}</Text>
-                </View>
+                <TouchableOpacity
+                    style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginLeft: 8 }}
+                    onPress={() => {
+                        const targetId = route?.params?.contactId;
+                        if (targetId) {
+                            navigation?.navigate('ExploreProfile', { userId: targetId });
+                        }
+                    }}
+                >
+                    <View style={[styles.contactAvatar, { backgroundColor: contactColor }]}>
+                        <Text style={styles.contactInitials}>{contactInitials}</Text>
+                    </View>
+                    <View style={styles.headerInfo}>
+                        <Text style={styles.contactName}>{contactName}</Text>
+                        <Text style={styles.contactStatus}>{contactSubtitle || 'Online'}</Text>
+                    </View>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.appointmentButton} onPress={handleAppointmentPress}>
                     <Ionicons name="calendar-outline" size={16} color="#F8FAFC" />
                     <Text style={styles.appointmentButtonText}>Afspraak</Text>
