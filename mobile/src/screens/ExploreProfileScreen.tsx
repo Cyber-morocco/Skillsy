@@ -21,6 +21,16 @@ import { UserProfile, Skill, Review } from '../types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+const colors = {
+  background: '#050816',
+  card: '#101936',
+  primary: '#7C3AED',
+  text: '#F8FAFC',
+  textMuted: '#94A3B8',
+  border: 'rgba(148, 163, 184, 0.25)',
+  accent: '#7C3AED',
+};
+
 interface ExploreProfileScreenProps {
   userId: string;
   onBack?: () => void;
@@ -64,7 +74,7 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
   if (loading) {
     return (
       <View style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#b832ff" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -139,14 +149,7 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
             style={styles.primaryButton}
             onPress={onSendMessage}
           >
-            <Text style={styles.primaryButtonText}>Bericht sturen</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={0.9}
-            style={styles.ghostButton}
-            onPress={onMakeAppointment}
-          >
-            <Text style={styles.ghostButtonText}>Afspraak maken</Text>
+            <Text style={styles.primaryButtonText}>Match</Text>
           </TouchableOpacity>
         </View>
 
@@ -274,11 +277,11 @@ const AVATAR_SIZE = 88;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f6f6f9',
+    backgroundColor: colors.background,
   },
   headerBackground: {
     height: 180,
-    backgroundColor: '#b832ff',
+    backgroundColor: colors.primary,
   },
   content: {
     flex: 1,
@@ -298,7 +301,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -312,6 +315,7 @@ const styles = StyleSheet.create({
   },
   roundIconText: {
     fontSize: 18,
+    color: colors.text,
   },
   roundIconTextLiked: {
     color: '#e0245e',
@@ -327,16 +331,16 @@ const styles = StyleSheet.create({
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
     borderRadius: AVATAR_SIZE / 2,
-    backgroundColor: '#f0f0f5',
+    backgroundColor: colors.card,
     borderWidth: 3,
-    borderColor: '#ffffff',
+    borderColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
   nameText: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#24253d',
+    color: colors.text,
     marginBottom: 6,
   },
   locationRow: {
@@ -349,7 +353,7 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 13,
-    color: '#6b6c80',
+    color: colors.textMuted,
   },
   locationDot: {
     width: 4,
@@ -370,12 +374,12 @@ const styles = StyleSheet.create({
   ratingValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#24253d',
+    color: colors.text,
     marginRight: 4,
   },
   ratingReviews: {
     fontSize: 12,
-    color: '#6b6c80',
+    color: colors.textMuted,
   },
   actionRow: {
     flexDirection: 'row',
@@ -384,7 +388,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     flex: 1,
-    backgroundColor: '#7c2cff',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -414,7 +418,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.card,
     borderRadius: 14,
     padding: 14,
     marginTop: 16,
@@ -423,16 +427,18 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
     elevation: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   cardTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#2f3042',
+    color: colors.text,
     marginBottom: 6,
   },
   cardBody: {
     fontSize: 13,
-    color: '#666778',
+    color: colors.textMuted,
     lineHeight: 18,
   },
   tabRow: {
@@ -443,22 +449,24 @@ const styles = StyleSheet.create({
   tabButton: {
     flex: 1,
     borderRadius: 12,
-    backgroundColor: '#f0f0f5',
+    backgroundColor: colors.card,
     paddingVertical: 12,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   tabButtonActive: {
-    backgroundColor: '#e8e1ff',
+    backgroundColor: 'rgba(99, 102, 241, 0.15)',
     borderWidth: 1,
-    borderColor: '#7c2cff',
+    borderColor: colors.primary,
   },
   tabText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#4a4b63',
+    color: colors.textMuted,
   },
   tabTextActive: {
-    color: '#7c2cff',
+    color: colors.primary,
   },
   tabContent: {
     marginTop: 12,
@@ -466,7 +474,7 @@ const styles = StyleSheet.create({
   },
   skillItem: {
     padding: 14,
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.card,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOpacity: 0.04,
@@ -476,6 +484,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   skillMain: {
     flexDirection: 'row',
@@ -485,33 +495,35 @@ const styles = StyleSheet.create({
   skillName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#24253d',
+    color: colors.text,
   },
   levelBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
-    backgroundColor: '#f0f0f5',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 6,
   },
   levelText: {
     fontSize: 10,
     fontWeight: '500',
-    color: '#666',
+    color: colors.textMuted,
   },
   priceText: {
     fontSize: 13,
-    color: '#7c2cff',
+    color: colors.accent,
     fontWeight: '600',
   },
   reviewItem: {
     padding: 14,
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.card,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOpacity: 0.04,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 2 },
     elevation: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   reviewHeader: {
     flexDirection: 'row',
@@ -521,7 +533,7 @@ const styles = StyleSheet.create({
   reviewName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#24253d',
+    color: colors.text,
   },
   reviewRating: {
     fontSize: 13,
@@ -529,12 +541,12 @@ const styles = StyleSheet.create({
   },
   reviewComment: {
     fontSize: 13,
-    color: '#666778',
+    color: colors.textMuted,
     lineHeight: 18,
   },
   emptyText: {
     fontSize: 13,
-    color: '#9c9db0',
+    color: colors.textMuted,
     textAlign: 'center',
     marginTop: 20,
     fontStyle: 'italic',
