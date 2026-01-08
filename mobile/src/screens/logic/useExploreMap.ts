@@ -25,9 +25,9 @@ const filterTalents = (
     }
 
     if (selectedCategories.length > 0) {
-      const talentSkillNames = (talent.skillNames || []).map(s => s.toLowerCase());
-      const hasMatchingCategory = selectedCategories.some((category) =>
-        talentSkillNames.some((skill) => skill.includes(category.toLowerCase()))
+      const talentCategories = talent.rootCategoryIds || [];
+      const hasMatchingCategory = selectedCategories.some((categoryId) =>
+        talentCategories.includes(categoryId)
       );
       if (!hasMatchingCategory) return false;
     }

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -20,6 +20,8 @@ import { auth, db } from '../config/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { addLearnSkill } from '../services/userService';
 import { Ionicons } from '@expo/vector-icons';
+import { ROOT_CATEGORIES, RootCategory } from '../constants/categories';
+import { resolveSkillIntelligence, SkillResolutionResult } from '../services/skillIntelligenceService';
 
 type NavProps = {
     navigation: {
@@ -28,49 +30,85 @@ type NavProps = {
     };
 };
 
-// Exact list from screenshot Step 3
-const PREDEFINED_INTERESTS = [
-    "Frans", "Engels", "Spaans",
-    "Duits", "Nederlands",
-    "Programmeren", "Python",
-    "JavaScript", "Web Development",
-    "Koken", "Bakken",
-    "Italiaans koken",
-    "Vegetarisch koken", "Yoga",
-    "Fitness", "Dans", "Meditatie"
-];
-
 const ProfileCreationStep3: React.FC<NavProps> = ({ navigation }) => {
-    const [selectedInterests, setSelectedInterests] = useState<Set<string>>(new Set());
+    const [step, setStep] = useState<'category' | 'details'>('category');
+    const [selectedRoot, setSelectedRoot] = useState<RootCategory | null>(null);
+    const [selectedInterests, setSelectedInterests] = useState<Array<{ subject: string, rootId: string }>>([]);
     const [customInterest, setCustomInterest] = useState('');
+    const [intelligenceResult, setIntelligenceResult] = useState<SkillResolutionResult | null>(null);
+    const [loadingIntelligence, setLoadingIntelligence] = useState(false);
     const [saving, setSaving] = useState(false);
+    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    const toggleInterest = (interest: string) => {
-        const newSelected = new Set(selectedInterests);
-        if (newSelected.has(interest)) {
-            newSelected.delete(interest);
-        } else {
-            newSelected.add(interest);
+    useEffect(() => {
+        if (customInterest.length < 3) {
+            setIntelligenceResult(null);
+            setLoadingIntelligence(false);
+            return;
         }
-        setSelectedInterests(newSelected);
+
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+        setLoadingIntelligence(true);
+        typingTimeoutRef.current = setTimeout(async () => {
+            try {
+                const result = await resolveSkillIntelligence(customInterest);
+                setIntelligenceResult(result);
+            } catch (error) {
+                console.error("Intelligence error:", error);
+            } finally {
+                setLoadingIntelligence(false);
+            }
+        }, 600); // 600ms delay
+
+        return () => {
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        };
+    }, [customInterest]);
+
+    const handleSelectCategory = (category: RootCategory) => {
+        setSelectedRoot(category);
+        setStep('details');
     };
 
-    const addCustomInterest = () => {
-        if (customInterest.trim()) {
-            const newSelected = new Set(selectedInterests);
-            newSelected.add(customInterest.trim());
-            setSelectedInterests(newSelected);
-            setCustomInterest('');
-        }
+    const handleBackToCategory = () => {
+        setStep('category');
+        setCustomInterest('');
+        setIntelligenceResult(null);
+        setLoadingIntelligence(false);
+    };
+
+    const addStructuredInterest = () => {
+        if (!customInterest.trim() || !selectedRoot) return;
+
+        const finalSubject = intelligenceResult?.type === 'auto_map'
+            ? intelligenceResult.match?.concept.label || customInterest.trim()
+            : customInterest.trim();
+
+        setSelectedInterests(prev => [...prev, {
+            subject: finalSubject,
+            rootId: selectedRoot.id
+        }]);
+
+        handleBackToCategory();
+    };
+
+    const removeInterest = (index: number) => {
+        setSelectedInterests(prev => prev.filter((_, i) => i !== index));
     };
 
     const handleFinish = async () => {
         if (!auth.currentUser) return;
+        if (selectedInterests.length === 0) {
+            Alert.alert('Wacht even', 'Voeg minimaal één interesse toe.');
+            return;
+        }
         setSaving(true);
         try {
-            const promises = Array.from(selectedInterests).map(subject => {
+            const promises = selectedInterests.map(item => {
                 return addLearnSkill({
-                    subject,
+                    subject: item.subject,
+                    rootId: item.rootId
                 });
             });
             await Promise.all(promises);
@@ -80,9 +118,12 @@ const ProfileCreationStep3: React.FC<NavProps> = ({ navigation }) => {
                 updatedAt: serverTimestamp(),
             });
 
+            navigation.navigate('MainTabs');
+
         } catch (error: any) {
             console.error(error);
             Alert.alert('Fout', 'Kon profiel niet afronden.');
+        } finally {
             setSaving(false);
         }
     };
@@ -94,7 +135,6 @@ const ProfileCreationStep3: React.FC<NavProps> = ({ navigation }) => {
                 <View style={{ flex: 1 }}>
                     <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 20 }}>
                         <View style={{ alignItems: 'center', marginBottom: 20 }}>
-                            {/* Progress Bar */}
                             <View style={{ flexDirection: 'row', width: '100%', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
                                 <View style={{ height: 4, flex: 1, backgroundColor: authColors.accent, borderRadius: 2 }} />
                                 <View style={{ height: 4, flex: 1, backgroundColor: authColors.accent, borderRadius: 2 }} />
@@ -104,94 +144,166 @@ const ProfileCreationStep3: React.FC<NavProps> = ({ navigation }) => {
                         </View>
 
                         <View style={[styles.card, { padding: 20, borderRadius: 24, minHeight: '60%' }]}>
-                            <View style={{ marginBottom: 20 }}>
-                                <Text style={{ fontSize: 20, fontWeight: '700', color: authColors.text, marginBottom: 6 }}>
-                                    Wat wil je leren? 📚
-                                </Text>
-                                <Text style={{ fontSize: 14, color: authColors.muted, lineHeight: 20 }}>
-                                    Kies vaardigheden die je wilt ontwikkelen
-                                </Text>
-                            </View>
+                            {step === 'category' ? (
+                                <>
+                                    <View style={{ marginBottom: 20 }}>
+                                        <Text style={{ fontSize: 20, fontWeight: '700', color: authColors.text, marginBottom: 6 }}>
+                                            Wat wil je leren? 📚
+                                        </Text>
+                                        <Text style={{ fontSize: 14, color: authColors.muted, lineHeight: 20 }}>
+                                            Kies eerst een categorie om een interesse toe te voegen
+                                        </Text>
+                                    </View>
 
-                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
-                                {Array.from(selectedInterests).filter(s => !PREDEFINED_INTERESTS.includes(s)).map(s => (
+                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
+                                        {ROOT_CATEGORIES.map((cat) => (
+                                            <TouchableOpacity
+                                                key={cat.id}
+                                                onPress={() => handleSelectCategory(cat)}
+                                                style={{
+                                                    width: '30%',
+                                                    aspectRatio: 1,
+                                                    backgroundColor: 'rgba(255,255,255,0.03)',
+                                                    borderRadius: 16,
+                                                    justifyContent: 'center',
+                                                    alignItems: 'center',
+                                                    borderWidth: 1,
+                                                    borderColor: 'rgba(255,255,255,0.1)'
+                                                }}
+                                            >
+                                                <Ionicons name={cat.icon as any} size={28} color={cat.color} />
+                                                <Text style={{ color: '#fff', fontSize: 10, marginTop: 8, textAlign: 'center' }}>
+                                                    {cat.name.nl}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                </>
+                            ) : (
+                                <>
                                     <TouchableOpacity
-                                        key={s}
-                                        onPress={() => toggleInterest(s)}
-                                        style={{
-                                            paddingHorizontal: 16,
-                                            paddingVertical: 10,
-                                            borderRadius: 12,
-                                            backgroundColor: 'rgba(124, 58, 237, 0.15)',
-                                            borderWidth: 1,
-                                            borderColor: authColors.accent,
-                                        }}
+                                        onPress={handleBackToCategory}
+                                        style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}
                                     >
-                                        <Text style={{ color: authColors.text, fontWeight: '600', fontSize: 14 }}>{s}</Text>
+                                        <Ionicons name="arrow-back" size={18} color={authColors.accent} />
+                                        <Text style={{ color: authColors.accent, marginLeft: 8 }}>Terug naar categorieën</Text>
                                     </TouchableOpacity>
-                                ))}
-                                {PREDEFINED_INTERESTS.map((title) => {
-                                    const isSelected = selectedInterests.has(title);
-                                    return (
-                                        <TouchableOpacity
-                                            key={title}
-                                            onPress={() => toggleInterest(title)}
+
+                                    <View style={{ marginBottom: 20 }}>
+                                        <Text style={{ fontSize: 18, fontWeight: '700', color: authColors.text, marginBottom: 4 }}>
+                                            {selectedRoot?.name.nl}
+                                        </Text>
+                                        <Text style={{ fontSize: 14, color: authColors.muted }}>
+                                            Wat zou je graag willen leren in deze categorie?
+                                        </Text>
+                                    </View>
+
+                                    <View style={{ marginBottom: 20 }}>
+                                        <TextInput
+                                            placeholder="Bijv. Piano, Spaans, Koken..."
+                                            placeholderTextColor={authColors.muted}
+                                            value={customInterest}
+                                            onChangeText={setCustomInterest}
                                             style={{
-                                                paddingHorizontal: 16,
-                                                paddingVertical: 10,
+                                                backgroundColor: 'rgba(255,255,255,0.05)',
                                                 borderRadius: 12,
-                                                backgroundColor: isSelected ? 'rgba(124, 58, 237, 0.15)' : 'rgba(255,255,255,0.03)',
+                                                paddingHorizontal: 16,
+                                                paddingVertical: 12,
+                                                fontSize: 16,
+                                                color: authColors.text,
                                                 borderWidth: 1,
-                                                borderColor: isSelected ? authColors.accent : 'rgba(255,255,255,0.1)',
+                                                borderColor: authColors.accent
                                             }}
-                                        >
-                                            <Text style={{
-                                                color: isSelected ? '#fff' : authColors.text,
-                                                fontWeight: isSelected ? '600' : '400',
-                                                fontSize: 14
-                                            }}>
-                                                {title}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </View>
+                                        />
+                                        {loadingIntelligence && (
+                                            <ActivityIndicator size="small" color={authColors.accent} style={{ marginTop: 12 }} />
+                                        )}
 
-                            {/* Add Custom Skill Input */}
-                            <View style={{ flexDirection: 'row', marginBottom: 24, gap: 10, alignItems: 'center' }}>
-                                <TextInput
-                                    placeholder="Eigen interesse toevoegen"
-                                    placeholderTextColor={authColors.muted}
-                                    value={customInterest}
-                                    onChangeText={setCustomInterest}
-                                    style={{
-                                        flex: 1,
-                                        backgroundColor: 'rgba(255,255,255,0.05)',
-                                        borderRadius: 12,
-                                        paddingHorizontal: 16,
-                                        paddingVertical: 12,
-                                        fontSize: 14,
-                                        color: authColors.text,
-                                        borderWidth: 1,
-                                        borderColor: 'rgba(255,255,255,0.1)'
-                                    }}
-                                />
-                                <TouchableOpacity
-                                    onPress={addCustomInterest}
-                                    style={{
-                                        backgroundColor: authColors.accent,
-                                        borderRadius: 12,
-                                        paddingHorizontal: 16,
-                                        paddingVertical: 12,
-                                        opacity: customInterest.trim() ? 1 : 0.6
-                                    }}
-                                    disabled={!customInterest.trim()}
-                                >
-                                    <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Toevoegen</Text>
-                                </TouchableOpacity>
-                            </View>
+                                        {intelligenceResult?.type === 'nudge' && intelligenceResult.suggestions && !loadingIntelligence && (
+                                            <View style={{ marginTop: 12 }}>
+                                                <Text style={{ color: authColors.muted, fontSize: 12, marginBottom: 8 }}>
+                                                    Bedoel je een van deze?
+                                                </Text>
+                                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                                                    {intelligenceResult.suggestions.map((s, i) => (
+                                                        <TouchableOpacity
+                                                            key={i}
+                                                            onPress={() => setCustomInterest(s.concept.label)}
+                                                            style={{
+                                                                paddingHorizontal: 12,
+                                                                paddingVertical: 6,
+                                                                borderRadius: 20,
+                                                                backgroundColor: 'rgba(124, 58, 237, 0.2)',
+                                                                borderWidth: 1,
+                                                                borderColor: authColors.accent
+                                                            }}
+                                                        >
+                                                            <Text style={{ color: '#fff', fontSize: 12 }}>{s.concept.label}</Text>
+                                                        </TouchableOpacity>
+                                                    ))}
+                                                </View>
+                                            </View>
+                                        )}
 
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 'auto', alignItems: 'center' }}>
+                                        {intelligenceResult?.type === 'discovery' && intelligenceResult.proposed && !loadingIntelligence && (
+                                            <View style={{ marginTop: 12, backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: '#10b981' }}>
+                                                <Text style={{ color: '#10b981', fontSize: 12, fontWeight: '700', marginBottom: 4 }}>
+                                                    ✨ Nieuwe interesse ontdekt! {intelligenceResult.isWebAugmented && " (🌐 Webonderzoek voltooid)"}
+                                                </Text>
+                                                <Text style={{ color: '#fff', fontSize: 13 }}>
+                                                    De AI herkent dit als: <Text style={{ fontWeight: '700' }}>{intelligenceResult.proposed.label}</Text> in de categorie <Text style={{ color: '#10b981' }}>{intelligenceResult.proposed.rootLabel}</Text>.
+                                                </Text>
+                                            </View>
+                                        )}
+                                    </View>
+
+                                    <TouchableOpacity
+                                        onPress={addStructuredInterest}
+                                        style={{
+                                            backgroundColor: authColors.accent,
+                                            borderRadius: 12,
+                                            paddingVertical: 14,
+                                            alignItems: 'center',
+                                            opacity: customInterest.trim() ? 1 : 0.6
+                                        }}
+                                        disabled={!customInterest.trim()}
+                                    >
+                                        <Text style={{ color: '#fff', fontWeight: '700' }}>Deze interesse toevoegen</Text>
+                                    </TouchableOpacity>
+                                </>
+                            )}
+
+                            {selectedInterests.length > 0 && (
+                                <View style={{ marginTop: 24, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', paddingTop: 20 }}>
+                                    <Text style={{ color: authColors.text, fontWeight: '600', marginBottom: 12 }}>
+                                        Toegevoegd ({selectedInterests.length}):
+                                    </Text>
+                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                                        {selectedInterests.map((s, i) => (
+                                            <View
+                                                key={i}
+                                                style={{
+                                                    flexDirection: 'row',
+                                                    alignItems: 'center',
+                                                    backgroundColor: 'rgba(255,255,255,0.05)',
+                                                    paddingHorizontal: 12,
+                                                    paddingVertical: 6,
+                                                    borderRadius: 8,
+                                                    borderWidth: 1,
+                                                    borderColor: 'rgba(255,255,255,0.1)'
+                                                }}
+                                            >
+                                                <Text style={{ color: '#fff', fontSize: 12, marginRight: 8 }}>{s.subject}</Text>
+                                                <TouchableOpacity onPress={() => removeInterest(i)}>
+                                                    <Ionicons name="close-circle" size={16} color="#ef4444" />
+                                                </TouchableOpacity>
+                                            </View>
+                                        ))}
+                                    </View>
+                                </View>
+                            )}
+
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 40, alignItems: 'center', paddingBottom: 20 }}>
                                 <TouchableOpacity
                                     onPress={() => navigation.goBack()}
                                     style={{

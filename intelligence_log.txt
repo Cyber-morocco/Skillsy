@@ -1,0 +1,51 @@
+
+--- NEW REQUEST: 'eten' ---
+Input Text: eten
+Web Augmented: False
+Enriched Text: eten...
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.2498 (Sem: 0.0614, Fuz: 0.5000, Pop: 0.4400)
+  - [Schilderen] Total: 0.2840 (Sem: 0.0528, Fuz: 0.7500, Pop: 0.2000)
+  - [Zang] Total: 0.1477 (Sem: 0.0449, Fuz: 0.2500, Pop: 0.3200)
+Discovery Category Similarities:
+  - muziek: 0.1912
+  - sport: 0.1625
+  - talen: 0.1976
+  - tech: 0.0296
+  - creatief: 0.1376
+  - academisch: 0.1587
+Final Decision: DISCOVERY in Category 'talen'
+
+--- NEW REQUEST: 'Eten' ---
+Input Text: eten
+Web Augmented: False
+Enriched Text: eten...
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.2498 (Sem: 0.0614, Fuz: 0.5000, Pop: 0.4400)
+  - [Schilderen] Total: 0.2840 (Sem: 0.0528, Fuz: 0.7500, Pop: 0.2000)
+  - [Zang] Total: 0.1477 (Sem: 0.0449, Fuz: 0.2500, Pop: 0.3200)
+Discovery Category Similarities:
+  - muziek: 0.1912
+  - sport: 0.1625
+  - talen: 0.1976
+  - tech: 0.0296
+  - creatief: 0.1376
+  - academisch: 0.1587
+Final Decision: DISCOVERY in Category 'talen'
+
+--- NEW REQUEST: 'eten' ---
+Input Text: eten
+Web Augmented: False
+Enriched Text: eten...
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.2498 (Sem: 0.0614, Fuz: 0.5000, Pop: 0.4400)
+  - [Schilderen] Total: 0.2840 (Sem: 0.0528, Fuz: 0.7500, Pop: 0.2000)
+  - [Zang] Total: 0.1477 (Sem: 0.0449, Fuz: 0.2500, Pop: 0.3200)
+Discovery Category Similarities:
+  - muziek: 0.1912
+  - sport: 0.1625
+  - talen: 0.1976
+  - tech: 0.0296
+  - creatief: 0.1376
+  - academisch: 0.1587
+Final Decision: DISCOVERY in Category 'talen'

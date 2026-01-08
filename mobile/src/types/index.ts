@@ -5,11 +5,13 @@ export interface Skill {
     subject: string;
     level: SkillLevel;
     price: string;
+    rootId?: string;
 }
 
 export interface LearnSkill {
     id: string;
     subject: string;
+    rootId?: string;
 }
 
 export type PostType = 'Vraag' | 'Succes' | 'Materiaal';
@@ -73,6 +75,7 @@ export interface Talent {
     lng: number;
     skills?: { name: string }[];
     skillNames?: string[];
+    rootCategoryIds?: string[];
     isActive: boolean;
 }
 
