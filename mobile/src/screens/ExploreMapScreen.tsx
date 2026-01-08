@@ -79,7 +79,7 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
 
       <View style={styles.mapContainer}>
         {viewMode === 'map' ? (
-          <View style={{ flex: 1 }}>
+          <>
             <MapViewLeaflet
               userLocation={userLocation}
               radiusKm={selectedDistance}
@@ -99,7 +99,7 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
                 color="#FFFFFF"
               />
             </TouchableOpacity>
-          </View>
+          </>
         ) : (
           <ScrollView style={styles.listContainer}>
             {filteredTalents.map((talent: Talent) => (

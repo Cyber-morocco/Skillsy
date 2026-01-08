@@ -40,7 +40,8 @@
         }
       ],
       "expo-font",
-      "expo-asset"
+      "expo-asset",
+      "expo-video"
     ],
     "web": {
       "favicon": "./assets/favicon.png"
