@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StatusBar, View, TouchableOpacity, ScrollView, Image, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -51,6 +51,11 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
     }
   };
 
+  // Ensure we land in list view whenever the Explore tab opens
+  useEffect(() => {
+    setViewMode('list');
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -79,7 +84,7 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
 
       <View style={styles.mapContainer}>
         {viewMode === 'map' ? (
-          <View style={{ flex: 1 }}>
+          <>
             <MapViewLeaflet
               userLocation={userLocation}
               radiusKm={selectedDistance}
@@ -99,7 +104,7 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
                 color="#FFFFFF"
               />
             </TouchableOpacity>
-          </View>
+          </>
         ) : (
           <ScrollView style={styles.listContainer}>
             {filteredTalents.map((talent: Talent) => (

@@ -11,7 +11,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Video, ResizeMode } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import {
   subscribeToOtherUserProfile,
   subscribeToOtherUserSkills,
@@ -250,18 +250,22 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
           ) : (
             // Videos tab
             profile?.promoVideos && profile.promoVideos.length > 0 ? (
-              profile.promoVideos.map((videoUrl, index) => (
-                <View key={index} style={styles.videoContainer}>
-                  <Video
-                    source={{ uri: videoUrl }}
-                    style={styles.video}
-                    useNativeControls
-                    resizeMode={ResizeMode.CONTAIN}
-                    isLooping={false}
-                  />
-                  <Text style={styles.videoLabel}>Promo video {index + 1}</Text>
-                </View>
-              ))
+              profile.promoVideos.map((videoUrl, index) => {
+                const player = useVideoPlayer(videoUrl, (player) => {
+                  player.loop = false;
+                });
+                return (
+                  <View key={index} style={styles.videoContainer}>
+                    <VideoView
+                      player={player}
+                      style={styles.video}
+                      allowsFullscreen
+                      allowsPictureInPicture
+                    />
+                    <Text style={styles.videoLabel}>Promo video {index + 1}</Text>
+                  </View>
+                );
+              })
             ) : (
               <Text style={styles.emptyText}>Geen video's beschikbaar.</Text>
             )
