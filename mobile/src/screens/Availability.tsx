@@ -13,7 +13,12 @@ import {
 import { subscribeToAvailability, saveAvailability } from '../services/userService';
 import { AvailabilityDay } from '../types';
 
-const purple = '#A020F0';
+const purple = '#7C3AED'; // Updated to match other screens
+const background = '#050816';
+const card = '#101936';
+const text = '#F8FAFC';
+const muted = '#94A3B8';
+const border = 'rgba(148, 163, 184, 0.25)';
 
 type Props = {
   navigation?: any;
@@ -112,7 +117,7 @@ const Availability: React.FC<AvailabilityProps> = ({ onNavigate }) => {
       <SafeAreaView style={styles.container}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color={purple} />
-          <Text style={{ marginTop: 12, color: '#777' }}>Laden...</Text>
+          <Text style={{ marginTop: 12, color: muted }}>Laden...</Text>
         </View>
       </SafeAreaView>
     );
@@ -221,16 +226,17 @@ export default Availability;
 
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: background },
 
   headerTitle: {
     marginTop: 15,
     fontSize: 24,
     fontWeight: '700',
     marginHorizontal: 20,
+    color: text,
   },
   headerSub: {
-    color: '#777',
+    color: muted,
     marginHorizontal: 20,
     marginBottom: 20,
   },
@@ -245,32 +251,34 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: border,
     alignItems: 'center',
+    backgroundColor: card,
   },
   activeTab: { backgroundColor: purple, borderColor: purple },
-  tabText: { color: '#333', fontWeight: '500' },
+  tabText: { color: muted, fontWeight: '500' },
   activeTabText: { color: '#fff', fontWeight: '600' },
 
   sectionLabel: {
     fontSize: 16,
     fontWeight: '700',
     marginHorizontal: 20,
+    color: text,
   },
   sectionSub: {
-    color: '#777',
+    color: muted,
     marginHorizontal: 20,
     marginBottom: 12,
   },
 
   dayCard: {
-    backgroundColor: '#fafafa',
+    backgroundColor: card,
     marginHorizontal: 20,
     marginBottom: 12,
     borderRadius: 12,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: border,
   },
   dayRow: { flexDirection: 'row', alignItems: 'center' },
 
@@ -284,8 +292,8 @@ const styles = StyleSheet.create({
   },
   checkboxActive: { backgroundColor: purple },
 
-  dayName: { flex: 1, fontSize: 15, fontWeight: '600' },
-  disabledDay: { color: '#aaa' },
+  dayName: { flex: 1, fontSize: 15, fontWeight: '600', color: text },
+  disabledDay: { color: muted },
 
   timeRow: {
     flexDirection: 'row',
@@ -294,12 +302,14 @@ const styles = StyleSheet.create({
   },
   timeBox: {
     width: '48%',
-    backgroundColor: '#f2f2f2',
+    backgroundColor: background, // Slightly darker than card
     padding: 12,
     borderRadius: 10,
+    borderWidth: 1,
+    borderColor: border,
   },
-  timeLabel: { fontSize: 13, color: '#777' },
-  timeValue: { fontSize: 16, fontWeight: '700' },
+  timeLabel: { fontSize: 13, color: muted },
+  timeValue: { fontSize: 16, fontWeight: '700', color: text },
 
   saveButton: {
     marginHorizontal: 20,
@@ -325,12 +335,15 @@ const styles = StyleSheet.create({
     width: '75%',
     padding: 20,
     borderRadius: 12,
-    backgroundColor: '#fff',
+    backgroundColor: card,
+    borderWidth: 1,
+    borderColor: border,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '700',
     textAlign: 'center',
+    color: text,
   },
   modalOption: {
     fontSize: 18,

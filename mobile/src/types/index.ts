@@ -97,6 +97,8 @@ export interface Conversation {
     lastMessageTime?: any;
     unreadCount?: { [userId: string]: number };
     updatedAt: any;
+    status?: 'pending' | 'active' | 'rejected';
+    matchInitiatorId?: string;
 }
 
 export interface Message {

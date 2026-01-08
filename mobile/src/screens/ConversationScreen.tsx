@@ -12,10 +12,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { conversationStyles as styles, conversationColors } from '../styles/ConversationStyle';
 import ScheduleMatchScreen from './ScheduleMatchScreen';
-import { subscribeToMessages, sendMessage as sendFirebaseMessage, updateMessage } from '../services/chatService';
+import { subscribeToMessages, sendMessage as sendFirebaseMessage, updateMessage, subscribeToChat } from '../services/chatService';
 import { createAppointment } from '../services/appointmentService';
 import { auth } from '../config/firebase';
-import { Message as FirebaseMessage } from '../types';
+import { Message as FirebaseMessage, Conversation } from '../types';
 import { Unsubscribe } from 'firebase/firestore';
 
 type Message = {
@@ -42,6 +42,7 @@ type ConversationProps = {
     };
     navigation?: {
         goBack: () => void;
+        navigate: (screen: string, params?: any) => void;
     };
 };
 
@@ -55,11 +56,16 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
     const [messageText, setMessageText] = useState('');
     const [showScheduleMatch, setShowScheduleMatch] = useState(false);
     const [messages, setMessages] = useState<any[]>([]);
+    const [chatData, setChatData] = useState<Conversation | null>(null);
 
     useEffect(() => {
         if (!chatId) return;
 
-        const unsubscribe = subscribeToMessages(chatId, (newMessages) => {
+        const unsubscribeChat = subscribeToChat(chatId, (updatedChat) => {
+            setChatData(updatedChat);
+        });
+
+        const unsubscribeMessages = subscribeToMessages(chatId, (newMessages) => {
 
             const formattedMessages = newMessages.map(m => {
                 return {
@@ -76,8 +82,17 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
             setMessages(formattedMessages);
         });
 
-        return () => unsubscribe();
+
+        return () => {
+            unsubscribeChat();
+            unsubscribeMessages();
+        };
     }, [chatId]);
+
+    const isPending = chatData?.status === 'pending';
+    const isRejected = chatData?.status === 'rejected';
+    const isInitiator = chatData?.matchInitiatorId === auth.currentUser?.uid;
+    const canSendMessage = (!isPending && !isRejected) || (isPending && !isInitiator);
 
     const sendMessage = async () => {
         if (messageText.trim() && chatId) {
@@ -256,18 +271,39 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                 <TouchableOpacity onPress={() => navigation?.goBack()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
                 </TouchableOpacity>
-                <View style={[styles.contactAvatar, { backgroundColor: contactColor }]}>
-                    <Text style={styles.contactInitials}>{contactInitials}</Text>
-                </View>
-                <View style={styles.headerInfo}>
-                    <Text style={styles.contactName}>{contactName}</Text>
-                    <Text style={styles.contactStatus}>{contactSubtitle || 'Online'}</Text>
-                </View>
+                <TouchableOpacity
+                    style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginLeft: 8 }}
+                    onPress={() => {
+                        const targetId = route?.params?.contactId;
+                        if (targetId) {
+                            navigation?.navigate('ExploreProfile', { userId: targetId });
+                        }
+                    }}
+                >
+                    <View style={[styles.contactAvatar, { backgroundColor: contactColor }]}>
+                        <Text style={styles.contactInitials}>{contactInitials}</Text>
+                    </View>
+                    <View style={styles.headerInfo}>
+                        <Text style={styles.contactName}>{contactName}</Text>
+                        <Text style={styles.contactStatus}>{contactSubtitle || 'Online'}</Text>
+                    </View>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.appointmentButton} onPress={handleAppointmentPress}>
                     <Ionicons name="calendar-outline" size={16} color="#F8FAFC" />
                     <Text style={styles.appointmentButtonText}>Afspraak</Text>
                 </TouchableOpacity>
             </View>
+
+            {isPending && (
+                <View style={{ backgroundColor: 'rgba(251, 191, 36, 0.1)', padding: 12, alignItems: 'center', borderBottomWidth: 1, borderBottomColor: 'rgba(251, 191, 36, 0.2)' }}>
+                    <Text style={{ color: '#FBBF24', fontSize: 13, textAlign: 'center' }}>
+                        {isInitiator
+                            ? "Je hebt een matchverzoek verstuurd. Je kunt chatten zodra deze is geaccepteerd."
+                            : "Stuur een bericht om het matchverzoek te accepteren."}
+                    </Text>
+                </View>
+            )}
+
             <FlatList
                 data={messages}
                 renderItem={renderMessage}
@@ -275,16 +311,21 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                 contentContainerStyle={styles.messagesList}
                 showsVerticalScrollIndicator={false}
             />
-            <View style={styles.inputContainer}>
+            <View style={[styles.inputContainer, !canSendMessage && { opacity: 0.5 }]}>
                 <TextInput
                     style={styles.textInput}
-                    placeholder="Typ een bericht..."
+                    placeholder={canSendMessage ? "Typ een bericht..." : "Wacht op acceptatie..."}
                     placeholderTextColor={conversationColors.notext}
                     value={messageText}
                     onChangeText={setMessageText}
                     multiline
+                    editable={canSendMessage}
                 />
-                <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+                <TouchableOpacity
+                    style={[styles.sendButton, !canSendMessage && { backgroundColor: '#94A3B8' }]}
+                    onPress={sendMessage}
+                    disabled={!canSendMessage}
+                >
                     <Ionicons name="send" size={18} color="#F8FAFC" />
                 </TouchableOpacity>
             </View>

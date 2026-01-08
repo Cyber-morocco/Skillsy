@@ -23,7 +23,7 @@ import { subscribeToAppointments, updateAppointmentStatus } from '../services/ap
 import { saveReview } from '../services/userService';
 import { auth } from '../config/firebase';
 
-type Tab = 'upcoming' | 'pending' | 'past';
+type Tab = 'upcoming' | 'past';
 
 interface AppointmentsScreenProps {
     onViewProfile?: (user: any) => void;
@@ -82,7 +82,6 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
     };
 
     const filteredAppointments = appointments.filter(app => {
-        if (activeTab === 'pending') return app.status === 'pending';
         if (activeTab === 'upcoming') return app.status === 'confirmed';
         if (activeTab === 'past') return app.status === 'completed' || app.status === 'cancelled';
         return false;
@@ -90,7 +89,6 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
 
     const counts = {
         upcoming: appointments.filter(app => app.status === 'confirmed').length,
-        pending: appointments.filter(app => app.status === 'pending').length,
         past: appointments.filter(app => app.status === 'completed' || app.status === 'cancelled').length
     };
 
@@ -281,7 +279,7 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
             </View>
 
             <View style={styles.tabContainer}>
-                {(['upcoming', 'pending', 'past'] as Tab[]).map((tab) => (
+                {(['upcoming', 'past'] as Tab[]).map((tab) => (
                     <TouchableOpacity
                         key={tab}
                         style={[styles.tab, activeTab === tab && styles.activeTab]}
@@ -289,7 +287,7 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                     >
                         <View style={styles.tabContent}>
                             <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>
-                                {tab === 'upcoming' ? 'Bevestigd' : tab === 'pending' ? 'Verzoeken' : 'Verleden'}
+                                {tab === 'upcoming' ? 'Bevestigd' : 'Verleden'}
                             </Text>
                             {counts[tab] > 0 && (
                                 <View style={[styles.badge, activeTab === tab && styles.activeBadge]}>

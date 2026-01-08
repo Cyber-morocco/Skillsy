@@ -14,7 +14,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { chatStyles as styles, chatColors } from '../styles/ChatStyle';
 import { ChatStackParamList } from '../navigation/ChatStack';
 import { MatchRequest, Conversation } from '../types';
-import { subscribeToChats } from '../services/chatService';
+import { subscribeToChats, respondToMatchRequest, clearAllMatchRequests } from '../services/chatService';
 import { auth } from '../config/firebase';
 import { Unsubscribe } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,11 +23,9 @@ import { Ionicons } from '@expo/vector-icons';
 
 interface ChatScreenProps {
     matchRequests?: MatchRequest[];
-    onRespondMatch?: (matchId: string, status: 'accepted' | 'rejected') => void;
-    onClearAllMatches?: (subject?: string) => void;
 }
 
-function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: ChatScreenProps) {
+function ChatScreen({ matchRequests = [] }: ChatScreenProps) {
     const navigation = useNavigation<NativeStackNavigationProp<ChatStackParamList>>();
     const [searchQuery, setSearchQuery] = useState('');
     const [matchesModalVisible, setMatchesModalVisible] = useState(false);
@@ -47,6 +45,16 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
     const filteredConversations = conversations.filter(conv => {
         const otherId = conv.participants.find(id => id !== auth.currentUser?.uid);
         const otherInfo = otherId ? conv.participantInfo[otherId] : null;
+
+
+        if (conv.status === 'pending' && conv.matchInitiatorId !== auth.currentUser?.uid) {
+            return false;
+        }
+
+        if (conv.status === 'rejected' && conv.matchInitiatorId !== auth.currentUser?.uid) {
+            return false;
+        }
+
         return otherInfo?.name.toLowerCase().includes(searchQuery.toLowerCase());
     });
 
@@ -103,10 +111,31 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
         );
     };
 
-    const handleRespondWithClose = async (matchId: string, status: 'accepted' | 'rejected') => {
-        await onRespondMatch?.(matchId, status);
-        if (status === 'accepted') {
+    const handleOpenMatchChat = async (match: MatchRequest) => {
+        const otherId = match.fromUserId;
+        const otherName = match.fromUserName;
+
+
+        const existingChat = conversations.find(c =>
+            c.participants.includes(otherId) && c.participants.includes(auth.currentUser?.uid || '')
+        );
+
+        if (existingChat) {
             setMatchesModalVisible(false);
+            openConversation(existingChat);
+        } else {
+            console.warn('Chat for match request not found');
+        }
+    };
+
+    const handleRespondWithClose = async (matchId: string, status: 'accepted' | 'rejected') => {
+        try {
+            await respondToMatchRequest(matchId, status);
+            if (status === 'accepted') {
+                setMatchesModalVisible(false);
+            }
+        } catch (error) {
+            console.error('Error responding to match:', error);
         }
     };
 
@@ -211,8 +240,11 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
 
                         {pendingMatches.length > 0 && (
                             <TouchableOpacity
-                                onPress={() => {
-                                    onClearAllMatches?.(selectedFilter);
+                                onPress={async () => {
+                                    const userId = auth.currentUser?.uid;
+                                    if (userId) {
+                                        await clearAllMatchRequests(userId, selectedFilter === 'All' ? undefined : selectedFilter);
+                                    }
                                 }}
                                 style={{
                                     flexDirection: 'row',
@@ -244,8 +276,10 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
                                                 <Text style={{ color: '#fff', fontWeight: '700' }}>{match.fromUserName.charAt(0)}</Text>
                                             </View>
                                             <View style={{ flex: 1 }}>
-                                                <Text style={{ color: '#fff', fontWeight: '600' }}>{match.fromUserName}</Text>
-                                                <Text style={{ color: '#9CA3AF', fontSize: 12 }}>Wil matchen voor <Text style={{ color: '#818cf8' }}>{match.subject || 'iets'}</Text></Text>
+                                                <TouchableOpacity onPress={() => handleOpenMatchChat(match)}>
+                                                    <Text style={{ color: '#fff', fontWeight: '600' }}>{match.fromUserName}</Text>
+                                                    <Text style={{ color: '#9CA3AF', fontSize: 12 }}>Wil matchen voor <Text style={{ color: '#818cf8' }}>{match.subject || 'iets'}</Text></Text>
+                                                </TouchableOpacity>
                                             </View>
                                         </View>
                                         <View style={{ flexDirection: 'row', gap: 12 }}>

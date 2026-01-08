@@ -115,6 +115,10 @@ export default function HomePage({ onViewProfile }: HomePageProps) {
                 setSelectedPost(item);
                 setIsCommentsVisible(true);
               }}
+              onImagePress={() => {
+                setSelectedPost(item);
+                setIsCommentsVisible(true);
+              }}
             />
           )}
           keyExtractor={(item) => item.id}

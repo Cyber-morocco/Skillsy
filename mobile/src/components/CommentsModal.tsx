@@ -105,6 +105,15 @@ export default function CommentsModal({ visible, onClose, post }: CommentsModalP
                                     <Text style={styles.emptyText}>Nog geen reacties. Deel je gedachten!</Text>
                                 </View>
                             }
+                            ListHeaderComponent={
+                                <>
+                                    {post?.imageURL && (
+                                        <View style={styles.imageContainer}>
+                                            <Image source={{ uri: post.imageURL }} style={styles.postImage} resizeMode="contain" />
+                                        </View>
+                                    )}
+                                </>
+                            }
                             contentContainerStyle={styles.listContent}
                         />
                     )}
@@ -249,5 +258,16 @@ const styles = StyleSheet.create({
     sendButtonDisabled: {
         backgroundColor: authColors.muted,
         opacity: 0.5,
+    },
+    imageContainer: {
+        marginBottom: 20,
+        backgroundColor: '#000',
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    postImage: {
+        width: '100%',
+        height: 250,
+        backgroundColor: '#000',
     },
 });
