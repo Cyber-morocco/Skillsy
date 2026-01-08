@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
 import ChatScreen from '../screens/ChatScreen';
@@ -21,11 +21,9 @@ import { MatchRequest } from '../types';
 
 interface ChatStackProps {
     matchRequests?: MatchRequest[];
-    onRespondMatch?: (matchId: string, status: 'accepted' | 'rejected') => void;
-    onClearAllMatches?: (subject?: string) => void;
 }
 
-function ChatStackNavigator({ matchRequests, onRespondMatch, onClearAllMatches }: ChatStackProps) {
+function ChatStackNavigator({ matchRequests }: ChatStackProps) {
     return (
         <NavigationContainer>
             <Stack.Navigator
@@ -34,7 +32,7 @@ function ChatStackNavigator({ matchRequests, onRespondMatch, onClearAllMatches }
                 }}
             >
                 <Stack.Screen name="ChatList">
-                    {props => <ChatScreen {...props} matchRequests={matchRequests} onRespondMatch={onRespondMatch} onClearAllMatches={onClearAllMatches} />}
+                    {props => <ChatScreen {...props} matchRequests={matchRequests} />}
                 </Stack.Screen>
                 <Stack.Screen name="Conversation" component={ConversationScreen} />
             </Stack.Navigator>
