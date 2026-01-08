@@ -248,20 +248,30 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
               <Text style={styles.emptyText}>Nog geen reviews.</Text>
             )
           ) : (
-            // Videos tab
             profile?.promoVideos && profile.promoVideos.length > 0 ? (
-              profile.promoVideos.map((videoUrl, index) => (
-                <View key={index} style={styles.videoContainer}>
-                  <Video
-                    source={{ uri: videoUrl }}
-                    style={styles.video}
-                    useNativeControls
-                    resizeMode={ResizeMode.CONTAIN}
-                    isLooping={false}
-                  />
-                  <Text style={styles.videoLabel}>Promo video {index + 1}</Text>
-                </View>
-              ))
+              profile.promoVideos.map((videoEntry, index) => {
+                const url = typeof videoEntry === 'string' ? videoEntry : (videoEntry?.url || '');
+                const title = typeof videoEntry === 'string' ? `Promo video ${index + 1}` : (videoEntry?.title || `Promo video ${index + 1}`);
+                const description = typeof videoEntry === 'string' ? '' : (videoEntry?.description || '');
+
+                if (!url) return null;
+
+                return (
+                  <View key={index} style={styles.videoContainer}>
+                    <Video
+                      source={{ uri: url }}
+                      style={styles.video}
+                      useNativeControls
+                      resizeMode={ResizeMode.CONTAIN}
+                      isLooping={false}
+                    />
+                    <View style={styles.videoInfo}>
+                      <Text style={styles.videoTitle}>{title}</Text>
+                      {description ? <Text style={styles.videoDescription}>{description}</Text> : null}
+                    </View>
+                  </View>
+                );
+              })
             ) : (
               <Text style={styles.emptyText}>Geen video's beschikbaar.</Text>
             )
@@ -561,12 +571,22 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
   },
-  videoLabel: {
+  videoInfo: {
+    padding: 12,
+    backgroundColor: colors.card,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  videoTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  videoDescription: {
     fontSize: 12,
-    color: '#666778',
-    textAlign: 'center',
-    paddingVertical: 8,
-    backgroundColor: '#ffffff',
+    color: colors.textMuted,
+    lineHeight: 16,
   },
 });
 

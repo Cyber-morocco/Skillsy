@@ -42,6 +42,12 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [learnModalVisible, setLearnModalVisible] = useState(false);
   const [newLearnSubject, setNewLearnSubject] = useState('');
 
+  const [videoModalVisible, setVideoModalVisible] = useState(false);
+  const [editingVideoIndex, setEditingVideoIndex] = useState<number | null>(null);
+  const [videoTitle, setVideoTitle] = useState('');
+  const [videoDescription, setVideoDescription] = useState('');
+  const [selectedVideoUri, setSelectedVideoUri] = useState<string | null>(null);
+
   const [profileName, setProfileName] = useState('');
   const [profileLocation, setProfileLocation] = useState('');
   const [profileAbout, setProfileAbout] = useState('');
@@ -199,24 +205,60 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
     });
 
     if (!result.canceled) {
-      setSaving(true);
-      try {
-        const videoUrl = await uploadVideo(result.assets[0].uri, index);
-        const currentVideos = [...(userProfile?.promoVideos || [])];
+      setSelectedVideoUri(result.assets[0].uri);
+      setEditingVideoIndex(index);
+      setVideoTitle('');
+      setVideoDescription('');
+      setVideoModalVisible(true);
+    }
+  };
 
-        while (currentVideos.length <= index) {
-          currentVideos.push('');
-        }
+  const handleSaveVideoMetadata = async () => {
+    if (editingVideoIndex === null) return;
 
-        currentVideos[index] = videoUrl;
-        await updateUserProfile({ promoVideos: currentVideos });
-        Alert.alert('Succes', 'Video geüpload');
-      } catch (error) {
-        console.error('Error uploading video:', error);
-        Alert.alert('Fout', 'Kon video niet uploaden');
-      } finally {
-        setSaving(false);
+    if (!videoTitle.trim()) {
+      Alert.alert('Fout', 'Voer een titel in');
+      return;
+    }
+    if (videoDescription.length > 100) {
+      Alert.alert('Fout', 'Beschrijving mag maximaal 100 karakters bevatten');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const currentVideos = [...(userProfile?.promoVideos || [])];
+
+      while (currentVideos.length <= editingVideoIndex) {
+        currentVideos.push({ url: '', title: '', description: '' });
       }
+
+      if (selectedVideoUri) {
+        const videoUrl = await uploadVideo(selectedVideoUri, editingVideoIndex);
+        currentVideos[editingVideoIndex] = {
+          url: videoUrl,
+          title: videoTitle.trim(),
+          description: videoDescription.trim(),
+        };
+      } else {
+        const existing = currentVideos[editingVideoIndex];
+        const existingUrl = typeof existing === 'string' ? existing : (existing?.url || '');
+
+        currentVideos[editingVideoIndex] = {
+          url: existingUrl,
+          title: videoTitle.trim(),
+          description: videoDescription.trim(),
+        };
+      }
+
+      await updateUserProfile({ promoVideos: currentVideos });
+      setVideoModalVisible(false);
+      setSelectedVideoUri(null);
+    } catch (error) {
+      console.error('Error saving video metadata:', error);
+      Alert.alert('Fout', 'Kon gegevens niet opslaan');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -234,7 +276,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             try {
               await deleteVideo(index);
               const currentVideos = [...(userProfile?.promoVideos || [])];
-              currentVideos[index] = '';
+              currentVideos[index] = { url: '', title: '', description: '' };
               await updateUserProfile({ promoVideos: currentVideos });
               Alert.alert('Succes', 'Video verwijderd');
             } catch (error) {
@@ -489,8 +531,11 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
 
             <View style={{ flexDirection: 'row', gap: 10 }}>
               {[0, 1, 2].map((index) => {
-                const videoUrl = userProfile?.promoVideos?.[index];
-                const hasVideo = videoUrl && videoUrl !== '';
+                const videoEntry = userProfile?.promoVideos?.[index];
+                const videoUrl = typeof videoEntry === 'string' ? videoEntry : (videoEntry?.url || '');
+                const videoTitleVal = typeof videoEntry === 'string' ? '' : (videoEntry?.title || '');
+                const videoDescVal = typeof videoEntry === 'string' ? '' : (videoEntry?.description || '');
+                const hasVideo = !!videoUrl;
 
                 return (
                   <TouchableOpacity
@@ -521,6 +566,32 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                     {hasVideo ? (
                       <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center' }}>
                         <Ionicons name="play-circle" size={40} color={authColors.accent} />
+
+                        {videoTitleVal ? (
+                          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.6)', padding: 4 }}>
+                            <Text numberOfLines={1} style={{ color: '#fff', fontSize: 10, textAlign: 'center' }}>{videoTitleVal}</Text>
+                          </View>
+                        ) : null}
+
+                        <TouchableOpacity
+                          onPress={() => {
+                            setEditingVideoIndex(index);
+                            setVideoTitle(videoTitleVal);
+                            setVideoDescription(videoDescVal);
+                            setVideoModalVisible(true);
+                          }}
+                          style={{
+                            position: 'absolute',
+                            top: 5,
+                            left: 5,
+                            backgroundColor: 'rgba(0,0,0,0.5)',
+                            padding: 4,
+                            borderRadius: 12
+                          }}
+                        >
+                          <Ionicons name="create-outline" size={16} color="#fff" />
+                        </TouchableOpacity>
+
                         <TouchableOpacity
                           onPress={() => handleDeleteVideo(index)}
                           style={{
@@ -570,6 +641,71 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                   </TouchableOpacity>
                   <TouchableOpacity onPress={SaveLearnSkill} style={styles.saveButton}>
                     <Text style={styles.saveButtonText}>Toevoegen</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={videoModalVisible}
+          onRequestClose={() => {
+            setVideoModalVisible(false);
+            setSelectedVideoUri(null);
+          }}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>{selectedVideoUri ? 'Video toevoegen' : 'Video bewerken'}</Text>
+
+                <Text style={styles.inputLabel}>Titel</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Titel"
+                  value={videoTitle}
+                  onChangeText={setVideoTitle}
+                />
+
+                <View style={styles.labelContainer}>
+                  <Text style={styles.inputLabel}>Beschrijving</Text>
+                  <Text style={styles.charCount}>{videoDescription.length}/100</Text>
+                </View>
+                <TextInput
+                  style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+                  placeholder="Korte beschrijving (max 100 tekens)"
+                  value={videoDescription}
+                  onChangeText={setVideoDescription}
+                  multiline={true}
+                  numberOfLines={4}
+                  maxLength={100}
+                />
+
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setVideoModalVisible(false);
+                      setSelectedVideoUri(null);
+                      setVideoTitle('');
+                      setVideoDescription('');
+                    }}
+                    style={styles.cancelButton}
+                  >
+                    <Text style={styles.cancelButtonText}>Annuleren</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleSaveVideoMetadata}
+                    style={[styles.saveButton, saving && { opacity: 0.7 }]}
+                    disabled={saving}
+                  >
+                    {saving ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={styles.saveButtonText}>{selectedVideoUri ? 'Plaatsen' : 'Opslaan'}</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               </View>
