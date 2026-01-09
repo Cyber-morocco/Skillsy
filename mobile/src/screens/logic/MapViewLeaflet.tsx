@@ -12,6 +12,7 @@ interface MapViewLeafletProps {
   talents: Talent[];
   focusTalent?: { id: string; lat: number; lng: number } | null;
   onTalentClick?: (id: string) => void;
+  onSwitchToList?: () => void;
 }
 
 export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({
@@ -20,6 +21,7 @@ export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({
   talents,
   focusTalent,
   onTalentClick,
+  onSwitchToList,
 }) => {
   const webViewRef = useRef<WebView>(null);
   const [isReady, setIsReady] = useState(false);
@@ -70,6 +72,9 @@ export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({
           const data = JSON.parse(event.nativeEvent.data);
           if (data.type === 'talentClick' && onTalentClick) {
             onTalentClick(data.talentId);
+          }
+          if (data.type === 'switchToList' && onSwitchToList) {
+            onSwitchToList();
           }
         }}
       />

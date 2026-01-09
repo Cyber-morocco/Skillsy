@@ -78,6 +78,7 @@ export const useExploreMap = () => {
   const [focusTalent, setFocusTalent] = useState<{ id: string; lat: number; lng: number } | null>(null);
   const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
   const [userLearnSkills, setUserLearnSkills] = useState<LearnSkill[]>([]);
+  const [profileReady, setProfileReady] = useState(false);
 
   // Default center on signup address; keep latest profile location in ref
   useEffect(() => {
@@ -94,6 +95,9 @@ export const useExploreMap = () => {
       if (!locationPermissionGranted) {
         setUserLocation(baseLocation);
       }
+
+      // Mark profile location as loaded so map can render centered correctly
+      setProfileReady(true);
     });
 
     return () => unsubscribe();
@@ -384,5 +388,6 @@ export const useExploreMap = () => {
     userLearnSkills,
     viewMode,
     centerToUserLocation,
+    profileReady,
   };
 };

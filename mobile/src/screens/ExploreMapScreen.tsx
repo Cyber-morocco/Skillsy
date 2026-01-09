@@ -38,6 +38,7 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
     userLocation,
     userLearnSkills,
     viewMode,
+    profileReady,
   } = useExploreMap();
 
   const handleTalentPress = (talentId: string) => {
@@ -80,13 +81,18 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
       <View style={styles.mapContainer}>
         {viewMode === 'map' ? (
           <View style={{ flex: 1 }}>
-            <MapViewLeaflet
-              userLocation={userLocation}
-              radiusKm={selectedDistance}
-              talents={filteredTalents}
-              focusTalent={focusTalent}
-              onTalentClick={handleTalentPress}
-            />
+            {profileReady ? (
+              <MapViewLeaflet
+                userLocation={userLocation}
+                radiusKm={selectedDistance}
+                talents={filteredTalents}
+                focusTalent={focusTalent}
+                onTalentClick={handleTalentPress}
+                onSwitchToList={() => setViewMode('list')}
+              />
+            ) : (
+              <View style={{ flex: 1 }} />
+            )}
 
             <TouchableOpacity
               style={styles.locationButton}
