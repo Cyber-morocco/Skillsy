@@ -24,7 +24,7 @@ export const chatStyles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingTop: 24,
+        paddingTop: 10,
         paddingBottom: 12,
     },
     headerTitle: {
