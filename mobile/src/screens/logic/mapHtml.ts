@@ -6,11 +6,13 @@ interface BuildMapHtmlArgs {
   userLocation: Location;
   radiusKm: number | null;
   talents: Talent[];
+  filtersActive: boolean;
 }
 
-export const buildMapHtml = ({ userLocation, radiusKm, talents }: BuildMapHtmlArgs): string => {
+export const buildMapHtml = ({ userLocation, radiusKm, talents, filtersActive }: BuildMapHtmlArgs): string => {
   const initialTalents = JSON.stringify(talents);
   const initialRadius = radiusKm !== null ? radiusKm : 'null';
+  const initialFiltersActive = filtersActive ? 'true' : 'false';
 
   return `
     <!DOCTYPE html>
@@ -48,6 +50,7 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents }: BuildMapHtmlAr
             let centerLat = ${userLocation.lat};
             let centerLng = ${userLocation.lng};
             let radiusKm = ${initialRadius};
+            let filtersActive = ${initialFiltersActive};
             let radiusCircle = null;
             let talentMarkers = {};
             
@@ -115,7 +118,7 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents }: BuildMapHtmlAr
               });
             };
             
-            createUserMarker(talentCount, radiusKm !== null);
+            createUserMarker(talentCount, filtersActive);
 
             if (radiusKm !== null) {
               radiusCircle = L.circle([centerLat, centerLng], {
@@ -131,7 +134,7 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents }: BuildMapHtmlAr
             const addTalentMarkers = (talents) => {
               // Don't show markers on map, just update count
               talentCount = talents.length;
-              createUserMarker(talentCount, radiusKm !== null);
+              createUserMarker(talentCount, filtersActive);
             };
 
             addTalentMarkers(${initialTalents});
@@ -157,7 +160,7 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents }: BuildMapHtmlAr
 
             const updateRadius = (radius) => {
               updateCircle(radius, centerLat, centerLng);
-              createUserMarker(talentCount, radius !== null);
+              createUserMarker(talentCount, filtersActive);
               const zoom = getZoomForRadius(radius);
               map.setView([centerLat, centerLng], zoom, { animate: true });
             };
@@ -173,6 +176,10 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents }: BuildMapHtmlAr
                   if (data.talents) {
                     addTalentMarkers(data.talents);
                   }
+                }
+                if (data.type === 'updateFiltersActive') {
+                  filtersActive = !!data.filtersActive;
+                  createUserMarker(talentCount, filtersActive);
                 }
                 if (data.type === 'updateLocation') {
                   const { location, radiusKm: r } = data;

@@ -10,6 +10,7 @@ interface MapViewLeafletProps {
   userLocation: Location;
   radiusKm: number | null;
   talents: Talent[];
+  filtersActive: boolean;
   focusTalent?: { id: string; lat: number; lng: number } | null;
   onTalentClick?: (id: string) => void;
   onSwitchToList?: () => void;
@@ -19,6 +20,7 @@ export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({
   userLocation,
   radiusKm,
   talents,
+  filtersActive,
   focusTalent,
   onTalentClick,
   onSwitchToList,
@@ -30,8 +32,9 @@ export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({
     () =>
       buildMapHtml({
         userLocation,
-        radiusKm: radiusKm ?? 5,
+        radiusKm: radiusKm,
         talents,
+        filtersActive,
       }),
     []
   );
@@ -55,6 +58,11 @@ export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({
     if (!isReady) return;
     postMessage({ type: 'updateTalents', talents });
   }, [isReady, talents]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    postMessage({ type: 'updateFiltersActive', filtersActive });
+  }, [isReady, filtersActive]);
 
   useEffect(() => {
     if (!isReady || !focusTalent) return;

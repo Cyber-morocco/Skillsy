@@ -41,6 +41,8 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
     profileReady,
   } = useExploreMap();
 
+  const filtersActive = (selectedDistance !== null) || (selectedCategories.length > 0) || (Boolean(skillSearch && skillSearch.trim().length > 0));
+
   const handleTalentPress = (talentId: string) => {
     const talent = filteredTalents.find(t => t.id === talentId);
     if (talent && onViewProfile) {
@@ -86,6 +88,7 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
                 userLocation={userLocation}
                 radiusKm={selectedDistance}
                 talents={filteredTalents}
+                filtersActive={filtersActive}
                 focusTalent={focusTalent}
                 onTalentClick={handleTalentPress}
                 onSwitchToList={() => setViewMode('list')}
