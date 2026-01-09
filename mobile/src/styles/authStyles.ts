@@ -4,7 +4,7 @@ const ACCENT = '#7C3AED';
 const BACKGROUND = '#050816';
 const CARD = '#101936';
 const TEXT_PRIMARY = '#F8FAFC';
-const TEXT_SECONDARY = '#94A3B8';
+const TEXT_SECONDARY = '#d4d6d7f3';
 
 export const authColors = {
   accent: ACCENT,
@@ -12,7 +12,7 @@ export const authColors = {
   card: CARD,
   text: TEXT_PRIMARY,
   muted: TEXT_SECONDARY,
-  placeholder: '#a49999ff',
+  placeholder: '#dadadaff',
 };
 
 const sharedShadow =
@@ -145,7 +145,7 @@ export const authStyles = StyleSheet.create({
     marginTop: 8,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.35)',
+    borderColor: 'rgba(222, 222, 222, 0.73)',
     paddingHorizontal: 18,
     paddingVertical: Platform.OS === 'ios' ? 16 : 12,
     color: TEXT_PRIMARY,

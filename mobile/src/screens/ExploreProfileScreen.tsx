@@ -40,7 +40,7 @@ interface ExploreProfileScreenProps {
 }
 
 const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onBack, onMakeAppointment, onSendMessage }) => {
-  const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews' | 'wilLeren' | 'videos'>('vaardigheden');
+  const [activeTab, setActiveTab] = useState<'vaardigheden' | 'wilLeren' | 'videos'>('vaardigheden');
   const [liked, setLiked] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [skills, setSkills] = useState<Skill[]>([]);
@@ -143,11 +143,13 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
             <Text style={styles.locationText}>-- km</Text>
           </View>
 
-          <View style={styles.ratingRow}>
-            <Text style={styles.ratingIcon}>⭐</Text>
-            <Text style={styles.ratingValue}>{averageRating}</Text>
-            <Text style={styles.ratingReviews}>({reviews.length} reviews)</Text>
-          </View>
+          {reviews.length >= 5 && (
+            <View style={styles.ratingRow}>
+              <Text style={styles.ratingIcon}>⭐</Text>
+              <Text style={styles.ratingValue}>{averageRating}</Text>
+              <Text style={styles.ratingReviews}>({reviews.length} reviews)</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.actionRow}>
@@ -186,23 +188,7 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={() => setActiveTab('reviews')}
-            style={[
-              styles.tabButton,
-              activeTab === 'reviews' && styles.tabButtonActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === 'reviews' && styles.tabTextActive,
-              ]}
-            >
-              Reviews
-            </Text>
-          </TouchableOpacity>
+
 
           <TouchableOpacity
             activeOpacity={0.9}
@@ -270,22 +256,9 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
             ) : (
               <Text style={styles.emptyText}>Geen leerdoelen opgegeven.</Text>
             )
-          ) : activeTab === 'reviews' ? (
-            reviews.length > 0 ? (
-              reviews.map((review) => (
-                <View key={review.id} style={styles.reviewItem}>
-                  <View style={styles.reviewHeader}>
-                    <Text style={styles.reviewName}>{review.fromName || 'Anoniem'}</Text>
-                    <Text style={styles.reviewRating}>⭐ {review.rating}</Text>
-                  </View>
-                  <Text style={styles.reviewComment}>{review.comment}</Text>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.emptyText}>Nog geen reviews.</Text>
-            )
+
           ) : (
-            profile?.promoVideos && profile.promoVideos.length > 0 ? (
+            profile?.promoVideos && profile.promoVideos.some(v => typeof v === 'string' ? !!v : !!v?.url) ? (
               profile.promoVideos.map((videoEntry, index) => {
                 const url = typeof videoEntry === 'string' ? videoEntry : (videoEntry?.url || '');
                 const title = typeof videoEntry === 'string' ? `Promo video ${index + 1}` : (videoEntry?.title || `Promo video ${index + 1}`);

@@ -151,7 +151,6 @@ export interface Review {
     userId: string;
     fromName: string;
     rating: number;
-    comment: string;
     createdAt: any;
 }
 
