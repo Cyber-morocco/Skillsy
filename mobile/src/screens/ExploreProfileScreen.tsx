@@ -143,11 +143,13 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
             <Text style={styles.locationText}>-- km</Text>
           </View>
 
-          <View style={styles.ratingRow}>
-            <Text style={styles.ratingIcon}>⭐</Text>
-            <Text style={styles.ratingValue}>{averageRating}</Text>
-            <Text style={styles.ratingReviews}>({reviews.length} reviews)</Text>
-          </View>
+          {reviews.length >= 5 && (
+            <View style={styles.ratingRow}>
+              <Text style={styles.ratingIcon}>⭐</Text>
+              <Text style={styles.ratingValue}>{averageRating}</Text>
+              <Text style={styles.ratingReviews}>({reviews.length} reviews)</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.actionRow}>
@@ -271,7 +273,7 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
               <Text style={styles.emptyText}>Geen leerdoelen opgegeven.</Text>
             )
           ) : activeTab === 'reviews' ? (
-            reviews.length > 0 ? (
+            reviews.length >= 5 ? (
               reviews.map((review) => (
                 <View key={review.id} style={styles.reviewItem}>
                   <View style={styles.reviewHeader}>
@@ -282,7 +284,7 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
                 </View>
               ))
             ) : (
-              <Text style={styles.emptyText}>Nog geen reviews.</Text>
+              <Text style={styles.emptyText}>Nog niet genoeg reviews (minimaal 5 vereist).</Text>
             )
           ) : (
             profile?.promoVideos && profile.promoVideos.some(v => typeof v === 'string' ? !!v : !!v?.url) ? (

@@ -5,11 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
 import { auth, } from '../config/firebase';
 import { authColors } from '../styles/authStyles';
-import { Skill, LearnSkill, SkillLevel, UserProfile } from '../types';
+import { Skill, LearnSkill, SkillLevel, UserProfile, Review } from '../types';
 import {
   subscribeToSkills,
   subscribeToLearnSkills,
   subscribeToUserProfile,
+  subscribeToOtherUserReviews,
   addSkill,
   deleteSkill,
   addLearnSkill,
@@ -30,6 +31,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [activeTab, setActiveTab] = useState<'skills' | 'wilLeren' | 'promoVideo' | 'reviews'>('skills');
   const [skills, setSkills] = useState<Skill[]>([]);
   const [learnSkills, setLearnSkills] = useState<LearnSkill[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -90,10 +92,21 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
       }
     );
 
+    const unsubscribeReviews = auth.currentUser?.uid ? subscribeToOtherUserReviews(
+      auth.currentUser.uid,
+      (fetchedReviews) => {
+        setReviews(fetchedReviews);
+      },
+      (error) => {
+        console.error('Error loading reviews:', error);
+      }
+    ) : () => { };
+
     return () => {
       unsubscribeProfile();
       unsubscribeSkills();
       unsubscribeLearnSkills();
+      unsubscribeReviews();
     };
   }, []);
 
@@ -420,8 +433,16 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
           </View>
 
           <View style={styles.reviewsContainer}>
-            <Ionicons name="star" size={16} color="#FFD700" />
-            <Text style={styles.reviewsText}>Nieuw profiel</Text>
+            {reviews.length >= 5 ? (
+              <>
+                <Ionicons name="star" size={16} color="#FFD700" />
+                <Text style={styles.reviewsText}>
+                  {(reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)} ({reviews.length} reviews)
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.reviewsText}>Nieuw profiel</Text>
+            )}
             <Text style={styles.punt}>•</Text>
             <Ionicons name="laptop-outline" size={16} color="rgba(255,255,255,0.9)" />
             <Text style={styles.reviewsText}>Lid sinds {formatDate(userProfile?.createdAt)}</Text>
