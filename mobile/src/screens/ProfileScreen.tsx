@@ -636,6 +636,28 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             </View>
           </View>
         )}
+        {activeTab === 'reviews' && (
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Reviews ({reviews.length})</Text>
+            </View>
+            {reviews.length > 0 ? (
+              reviews.map((review) => (
+                <View key={review.id} style={styles.reviewItem}>
+                  <View style={styles.reviewHeader}>
+                    <Text style={styles.reviewName}>{review.fromName || 'Anoniem'}</Text>
+                    <Text style={styles.reviewRating}>⭐ {review.rating}</Text>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="chatbubbles-outline" size={48} color={authColors.muted} style={{ opacity: 0.5 }} />
+                <Text style={styles.emptyText}>Je hebt nog geen reviews ontvangen.</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         <Modal
           animationType="slide"
@@ -1109,6 +1131,40 @@ const styles = StyleSheet.create({
   priceText: {
     fontSize: 14,
     color: authColors.muted,
+  },
+  reviewItem: {
+    padding: 16,
+    backgroundColor: authColors.card,
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.15)',
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  reviewName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: authColors.text,
+  },
+  reviewRating: {
+    fontSize: 13,
+    color: '#fbbf24',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 40,
+    gap: 12,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: authColors.muted,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   modalOverlay: {
     flex: 1,

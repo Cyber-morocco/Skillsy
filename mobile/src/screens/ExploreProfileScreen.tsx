@@ -40,7 +40,7 @@ interface ExploreProfileScreenProps {
 }
 
 const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onBack, onMakeAppointment, onSendMessage }) => {
-  const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews' | 'wilLeren' | 'videos'>('vaardigheden');
+  const [activeTab, setActiveTab] = useState<'vaardigheden' | 'wilLeren' | 'videos'>('vaardigheden');
   const [liked, setLiked] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [skills, setSkills] = useState<Skill[]>([]);
@@ -188,23 +188,7 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={() => setActiveTab('reviews')}
-            style={[
-              styles.tabButton,
-              activeTab === 'reviews' && styles.tabButtonActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === 'reviews' && styles.tabTextActive,
-              ]}
-            >
-              Reviews
-            </Text>
-          </TouchableOpacity>
+
 
           <TouchableOpacity
             activeOpacity={0.9}
@@ -272,20 +256,7 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
             ) : (
               <Text style={styles.emptyText}>Geen leerdoelen opgegeven.</Text>
             )
-          ) : activeTab === 'reviews' ? (
-            reviews.length >= 5 ? (
-              reviews.map((review) => (
-                <View key={review.id} style={styles.reviewItem}>
-                  <View style={styles.reviewHeader}>
-                    <Text style={styles.reviewName}>{review.fromName || 'Anoniem'}</Text>
-                    <Text style={styles.reviewRating}>⭐ {review.rating}</Text>
-                  </View>
-                  <Text style={styles.reviewComment}>{review.comment}</Text>
-                </View>
-              ))
-            ) : (
-              <Text style={styles.emptyText}>Nog niet genoeg reviews (minimaal 5 vereist).</Text>
-            )
+
           ) : (
             profile?.promoVideos && profile.promoVideos.some(v => typeof v === 'string' ? !!v : !!v?.url) ? (
               profile.promoVideos.map((videoEntry, index) => {
