@@ -11,6 +11,7 @@ import {
   Alert,
   ActivityIndicator
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import {
   subscribeToSpecificDates,
@@ -118,10 +119,20 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        <Text style={styles.headerTitle}>Beschikbaarheid</Text>
-        <Text style={styles.headerSub}>
-          Kies specifieke datums met eigen tijdschema
-        </Text>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.headerTitle}>Beschikbaarheid</Text>
+            <Text style={styles.headerSub}>
+              Kies specifieke datums met eigen tijdschema
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => onNavigate && onNavigate('profile')}
+          >
+            <Ionicons name="close" size={28} color={text} />
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.tabs}>
           <TouchableOpacity style={styles.tab} onPress={() => onNavigate && onNavigate('availability')}>
@@ -385,8 +396,18 @@ export default AvailabilitySpecificDates;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: background },
 
-  headerTitle: { marginTop: 15, fontSize: 24, fontWeight: '700', marginHorizontal: 20, color: text },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginRight: 20,
+    marginTop: 15,
+  },
+  headerTitle: { fontSize: 24, fontWeight: '700', marginHorizontal: 20, color: text },
   headerSub: { color: muted, marginHorizontal: 20, marginBottom: 20 },
+  closeButton: {
+    padding: 5,
+  },
 
   tabs: { flexDirection: 'row', marginHorizontal: 20, marginBottom: 16 },
   tab: {
