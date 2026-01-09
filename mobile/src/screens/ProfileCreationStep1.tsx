@@ -218,6 +218,10 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                             placeholder="Je naam..."
                             value={name}
                             onChangeText={setName}
+                            autoComplete="name"
+                            importantForAutofill="yes"
+                            textContentType="name"
+                            editable={true}
                         />
 
                         <AppInput
@@ -293,12 +297,12 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
 
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, alignItems: 'center' }}>
                                 <TouchableOpacity
-                                    onPress={() => navigation.canGoBack() ? navigation.goBack() : handleLogout()}
-                                    style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: navigation.canGoBack() ? 'rgba(148,163,184,0.2)' : 'rgba(255,68,68,0.2)' }}
+                                    onPress={handleLogout}
+                                    style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(148,163,184,0.2)' }}
                                     disabled={saving}
                                 >
-                                    <Text style={{ color: navigation.canGoBack() ? authColors.text : '#ff4444', fontWeight: '600' }}>
-                                        {navigation.canGoBack() ? '‹ Vorige' : 'Uitloggen'}
+                                    <Text style={{ color: authColors.text, fontWeight: '600' }}>
+                                        ‹ Terug
                                     </Text>
                                 </TouchableOpacity>
 
