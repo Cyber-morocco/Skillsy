@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { authColors, authStyles as styles } from '../styles/authStyles';
 import { AppInput } from '../components/AppInput';
 import { auth } from '../config/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 
 type AuthScreenProps = {
   navigation?: {
@@ -29,9 +29,32 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      Alert.alert('E-mailadres vereist', 'Vul je e-mailadres in om een wachtwoordreset aan te vragen.');
+      return;
+    }
+
+    try {
+      await sendPasswordResetEmail(auth, email.toLowerCase().trim());
+      Alert.alert('E-mail verzonden', 'Controleer je inbox voor instructies om je wachtwoord te resetten.');
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      let errorMessage = 'Kon reset-link niet verzenden';
+
+      if (error.code === 'auth/user-not-found') {
+        errorMessage = 'Geen account gevonden met dit e-mailadres';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Ongeldig e-mailadres';
+      }
+
+      Alert.alert('Fout', errorMessage);
+    }
+  };
+
   const handleLogin = async () => {
     if (!email.trim() || !password) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+      Alert.alert('Fout', 'Vul alle velden in');
       return;
     }
 
@@ -39,20 +62,20 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     try {
       await signInWithEmailAndPassword(auth, email.toLowerCase().trim(), password);
     } catch (error: any) {
-      let errorMessage = 'Une erreur est survenue';
+      let errorMessage = 'Er is een fout opgetreden';
 
       switch (error.code) {
         case 'auth/invalid-email':
-          errorMessage = 'Adresse email invalide';
+          errorMessage = 'Ongeldig e-mailadres';
           break;
         case 'auth/user-not-found':
-          errorMessage = 'Aucun compte trouvé met dit email';
+          errorMessage = 'Geen account gevonden met dit e-mailadres';
           break;
         case 'auth/wrong-password':
           errorMessage = 'Onjuist wachtwoord';
           break;
         case 'auth/invalid-credential':
-          errorMessage = 'Email of wachtwoord onjuist';
+          errorMessage = 'E-mailadres of wachtwoord onjuist';
           break;
         default:
           errorMessage = error.message;
@@ -131,7 +154,7 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
             />
 
             <View style={styles.inlineRow}>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={handleForgotPassword}>
                 <Text style={styles.link}>wachtwoord vergeten</Text>
               </TouchableOpacity>
             </View>
