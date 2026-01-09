@@ -39,6 +39,7 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [submittingReview, setSubmittingReview] = useState(false);
 
     const [ratings, setRatings] = useState({
         q1: 0,
@@ -112,6 +113,7 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
         const averageRating = (ratings.q1 + ratings.q2 + ratings.q3) / 3;
 
         if (selectedAppointment) {
+            setSubmittingReview(true);
             try {
                 const isMeAsTutor = selectedAppointment.tutorId === auth.currentUser?.uid;
                 const recipientId = isMeAsTutor ? selectedAppointment.studentId : selectedAppointment.tutorId;
@@ -133,15 +135,16 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                         createdAt: new Date(),
                     }, recipientId);
                 }
+
+                setReviewModalVisible(false);
+                Alert.alert('Bedankt!', 'Je review is opgeslagen.');
             } catch (error) {
                 console.error('Error saving review:', error);
                 Alert.alert('Fout', 'Kon de review niet opslaan.');
-                return;
+            } finally {
+                setSubmittingReview(false);
             }
         }
-
-        setReviewModalVisible(false);
-        Alert.alert('Bedankt!', 'Je review is opgeslagen.');
     };
 
     const getStatusText = (status: Appointment['status']) => {
@@ -397,10 +400,15 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                                         <Text style={styles.modalCancelText}>Annuleren</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
-                                        style={styles.modalSubmitButton}
+                                        style={[styles.modalSubmitButton, submittingReview && { opacity: 0.7 }]}
                                         onPress={handleSubmitReview}
+                                        disabled={submittingReview}
                                     >
-                                        <Text style={styles.modalSubmitText}>Verzenden</Text>
+                                        {submittingReview ? (
+                                            <ActivityIndicator size="small" color={authColors.text} />
+                                        ) : (
+                                            <Text style={styles.modalSubmitText}>Verzenden</Text>
+                                        )}
                                     </TouchableOpacity>
                                 </View>
                             </View>
