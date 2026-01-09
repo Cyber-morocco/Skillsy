@@ -25,17 +25,12 @@ import { MatchRequest } from '../types';
 
 interface ChatStackProps {
     matchRequests?: MatchRequest[];
-    initialRouteName?: keyof ChatStackParamList;
-    initialParams?: any;
-    onRespondMatch?: (matchId: string, status: 'accepted' | 'rejected') => Promise<void>;
-    onClearAllMatches?: (subject?: string) => Promise<void>;
 }
 
-function ChatStackNavigator({ matchRequests, initialRouteName, initialParams, onRespondMatch, onClearAllMatches }: ChatStackProps) {
+function ChatStackNavigator({ matchRequests }: ChatStackProps) {
     return (
         <NavigationContainer>
             <Stack.Navigator
-                initialRouteName={initialRouteName}
                 screenOptions={{
                     headerShown: false,
                 }}
@@ -43,11 +38,7 @@ function ChatStackNavigator({ matchRequests, initialRouteName, initialParams, on
                 <Stack.Screen name="ChatList">
                     {props => <ChatScreen {...props} matchRequests={matchRequests} />}
                 </Stack.Screen>
-                <Stack.Screen
-                    name="Conversation"
-                    component={ConversationScreen}
-                    initialParams={initialRouteName === 'Conversation' ? initialParams : undefined}
-                />
+                <Stack.Screen name="Conversation" component={ConversationScreen} />
                 <Stack.Screen name="ExploreProfile">
                     {props => (
                         <ExploreProfileScreen
