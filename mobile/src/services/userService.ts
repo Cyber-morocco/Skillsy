@@ -143,11 +143,14 @@ export const deleteSkill = async (skillId: string): Promise<void> => {
 export const updateUserSkillNames = async (userId: string): Promise<void> => {
     const skillsRef = collection(db, 'users', userId, 'skills');
     const snapshot = await getDocs(skillsRef);
-    const skillNames = snapshot.docs.map(doc => (doc.data() as Skill).subject);
+    const skills = snapshot.docs.map(doc => doc.data() as Skill);
+    const skillNames = skills.map(s => s.subject);
+    const rootCategoryIds = Array.from(new Set(skills.map(s => s.rootId).filter(Boolean)));
 
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
         skillNames,
+        rootCategoryIds,
         updatedAt: serverTimestamp()
     });
 };

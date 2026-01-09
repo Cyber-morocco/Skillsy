@@ -6,11 +6,19 @@ export interface Skill {
     level: SkillLevel;
     price: string;
     type?: 'paid' | 'swap';
+    rootId?: string;
 }
 
 export interface LearnSkill {
     id: string;
     subject: string;
+    rootId?: string;
+}
+
+export interface PromoVideo {
+    url: string;
+    title: string;
+    description: string;
 }
 
 export interface PromoVideo {
@@ -87,6 +95,7 @@ export interface Talent {
     };
     averageRating?: number;
     reviewCount?: number;
+    rootCategoryIds?: string[];
     isActive: boolean;
 }
 

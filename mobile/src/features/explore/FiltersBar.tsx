@@ -3,6 +3,12 @@ import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { exploreMapStyles as styles } from '../../styles/exploreMapStyles';
 
+interface CategoryOption {
+  id: string;
+  label: string;
+  icon: string;
+}
+
 interface FiltersBarProps {
   selectedDistance: number | null;
   onSelectDistance: (distance: number) => void;
@@ -12,7 +18,7 @@ interface FiltersBarProps {
   viewMode: 'map' | 'list';
   onToggleViewMode: () => void;
   distanceOptions: number[];
-  categoryOptions: string[];
+  categoryOptions: CategoryOption[];
 }
 
 export const FiltersBar: React.FC<FiltersBarProps> = ({
@@ -142,16 +148,16 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
           <ScrollView scrollEnabled showsVerticalScrollIndicator>
             {categoryOptions.map((category) => (
               <TouchableOpacity
-                key={category}
-                style={[styles.dropdownOption, selectedCategories.includes(category) && styles.dropdownOptionActive]}
-                onPress={() => onToggleCategory(category)}
+                key={category.id}
+                style={[styles.dropdownOption, selectedCategories.includes(category.id) && styles.dropdownOptionActive]}
+                onPress={() => onToggleCategory(category.id)}
               >
                 <Text
-                  style={[styles.dropdownOptionText, selectedCategories.includes(category) && styles.dropdownOptionTextActive]}
+                  style={[styles.dropdownOptionText, selectedCategories.includes(category.id) && styles.dropdownOptionTextActive]}
                 >
-                  {category}
+                  {category.label}
                 </Text>
-                {selectedCategories.includes(category) && <Ionicons name="checkmark" size={18} color="#7c3aed" />}
+                {selectedCategories.includes(category.id) && <Ionicons name="checkmark" size={18} color="#7c3aed" />}
               </TouchableOpacity>
             ))}
 
