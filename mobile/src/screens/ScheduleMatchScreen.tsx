@@ -7,6 +7,8 @@ import {
     ScrollView,
     Alert,
     ActivityIndicator,
+    Modal,
+    FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -47,6 +49,9 @@ export default function ScheduleMatchScreen({
 }: ScheduleMatchScreenProps) {
     const [loading, setLoading] = useState(true);
     const [availabilityData, setAvailabilityData] = useState<DayAvailability[]>([]);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedDayData, setSelectedDayData] = useState<DayAvailability | null>(null);
+    const [availableSlots, setAvailableSlots] = useState<string[]>([]);
 
     useEffect(() => {
         const loadAvailability = async () => {
@@ -95,12 +100,61 @@ export default function ScheduleMatchScreen({
         loadAvailability();
     }, [contactId, contactName]);
 
-    const handleMatch = async (dayData: DayAvailability) => {
-        // Simple logic: pick the first available time slot overlapping or just the contact's slot
+    const calculateTimeSlots = (dayData: DayAvailability): string[] => {
         const mySlot = dayData.people.find(p => p.name === 'Jij');
         const contactSlot = dayData.people.find(p => p.name === contactName);
 
-        const timeToMatch = contactSlot ? contactSlot.times[0] : (mySlot ? mySlot.times[0] : '10:00 - 11:00');
+        if (!mySlot || !contactSlot) return [];
+
+        const parseRange = (range: string) => {
+            const [start, end] = range.split(' - ');
+            const [sH, sM] = start.split(':').map(Number);
+            const [eH, eM] = end.split(':').map(Number);
+            return { s: sH * 60 + sM, e: eH * 60 + eM };
+        };
+
+        const myRange = parseRange(mySlot.times[0]);
+        const contactRange = parseRange(contactSlot.times[0]);
+
+        const start = Math.max(myRange.s, contactRange.s);
+        const end = Math.min(myRange.e, contactRange.e);
+
+        if (start >= end) return [];
+
+        const slots: string[] = [];
+        let current = start;
+        while (current + 60 <= end) {
+            const h = Math.floor(current / 60);
+            const m = current % 60;
+            const endH = Math.floor((current + 60) / 60);
+            const endM = (current + 60) % 60;
+
+            const format = (h: number, m: number) =>
+                `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+
+            slots.push(`${format(h, m)} - ${format(endH, endM)}`);
+            current += 60;
+        }
+        return slots;
+    };
+
+    const handleMatchPress = (dayData: DayAvailability) => {
+        const slots = calculateTimeSlots(dayData);
+        if (slots.length > 0) {
+            setAvailableSlots(slots);
+            setSelectedDayData(dayData);
+            setModalVisible(true);
+        } else {
+            Alert.alert('Geen overlap', 'Er zijn geen overlappende tijden gevonden op deze dag.');
+        }
+    };
+
+    const confirmMatch = async (timeSlot: string) => {
+        setModalVisible(false);
+        if (!selectedDayData) return;
+
+        const dayData = selectedDayData;
+        const timeToMatch = timeSlot;
 
         try {
             const currentUserId = auth.currentUser?.uid;
@@ -169,7 +223,7 @@ export default function ScheduleMatchScreen({
                     </View>
                     <TouchableOpacity
                         style={[styles.matchButton, !isMutual && { backgroundColor: 'rgba(148, 163, 184, 0.1)' }]}
-                        onPress={() => handleMatch(dayData)}
+                        onPress={() => isMutual ? handleMatchPress(dayData) : Alert.alert('Geen Match', 'Je kunt alleen matchen op dagen dat jullie beiden beschikbaar zijn.')}
                     >
                         <Text style={[styles.matchButtonText, !isMutual && { color: scheduleMatchColors.textSecondary }]}>
                             Match
@@ -238,6 +292,35 @@ export default function ScheduleMatchScreen({
                 </ScrollView>
             )}
 
+            <Modal
+                visible={modalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' }}>
+                    <View style={{ backgroundColor: scheduleMatchColors.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '60%' }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                            <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>Kies een tijdstip</Text>
+                            <TouchableOpacity onPress={() => setModalVisible(false)}>
+                                <Ionicons name="close" size={24} color="#fff" />
+                            </TouchableOpacity>
+                        </View>
+                        <FlatList
+                            data={availableSlots}
+                            keyExtractor={(item) => item}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={{ padding: 15, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' }}
+                                    onPress={() => confirmMatch(item)}
+                                >
+                                    <Text style={{ color: '#fff', fontSize: 16, textAlign: 'center' }}>{item}</Text>
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
