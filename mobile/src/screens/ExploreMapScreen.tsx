@@ -98,6 +98,9 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
                 size={28}
                 color="#FFFFFF"
               />
+              {locationPermissionGranted && (
+                <View style={styles.activeLocationDot} />
+              )}
             </TouchableOpacity>
           </View>
         ) : (

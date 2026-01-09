@@ -166,6 +166,17 @@ export const exploreMapStyles = StyleSheet.create({
     borderWidth: 0,
     zIndex: 10,
   },
+  activeLocationDot: {
+    position: 'absolute',
+    top: 23.75,
+    left: 23.75,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#10b981',
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
   listContainer: {
     flex: 1,
     backgroundColor: '#050816',
