@@ -10,16 +10,20 @@ interface MapViewLeafletProps {
   userLocation: Location;
   radiusKm: number | null;
   talents: Talent[];
+  filtersActive: boolean;
   focusTalent?: { id: string; lat: number; lng: number } | null;
   onTalentClick?: (id: string) => void;
+  onSwitchToList?: () => void;
 }
 
 export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({
   userLocation,
   radiusKm,
   talents,
+  filtersActive,
   focusTalent,
   onTalentClick,
+  onSwitchToList,
 }) => {
   const webViewRef = useRef<WebView>(null);
   const [isReady, setIsReady] = useState(false);
@@ -28,8 +32,9 @@ export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({
     () =>
       buildMapHtml({
         userLocation,
-        radiusKm: radiusKm ?? 5,
+        radiusKm: radiusKm,
         talents,
+        filtersActive,
       }),
     []
   );
@@ -41,13 +46,23 @@ export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({
 
   useEffect(() => {
     if (!isReady) return;
-    postMessage({ type: 'updateRadius', radiusKm: radiusKm ?? 5, talents });
-  }, [isReady, radiusKm, talents]);
+    postMessage({ type: 'updateRadius', radiusKm: radiusKm, talents });
+  }, [isReady, radiusKm]);
 
   useEffect(() => {
     if (!isReady) return;
-    postMessage({ type: 'updateLocation', location: userLocation, radiusKm: radiusKm ?? 5, talents });
-  }, [isReady, userLocation, radiusKm, talents]);
+    postMessage({ type: 'updateLocation', location: userLocation, radiusKm: radiusKm });
+  }, [isReady, userLocation]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    postMessage({ type: 'updateTalents', talents });
+  }, [isReady, talents]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    postMessage({ type: 'updateFiltersActive', filtersActive });
+  }, [isReady, filtersActive]);
 
   useEffect(() => {
     if (!isReady || !focusTalent) return;
@@ -65,6 +80,9 @@ export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({
           const data = JSON.parse(event.nativeEvent.data);
           if (data.type === 'talentClick' && onTalentClick) {
             onTalentClick(data.talentId);
+          }
+          if (data.type === 'switchToList' && onSwitchToList) {
+            onSwitchToList();
           }
         }}
       />

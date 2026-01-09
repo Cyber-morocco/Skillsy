@@ -6,11 +6,13 @@ interface BuildMapHtmlArgs {
   userLocation: Location;
   radiusKm: number | null;
   talents: Talent[];
+  filtersActive: boolean;
 }
 
-export const buildMapHtml = ({ userLocation, radiusKm, talents }: BuildMapHtmlArgs): string => {
-  const safeRadius = radiusKm ?? 5;
+export const buildMapHtml = ({ userLocation, radiusKm, talents, filtersActive }: BuildMapHtmlArgs): string => {
   const initialTalents = JSON.stringify(talents);
+  const initialRadius = radiusKm !== null ? radiusKm : 'null';
+  const initialFiltersActive = filtersActive ? 'true' : 'false';
 
   return `
     <!DOCTYPE html>
@@ -47,116 +49,149 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents }: BuildMapHtmlAr
           try {
             let centerLat = ${userLocation.lat};
             let centerLng = ${userLocation.lng};
-            let radiusKm = ${safeRadius};
+            let radiusKm = ${initialRadius};
+            let filtersActive = ${initialFiltersActive};
             let radiusCircle = null;
             let talentMarkers = {};
             
-            const map = L.map('map').setView([centerLat, centerLng], 13);
+            const getZoomForRadius = (radiusKm) => {
+              if (!radiusKm || radiusKm === null) return 13; // Default zoom when no filter
+              
+              // Calculate zoom to fit circle with ~10% padding
+              // At equator: zoom level n shows approximately 40000 / (2^n) km width
+              // We need diameter (2 * radius) + padding to fit in viewport
+              const diameter = radiusKm * 2;
+              const neededWidth = diameter * 1.1; // 10% padding around circle
+              
+              // Calculate zoom: width = 40000 / (2^zoom)
+              // So: zoom = log2(40000 / width)
+              const zoom = Math.log2(40000 / neededWidth);
+              
+              // Clamp between reasonable values and round down for safety
+              return Math.max(6, Math.min(15, Math.floor(zoom)));
+            };
+            
+            const initialZoom = getZoomForRadius(radiusKm);
+            const map = L.map('map').setView([centerLat, centerLng], initialZoom);
             
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
               attribution: '© OpenStreetMap',
               maxZoom: 19
             }).addTo(map);
 
-            const userMarker = L.circleMarker([centerLat, centerLng], {
-              radius: 8,
-              fillColor: '#10b981',
-              color: 'white',
-              weight: 3,
-              opacity: 1,
-              fillOpacity: 0.8
-            }).addTo(map);
-            userMarker.bindPopup('<strong>You</strong>');
+            let talentCount = ${initialTalents}.length;
+            let userMarker = null;
+            
+            const createUserMarker = (count, showCount) => {
+              if (userMarker) {
+                map.removeLayer(userMarker);
+              }
+              
+              const size = 44;
+              const innerContent = showCount 
+                ? '<span style="color: white; font-size: 18px; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">' + count + '</span>'
+                : '<div style="width: 12px; height: 12px; background: white; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,0.3);"></div>';
+              
+              const html = '<div style="' +
+                'width: ' + size + 'px; ' +
+                'height: ' + size + 'px; ' +
+                'border-radius: 50%; ' +
+                'background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); ' +
+                'border: 3px solid white; ' +
+                'display: flex; ' +
+                'align-items: center; ' +
+                'justify-content: center; ' +
+                'box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4), 0 4px 16px rgba(0, 0, 0, 0.2); ' +
+                'cursor: pointer; ' +
+                'transition: transform 0.2s;' +
+                '">' + innerContent + '</div>';
+              
+              const icon = L.divIcon({
+                html: html,
+                iconSize: [size, size],
+                className: 'talent-count-marker'
+              });
+              
+              userMarker = L.marker([centerLat, centerLng], { icon: icon }).addTo(map);
+              userMarker.on('click', () => {
+                window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'switchToList' }));
+              });
+            };
+            
+            createUserMarker(talentCount, filtersActive);
 
-            radiusCircle = L.circle([centerLat, centerLng], {
-              radius: radiusKm * 1000,
-              color: '#7c3aed',
-              fillColor: '#7c3aed',
-              fillOpacity: 0.05,
-              weight: 2,
-              dashArray: '5, 5'
-            }).addTo(map);
+            if (radiusKm !== null) {
+              radiusCircle = L.circle([centerLat, centerLng], {
+                radius: radiusKm * 1000,
+                color: '#7c3aed',
+                fillColor: '#7c3aed',
+                fillOpacity: 0.15,
+                weight: 2,
+                dashArray: '5, 5'
+              }).addTo(map);
+            }
 
             const addTalentMarkers = (talents) => {
-              Object.values(talentMarkers).forEach(marker => {
-                map.removeLayer(marker);
-              });
-              talentMarkers = {};
-
-              const colors = ['#a78bfa', '#f472b6', '#60a5fa', '#fbbf24'];
-              
-              talents.forEach((talent, index) => {
-                const color = colors[index % 4];
-                const avatar = talent.avatar;
-                const html =
-                  '<div style="width: 50px; height: 50px; border-radius: 50%; border: 3px solid ' +
-                  color +
-                  '; overflow: hidden; display: flex; align-items: center; justify-content: center; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">' +
-                  '<img src="' +
-                  avatar +
-                  '" style="width: 100%; height: 100%; border-radius: 50%;"/></div>';
-
-                const customIcon = L.divIcon({
-                  html,
-                  iconSize: [50, 50],
-                  className: 'custom-marker'
-                });
-
-                const marker = L.marker([talent.lat, talent.lng], { icon: customIcon }).addTo(map);
-                
-                const popupContent =
-                  '<div style="font-family: Arial; padding: 10px; text-align: center; min-width: 150px;">' +
-                  '<img src="' + avatar + '" style="width: 50px; height: 50px; border-radius: 50%; margin-bottom: 8px;"/>' +
-                  '<strong style="display: block; margin-bottom: 4px;">' + talent.name + '</strong>' +
-                  '<small style="color: #666;">' + talent.shortBio + '</small>' +
-                  '</div>';
-                
-                marker.bindPopup(popupContent);
-                marker.on('click', () => {
-                  window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'talentClick', talentId: talent.id }));
-                });
-                
-                talentMarkers[talent.id] = marker;
-              });
+              // Don't show markers on map, just update count
+              talentCount = talents.length;
+              createUserMarker(talentCount, filtersActive);
             };
 
             addTalentMarkers(${initialTalents});
 
-            const updateRadius = (radius) => {
-              const nextRadius = typeof radius === 'number' ? radius : ${safeRadius};
-              radiusKm = nextRadius;
+            const updateCircle = (radius, centerLat, centerLng) => {
               if (radiusCircle) {
                 map.removeLayer(radiusCircle);
+                radiusCircle = null;
               }
-              radiusCircle = L.circle([centerLat, centerLng], {
-                radius: nextRadius * 1000,
-                color: '#7c3aed',
-                fillColor: '#7c3aed',
-                fillOpacity: 0.05,
-                weight: 2,
-                dashArray: '5, 5'
-              }).addTo(map);
+              
+              if (radius && radius !== null) {
+                radiusKm = radius;
+                radiusCircle = L.circle([centerLat, centerLng], {
+                  radius: radius * 1000,
+                  color: '#7c3aed',
+                  fillColor: '#7c3aed',
+                  fillOpacity: 0.15,
+                  weight: 2,
+                  dashArray: '5, 5'
+                }).addTo(map);
+              }
+            };
+
+            const updateRadius = (radius) => {
+              updateCircle(radius, centerLat, centerLng);
+              createUserMarker(talentCount, filtersActive);
+              const zoom = getZoomForRadius(radius);
+              map.setView([centerLat, centerLng], zoom, { animate: true });
             };
 
             document.addEventListener('message', (event) => {
               try {
                 const data = JSON.parse(event.data);
                 if (data.type === 'updateRadius') {
-                  updateRadius(data.radiusKm);
+                  const nextRadius = data.radiusKm;
+                  updateRadius(nextRadius);
+                }
+                if (data.type === 'updateTalents') {
                   if (data.talents) {
                     addTalentMarkers(data.talents);
                   }
                 }
+                if (data.type === 'updateFiltersActive') {
+                  filtersActive = !!data.filtersActive;
+                  createUserMarker(talentCount, filtersActive);
+                }
                 if (data.type === 'updateLocation') {
-                  const { location, radiusKm: r, talents } = data;
+                  const { location, radiusKm: r } = data;
                   centerLat = location.lat;
                   centerLng = location.lng;
-                  map.setView([location.lat, location.lng], 13);
-                  userMarker.setLatLng([location.lat, location.lng]);
-                  updateRadius(r);
-                  if (talents) {
-                    addTalentMarkers(talents);
+                  if (userMarker) {
+                    userMarker.setLatLng([centerLat, centerLng]);
                   }
+                  if (radiusCircle) {
+                    updateCircle(r, centerLat, centerLng);
+                  }
+                  map.setView([centerLat, centerLng], map.getZoom(), { animate: true });
                 }
                 if (data.type === 'focusTalent') {
                   const { talentId, lat, lng } = data;

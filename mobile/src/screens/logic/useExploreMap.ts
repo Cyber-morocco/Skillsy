@@ -1,8 +1,9 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { Alert, Linking, Platform } from 'react-native';
 import { Location, GeocodingResult, Talent, LearnSkill } from '../../types';
-import { subscribeToTalents, subscribeToOtherUserSkills, subscribeToOtherUserReviews, subscribeToLearnSkills } from '../../services/userService';
+import { subscribeToTalents, subscribeToOtherUserSkills, subscribeToOtherUserReviews, subscribeToLearnSkills, subscribeToUserProfile } from '../../services/userService';
 import { CATEGORY_OPTIONS, DISTANCE_OPTIONS } from '../../constants/exploreMap';
+import { auth } from '../../config/firebase';
 import { calculateDistance } from './distance';
 
 const DEFAULT_LOCATION: Location = { lat: 52.3676, lng: 4.9041 };
@@ -70,15 +71,45 @@ export const useExploreMap = () => {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [userLocation, setUserLocation] = useState<Location>(DEFAULT_LOCATION);
+  const [profileLocation, setProfileLocation] = useState<Location>(DEFAULT_LOCATION);
+  const profileLocationRef = useRef<Location>(DEFAULT_LOCATION);
   const [isSearching, setIsSearching] = useState(false);
   const [searchType, setSearchType] = useState<'skill' | 'address'>('skill');
   const [focusTalent, setFocusTalent] = useState<{ id: string; lat: number; lng: number } | null>(null);
   const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
   const [userLearnSkills, setUserLearnSkills] = useState<LearnSkill[]>([]);
+  const [profileReady, setProfileReady] = useState(false);
+
+  // Default center on signup address; keep latest profile location in ref
+  useEffect(() => {
+    const unsubscribe = subscribeToUserProfile((profile) => {
+      const loc = profile.location;
+      const baseLocation = loc?.lat && loc.lng
+        ? { lat: loc.lat, lng: loc.lng, address: loc.address }
+        : DEFAULT_LOCATION;
+
+      setProfileLocation(baseLocation);
+      profileLocationRef.current = baseLocation;
+
+      // Only override map center if we are not actively using GPS
+      if (!locationPermissionGranted) {
+        setUserLocation(baseLocation);
+      }
+
+      // Mark profile location as loaded so map can render centered correctly
+      setProfileReady(true);
+    });
+
+    return () => unsubscribe();
+  }, [locationPermissionGranted]);
 
   useEffect(() => {
     const unsubscribe = subscribeToTalents((fetchedTalents) => {
-      const mappedTalents: Talent[] = fetchedTalents.map((u: any) => ({
+      // Filter out current user
+      const currentUserId = auth.currentUser?.uid;
+      const filteredFetchedTalents = fetchedTalents.filter((u: any) => u.id !== currentUserId);
+      
+      const mappedTalents: Talent[] = filteredFetchedTalents.map((u: any) => ({
         id: u.id,
         userId: u.id,
         name: u.displayName || 'Onbekend',
@@ -177,6 +208,9 @@ export const useExploreMap = () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
 
       if (status !== 'granted') {
+        setLocationPermissionGranted(false);
+        setUserLocation(profileLocationRef.current);
+        setFocusTalent(null);
         // Show alert to user to go to settings
         Alert.alert(
           'Locatietoegang geweigerd',
@@ -225,7 +259,8 @@ export const useExploreMap = () => {
           setUserLocation(newLocation);
           setFocusTalent(null);
         } else {
-          console.log('No location available, keeping default');
+          setUserLocation(profileLocationRef.current);
+          setFocusTalent(null);
         }
       }
     } catch (error) {
@@ -236,6 +271,9 @@ export const useExploreMap = () => {
         'Er is een fout opgetreden bij het ophalen van je locatie. Controleer je locatie-instellingen.',
         [{ text: 'OK' }]
       );
+      setLocationPermissionGranted(false);
+      setUserLocation(profileLocationRef.current);
+      setFocusTalent(null);
     }
   };
 
@@ -350,5 +388,6 @@ export const useExploreMap = () => {
     userLearnSkills,
     viewMode,
     centerToUserLocation,
+    profileReady,
   };
 };
