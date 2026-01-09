@@ -112,7 +112,6 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                     userId: selectedAppointment.tutorId,
                     fromName: auth.currentUser?.displayName || 'Gebruiker',
                     rating: averageRating,
-                    comment: 'Review via afspraken',
                 });
 
                 if (onSubmitReview) {
@@ -121,7 +120,6 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                         userId: selectedAppointment.tutorId,
                         fromName: auth.currentUser?.displayName || 'Gebruiker',
                         rating: averageRating,
-                        comment: 'Review via afspraken',
                         createdAt: new Date(),
                     }, selectedAppointment.tutorId);
                 }
@@ -263,7 +261,7 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                     <View style={styles.actionButtons}>
                         <TouchableOpacity style={styles.reviewButton} onPress={() => handleOpenReview(item)}>
                             <Ionicons name="star-outline" size={16} color={authColors.accent} />
-                            <Text style={styles.reviewButtonText}>Review schrijven</Text>
+                            <Text style={styles.reviewButtonText}>Review achterlaten</Text>
                         </TouchableOpacity>
                     </View>
                 )}
