@@ -1,9 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 
+
+import { fetchPlatformStats, PlatformStats } from '../services/statsService';
 
 const { width } = Dimensions.get('window');
 
@@ -24,6 +26,29 @@ interface PrePaginaProps {
 }
 
 export default function PrePagina({ onLogin, onSignup }: PrePaginaProps) {
+    const [stats, setStats] = React.useState<PlatformStats>({
+        activeUsers: 0,
+        totalSkills: 0,
+        completedSessions: 0
+    });
+
+    React.useEffect(() => {
+        const loadStats = async () => {
+            try {
+                const data = await fetchPlatformStats();
+                setStats(data);
+            } catch (error: any) {
+                console.error('Stats loading failed:', error);
+                if (error.code === 'permission-denied' || error.message?.includes('permission')) {
+                    Alert.alert(
+                        'Database Toegang Geweigerd',
+                        'Kon de statistieken niet laden. Dit komt waarschijnlijk doordat de Firebase Rules openbare leestoegang blokkeren voor niet-ingelogde gebruikers.\n\nControleer je Firestore Rules.'
+                    );
+                }
+            }
+        };
+        loadStats();
+    }, []);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -88,17 +113,17 @@ export default function PrePagina({ onLogin, onSignup }: PrePaginaProps) {
 
                 <View style={styles.statsContainer}>
                     <View style={styles.statItem}>
-                        <Text style={styles.statValue}>1,200+</Text>
+                        <Text style={styles.statValue}>{stats.activeUsers}+</Text>
                         <Text style={styles.statLabel}>Actieve {'\n'}gebruikers</Text>
                     </View>
                     <View style={styles.statDivider} />
                     <View style={styles.statItem}>
-                        <Text style={styles.statValue}>350+</Text>
+                        <Text style={styles.statValue}>{stats.totalSkills}+</Text>
                         <Text style={styles.statLabel}>Vaardigheden</Text>
                     </View>
                     <View style={styles.statDivider} />
                     <View style={styles.statItem}>
-                        <Text style={styles.statValue}>5,000+</Text>
+                        <Text style={styles.statValue}>{stats.completedSessions}+</Text>
                         <Text style={styles.statLabel}>Sessies {'\n'}voltooid</Text>
                     </View>
                 </View>
