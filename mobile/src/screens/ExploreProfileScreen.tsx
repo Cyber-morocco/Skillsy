@@ -11,7 +11,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Video, ResizeMode } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import {
   subscribeToOtherUserProfile,
   subscribeToOtherUserSkills,
@@ -293,14 +293,17 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
 
                 if (!url) return null;
 
+                const player = useVideoPlayer(url, (player) => {
+                  player.play();
+                });
+
                 return (
                   <View key={index} style={styles.videoContainer}>
-                    <Video
-                      source={{ uri: url }}
+                    <VideoView
+                      player={player}
                       style={styles.video}
-                      useNativeControls
-                      resizeMode={ResizeMode.CONTAIN}
-                      isLooping={false}
+                      nativeControls
+                      allowsFullscreen
                     />
                     <View style={styles.videoInfo}>
                       <Text style={styles.videoTitle}>{title}</Text>
