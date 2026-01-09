@@ -49,7 +49,7 @@ export interface UserProfile {
     displayName: string;
     email: string;
     profileComplete: boolean;
-    photoURL?: string;
+    photoURL?: string | null;
     bio?: string;
     location?: {
         lat?: number;
