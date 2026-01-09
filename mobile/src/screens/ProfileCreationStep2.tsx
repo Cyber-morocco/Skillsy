@@ -30,8 +30,6 @@ type NavProps = {
 };
 
 const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
-    const [step, setStep] = useState<'category' | 'details'>('category');
-    const [selectedRoot, setSelectedRoot] = useState<RootCategory | null>(null);
     const [selectedSkills, setSelectedSkills] = useState<Array<{ subject: string, rootId: string, level: number }>>([]);
     const [customSkill, setCustomSkill] = useState('');
     const [abilityLevel, setAbilityLevel] = useState<1 | 2 | 3>(1);
@@ -59,39 +57,34 @@ const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
             } finally {
                 setLoadingIntelligence(false);
             }
-        }, 600); // 600ms delay
+        }, 600);
 
         return () => {
             if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         };
     }, [customSkill]);
 
-    const handleSelectCategory = (category: RootCategory) => {
-        setSelectedRoot(category);
-        setStep('details');
-    };
-
-    const handleBackToCategory = () => {
-        setStep('category');
-        setCustomSkill('');
-        setIntelligenceResult(null);
-        setLoadingIntelligence(false);
-    };
-
     const addStructuredSkill = () => {
-        if (!customSkill.trim() || !selectedRoot) return;
+        if (!customSkill.trim()) return;
 
-        const finalSubject = intelligenceResult?.type === 'auto_map'
-            ? intelligenceResult.match?.concept.label || customSkill.trim()
-            : customSkill.trim();
+        let rootId = 'overig';
+        let finalSubject = customSkill.trim();
+
+        if (intelligenceResult?.type === 'auto_map' && intelligenceResult.match) {
+            rootId = intelligenceResult.match.concept.rootId;
+            finalSubject = intelligenceResult.match.concept.label;
+        } else if (intelligenceResult?.type === 'discovery' && intelligenceResult.proposed) {
+            rootId = intelligenceResult.proposed.rootId;
+        }
 
         setSelectedSkills(prev => [...prev, {
             subject: finalSubject,
-            rootId: selectedRoot.id,
+            rootId: rootId,
             level: abilityLevel
         }]);
 
-        handleBackToCategory();
+        setCustomSkill('');
+        setIntelligenceResult(null);
     };
 
     const removeSkill = (index: number) => {
@@ -125,253 +118,194 @@ const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
     return (
         <SafeAreaView style={styles.safeArea}>
             <StatusBar barStyle="light-content" />
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <View style={{ flex: 1 }}>
-                    <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 20, paddingTop: 20 }}>
-                        <View style={{ alignItems: 'center', marginBottom: 20 }}>
-                            <View style={{ flexDirection: 'row', width: '100%', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
-                                <View style={{ height: 4, flex: 1, backgroundColor: authColors.accent, borderRadius: 2 }} />
-                                <View style={{ height: 4, flex: 1, backgroundColor: authColors.accent, borderRadius: 2 }} />
-                                <View style={{ height: 4, flex: 1, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 2 }} />
-                            </View>
-                            <Text style={{ color: authColors.muted, fontSize: 13, fontWeight: '500' }}>Stap 2 van 3</Text>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1 }}
+            >
+                <ScrollView
+                    contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingTop: 20 }}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    <View style={{ marginBottom: 32 }}>
+                        <View style={{ flexDirection: 'row', width: '100%', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
+                            <View style={{ height: 4, flex: 1, backgroundColor: authColors.accent, borderRadius: 2 }} />
+                            <View style={{ height: 4, flex: 1, backgroundColor: authColors.accent, borderRadius: 2 }} />
+                            <View style={{ height: 4, flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }} />
                         </View>
+                        <Text style={{ color: authColors.muted, fontSize: 13, fontWeight: '600', textAlign: 'center' }}>Stap 2 van 3</Text>
+                    </View>
 
-                        <View style={[styles.card, { padding: 20, borderRadius: 24, minHeight: '60%' }]}>
-                            {step === 'category' ? (
-                                <>
-                                    <View style={{ marginBottom: 20 }}>
-                                        <Text style={{ fontSize: 20, fontWeight: '700', color: authColors.text, marginBottom: 6 }}>
-                                            Wat kun je aanleren? 🎓
-                                        </Text>
-                                        <Text style={{ fontSize: 14, color: authColors.muted, lineHeight: 20 }}>
-                                            Kies eerst een categorie om een vaardigheid toe te voegen
-                                        </Text>
+                    <View style={{ marginBottom: 24 }}>
+                        <Text style={{ fontSize: 28, fontWeight: '800', color: authColors.text, marginBottom: 8 }}>
+                            Wat zijn jouw talenten? 🚀
+                        </Text>
+                        <Text style={{ fontSize: 16, color: authColors.muted, lineHeight: 24 }}>
+                            Voeg de vaardigheden toe waarin je les wilt geven. De AI helpt je ze te categoriseren.
+                        </Text>
+                    </View>
+
+                    <View style={[styles.card, { padding: 20, borderRadius: 24, marginBottom: 20 }]}>
+                        <View style={{ marginBottom: 20 }}>
+                            <Text style={{ color: authColors.text, fontSize: 15, fontWeight: '600', marginBottom: 10 }}>Zoek of typ een vaardigheid</Text>
+                            <View style={{ position: 'relative' }}>
+                                <TextInput
+                                    placeholder="Bijv. Gitaarles, Python, Frans..."
+                                    placeholderTextColor={authColors.placeholder}
+                                    value={customSkill}
+                                    onChangeText={setCustomSkill}
+                                    style={{
+                                        backgroundColor: 'rgba(255,255,255,0.03)',
+                                        borderRadius: 16,
+                                        paddingHorizontal: 16,
+                                        paddingVertical: 14,
+                                        fontSize: 16,
+                                        color: authColors.text,
+                                        borderWidth: 1,
+                                        borderColor: customSkill ? authColors.accent : 'rgba(255,255,255,0.1)'
+                                    }}
+                                />
+                                {loadingIntelligence && (
+                                    <View style={{ position: 'absolute', right: 16, top: 16 }}>
+                                        <ActivityIndicator size="small" color={authColors.accent} />
                                     </View>
+                                )}
+                            </View>
 
-                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
-                                        {ROOT_CATEGORIES.map((cat) => (
-                                            <TouchableOpacity
-                                                key={cat.id}
-                                                onPress={() => handleSelectCategory(cat)}
-                                                style={{
-                                                    width: '30%',
-                                                    aspectRatio: 1,
-                                                    backgroundColor: 'rgba(255,255,255,0.03)',
-                                                    borderRadius: 16,
-                                                    justifyContent: 'center',
-                                                    alignItems: 'center',
-                                                    borderWidth: 1,
-                                                    borderColor: 'rgba(255,255,255,0.1)'
-                                                }}
-                                            >
-                                                <Ionicons name={cat.icon as any} size={28} color={cat.color} />
-                                                <Text style={{ color: '#fff', fontSize: 10, marginTop: 8, textAlign: 'center' }}>
-                                                    {cat.name.nl}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-                                </>
-                            ) : (
-                                <>
-                                    <TouchableOpacity
-                                        onPress={handleBackToCategory}
-                                        style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}
-                                    >
-                                        <Ionicons name="arrow-back" size={18} color={authColors.accent} />
-                                        <Text style={{ color: authColors.accent, marginLeft: 8 }}>Terug naar categorieën</Text>
-                                    </TouchableOpacity>
-
-                                    <View style={{ marginBottom: 20 }}>
-                                        <Text style={{ fontSize: 18, fontWeight: '700', color: authColors.text, marginBottom: 4 }}>
-                                            {selectedRoot?.name.nl}
-                                        </Text>
-                                        <Text style={{ fontSize: 14, color: authColors.muted }}>
-                                            Welke specifieke vaardigheid wil je delen?
-                                        </Text>
-                                    </View>
-
-                                    <View style={{ marginBottom: 20 }}>
-                                        <TextInput
-                                            placeholder="Bijv. Elektrische Gitaar, Python, Frans..."
-                                            placeholderTextColor={authColors.muted}
-                                            value={customSkill}
-                                            onChangeText={setCustomSkill}
-                                            style={{
-                                                backgroundColor: 'rgba(255,255,255,0.05)',
-                                                borderRadius: 12,
-                                                paddingHorizontal: 16,
-                                                paddingVertical: 12,
-                                                fontSize: 16,
-                                                color: authColors.text,
-                                                borderWidth: 1,
-                                                borderColor: authColors.accent
-                                            }}
-                                        />
-                                        {loadingIntelligence && (
-                                            <ActivityIndicator size="small" color={authColors.accent} style={{ marginTop: 12 }} />
-                                        )}
-
-                                        {intelligenceResult?.type === 'nudge' && intelligenceResult.suggestions && !loadingIntelligence && (
-                                            <View style={{ marginTop: 12 }}>
-                                                <Text style={{ color: authColors.muted, fontSize: 12, marginBottom: 8 }}>
-                                                    Bedoel je een van deze?
-                                                </Text>
-                                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                                                    {intelligenceResult.suggestions.map((s, i) => (
-                                                        <TouchableOpacity
-                                                            key={i}
-                                                            onPress={() => setCustomSkill(s.concept.label)}
-                                                            style={{
-                                                                paddingHorizontal: 12,
-                                                                paddingVertical: 6,
-                                                                borderRadius: 20,
-                                                                backgroundColor: 'rgba(124, 58, 237, 0.2)',
-                                                                borderWidth: 1,
-                                                                borderColor: authColors.accent
-                                                            }}
-                                                        >
-                                                            <Text style={{ color: '#fff', fontSize: 12 }}>{s.concept.label}</Text>
-                                                        </TouchableOpacity>
-                                                    ))}
-                                                </View>
-                                            </View>
-                                        )}
-
-                                        {intelligenceResult?.type === 'discovery' && intelligenceResult.proposed && !loadingIntelligence && (
-                                            <View style={{ marginTop: 12, backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: '#10b981' }}>
-                                                <Text style={{ color: '#10b981', fontSize: 12, fontWeight: '700', marginBottom: 4 }}>
-                                                    ✨ Nieuwe vaardigheid ontdekt! {intelligenceResult.isWebAugmented && " (🌐 Webonderzoek voltooid)"}
-                                                </Text>
-                                                <Text style={{ color: '#fff', fontSize: 13 }}>
-                                                    De AI herkent dit als: <Text style={{ fontWeight: '700' }}>{intelligenceResult.proposed.label}</Text> in de categorie <Text style={{ color: '#10b981' }}>{intelligenceResult.proposed.rootLabel}</Text>.
-                                                </Text>
-                                            </View>
-                                        )}
-                                    </View>
-
-                                    <View style={{ marginBottom: 20 }}>
-                                        <Text style={{ fontSize: 16, fontWeight: '600', color: authColors.text, marginBottom: 12 }}>
-                                            Jouw niveau:
-                                        </Text>
-                                        {[1, 2, 3].map((num) => (
-                                            <TouchableOpacity
-                                                key={num}
-                                                onPress={() => setAbilityLevel(num as any)}
-                                                style={{
-                                                    flexDirection: 'row',
-                                                    alignItems: 'center',
-                                                    padding: 12,
-                                                    borderRadius: 12,
-                                                    backgroundColor: abilityLevel === num ? 'rgba(124, 58, 237, 0.1)' : 'transparent',
-                                                    borderWidth: 1,
-                                                    borderColor: abilityLevel === num ? authColors.accent : 'rgba(255,255,255,0.05)',
-                                                    marginBottom: 8
-                                                }}
-                                            >
-                                                <View style={{
-                                                    width: 20,
-                                                    height: 20,
-                                                    borderRadius: 10,
-                                                    borderWidth: 2,
-                                                    borderColor: abilityLevel === num ? authColors.accent : authColors.muted,
-                                                    justifyContent: 'center',
-                                                    alignItems: 'center',
-                                                    marginRight: 12
-                                                }}>
-                                                    {abilityLevel === num && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: authColors.accent }} />}
-                                                </View>
-                                                <Text style={{ color: abilityLevel === num ? '#fff' : authColors.muted, fontSize: 14 }}>
-                                                    {AbilityLevelLabels[num as 1 | 2 | 3]}
-                                                </Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
-
-                                    <TouchableOpacity
-                                        onPress={addStructuredSkill}
-                                        style={{
-                                            backgroundColor: authColors.accent,
-                                            borderRadius: 12,
-                                            paddingVertical: 14,
-                                            alignItems: 'center',
-                                            opacity: customSkill.trim() ? 1 : 0.6
-                                        }}
-                                        disabled={!customSkill.trim()}
-                                    >
-                                        <Text style={{ color: '#fff', fontWeight: '700' }}>Deze vaardigheid toevoegen</Text>
-                                    </TouchableOpacity>
-                                </>
-                            )}
-
-                            {selectedSkills.length > 0 && (
-                                <View style={{ marginTop: 24, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', paddingTop: 20 }}>
-                                    <Text style={{ color: authColors.text, fontWeight: '600', marginBottom: 12 }}>
-                                        Toegevoegd ({selectedSkills.length}):
+                            {intelligenceResult?.type === 'auto_map' && intelligenceResult.match && (
+                                <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(124, 58, 237, 0.1)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 }}>
+                                    <Ionicons name="checkmark-circle" size={16} color={authColors.accent} />
+                                    <Text style={{ color: authColors.text, fontSize: 13, marginLeft: 8 }}>
+                                        Gevonden: <Text style={{ fontWeight: '700' }}>{intelligenceResult.match.concept.label}</Text>
                                     </Text>
-                                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                                        {selectedSkills.map((s, i) => (
-                                            <View
-                                                key={i}
-                                                style={{
-                                                    flexDirection: 'row',
-                                                    alignItems: 'center',
-                                                    backgroundColor: 'rgba(255,255,255,0.05)',
-                                                    paddingHorizontal: 12,
-                                                    paddingVertical: 6,
-                                                    borderRadius: 8,
-                                                    borderWidth: 1,
-                                                    borderColor: 'rgba(255,255,255,0.1)'
-                                                }}
-                                            >
-                                                <Text style={{ color: '#fff', fontSize: 12, marginRight: 8 }}>{s.subject}</Text>
-                                                <TouchableOpacity onPress={() => removeSkill(i)}>
-                                                    <Ionicons name="close-circle" size={16} color="#ef4444" />
-                                                </TouchableOpacity>
-                                            </View>
-                                        ))}
-                                    </View>
                                 </View>
                             )}
 
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 40, alignItems: 'center', paddingBottom: 20 }}>
-                                <TouchableOpacity
-                                    onPress={() => navigation.goBack()}
-                                    style={{
-                                        paddingVertical: 12,
-                                        paddingHorizontal: 20,
-                                        borderRadius: 12,
-                                        borderWidth: 1,
-                                        borderColor: 'rgba(255,255,255,0.1)',
-                                        backgroundColor: 'transparent'
-                                    }}
-                                >
-                                    <Text style={{ color: authColors.text, fontWeight: '600' }}>‹ Vorige</Text>
-                                </TouchableOpacity>
+                            {intelligenceResult?.type === 'discovery' && intelligenceResult.proposed && (
+                                <View style={{ marginTop: 12, backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(16, 185, 129, 0.2)' }}>
+                                    <Text style={{ color: '#10b981', fontSize: 12, fontWeight: '700', marginBottom: 4 }}>✨ Nieuwe vaardigheid herkend</Text>
+                                    <Text style={{ color: authColors.muted, fontSize: 13 }}>In categorie: <Text style={{ color: authColors.text, fontWeight: '600' }}>{intelligenceResult.proposed.rootLabel}</Text></Text>
+                                </View>
+                            )}
+                        </View>
 
-                                <TouchableOpacity
-                                    style={{
-                                        backgroundColor: authColors.accent,
-                                        paddingVertical: 12,
-                                        paddingHorizontal: 32,
-                                        borderRadius: 12,
-                                        opacity: saving ? 0.7 : 1
-                                    }}
-                                    onPress={handleNext}
-                                    disabled={saving}
-                                >
-                                    {saving ? (
-                                        <ActivityIndicator color="#fff" size="small" />
-                                    ) : (
-                                        <Text style={{ color: '#fff', fontWeight: '600' }}>Volgende ›</Text>
-                                    )}
-                                </TouchableOpacity>
+                        <View style={{ marginBottom: 20 }}>
+                            <Text style={{ fontSize: 15, fontWeight: '600', color: authColors.text, marginBottom: 12 }}>Jouw niveau:</Text>
+                            <View style={{ flexDirection: 'row', gap: 8 }}>
+                                {[1, 2, 3].map((num) => (
+                                    <TouchableOpacity
+                                        key={num}
+                                        onPress={() => setAbilityLevel(num as any)}
+                                        style={{
+                                            flex: 1,
+                                            paddingVertical: 10,
+                                            borderRadius: 12,
+                                            backgroundColor: abilityLevel === num ? authColors.accent : 'rgba(255,255,255,0.03)',
+                                            alignItems: 'center',
+                                            borderWidth: 1,
+                                            borderColor: abilityLevel === num ? authColors.accent : 'rgba(255,255,255,0.1)'
+                                        }}
+                                    >
+                                        <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600', opacity: abilityLevel === num ? 1 : 0.6 }}>
+                                            {num === 1 ? 'Basis' : num === 2 ? 'Gemiddeld' : 'Expert'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
                             </View>
                         </View>
-                    </ScrollView>
-                </View>
-            </TouchableWithoutFeedback>
+
+                        <TouchableOpacity
+                            onPress={addStructuredSkill}
+                            style={{
+                                backgroundColor: customSkill.trim() ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.02)',
+                                borderRadius: 16,
+                                paddingVertical: 14,
+                                alignItems: 'center',
+                                borderWidth: 1,
+                                borderColor: customSkill.trim() ? 'rgba(255,255,255,0.2)' : 'transparent'
+                            }}
+                            disabled={!customSkill.trim()}
+                        >
+                            <Text style={{ color: customSkill.trim() ? '#fff' : authColors.muted, fontWeight: '700' }}>+ Voeg toe</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={{ flex: 1 }}>
+                        <Text style={{ color: authColors.text, fontSize: 18, fontWeight: '700', marginBottom: 16 }}>
+                            Gereed om te delen ({selectedSkills.length})
+                        </Text>
+
+                        {selectedSkills.length === 0 ? (
+                            <View style={{ padding: 40, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.02)', borderRadius: 24, borderStyle: 'dashed', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                                <Ionicons name="sparkles-outline" size={32} color="rgba(255,255,255,0.2)" />
+                                <Text style={{ color: 'rgba(255,255,255,0.3)', marginTop: 12, textAlign: 'center' }}>Je hebt nog geen vaardigheden toegevoegd</Text>
+                            </View>
+                        ) : (
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+                                {selectedSkills.map((s, i) => {
+                                    const catColor = ROOT_CATEGORIES.find(c => c.id === s.rootId)?.color || authColors.muted;
+                                    return (
+                                        <View
+                                            key={i}
+                                            style={{
+                                                flexDirection: 'row',
+                                                alignItems: 'center',
+                                                backgroundColor: 'rgba(255,255,255,0.05)',
+                                                paddingLeft: 14,
+                                                paddingRight: 8,
+                                                paddingVertical: 10,
+                                                borderRadius: 16,
+                                                borderWidth: 1,
+                                                borderColor: 'rgba(255,255,255,0.1)'
+                                            }}
+                                        >
+                                            <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: catColor, marginRight: 10 }} />
+                                            <View>
+                                                <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>{s.subject}</Text>
+                                                <Text style={{ color: authColors.muted, fontSize: 10, marginTop: 2 }}>
+                                                    {s.level === 1 ? 'Basis' : s.level === 2 ? 'Gemiddeld' : 'Expert'}
+                                                </Text>
+                                            </View>
+                                            <TouchableOpacity
+                                                onPress={() => removeSkill(i)}
+                                                style={{ marginLeft: 12, padding: 4 }}
+                                            >
+                                                <Ionicons name="close-circle" size={20} color="rgba(255,255,255,0.2)" />
+                                            </TouchableOpacity>
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        )}
+                    </View>
+
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 40, marginBottom: 30 }}>
+                        <TouchableOpacity
+                            onPress={() => navigation.goBack()}
+                            style={{ padding: 16 }}
+                        >
+                            <Text style={{ color: authColors.muted, fontWeight: '600' }}>Terug</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: authColors.accent,
+                                paddingVertical: 16,
+                                paddingHorizontal: 40,
+                                borderRadius: 20,
+                                opacity: selectedSkills.length > 0 ? 1 : 0.5
+                            }}
+                            onPress={handleNext}
+                            disabled={selectedSkills.length === 0 || saving}
+                        >
+                            {saving ? (
+                                <ActivityIndicator color="#fff" size="small" />
+                            ) : (
+                                <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Volgende</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };

@@ -85,21 +85,45 @@ async def resolve_skill(request: ResolveRequest):
     
     print(f"🔍 Always-on Web Discovery for: '{input_text}'")
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
-        search_url = f"https://api.duckduckgo.com/?q={input_text}&format=json&no_html=1"
-        response = requests.get(search_url, headers=headers, timeout=3)
+        headers = {'User-Agent': 'SkillsyIntelligence/1.0 (contact: support@skillsy.app)'}
+        
+        # Phase 1: DuckDuckGo Instant Answer
+        ddg_url = f"https://api.duckduckgo.com/?q={input_text}&format=json&no_html=1"
+        response = requests.get(ddg_url, headers=headers, timeout=5)
         
         if response.status_code == 200:
-            try:
-                data = response.json()
-                if data.get("AbstractText"):
-                    discovery_text = data["AbstractText"]
+            data = response.json()
+            if data.get("AbstractText"):
+                discovery_text = data["AbstractText"]
+                is_web_augmented = True
+                print(f"🌐 DDG Result: {discovery_text[:100]}...")
+
+        # Phase 2: Wikipedia Fallback (if DDG failed)
+        if not is_web_augmented:
+            print(f"🔄 DDG empty, trying Wikipedia Fallback for '{input_text}'...")
+            wiki_url = f"https://nl.wikipedia.org/api/rest_v1/page/summary/{input_text.capitalize()}"
+            wiki_res = requests.get(wiki_url, headers=headers, timeout=5)
+            if wiki_res.status_code == 200:
+                wiki_data = wiki_res.json()
+                if wiki_data.get("extract"):
+                    discovery_text = wiki_data["extract"]
                     is_web_augmented = True
-                    print(f"🌐 Web result: {discovery_text[:100]}...")
-            except ValueError:
-                print(f"⚠️ Non-JSON from web for '{input_text}'")
+                    print(f"📖 Wiki Result: {discovery_text[:100]}...")
+            elif wiki_res.status_code == 404:
+                # Try English Wikipedia if Dutch fails
+                print(f"🔄 NL Wiki 404, trying EN Wiki...")
+                wiki_url_en = f"https://en.wikipedia.org/api/rest_v1/page/summary/{input_text.capitalize()}"
+                wiki_res_en = requests.get(wiki_url_en, headers=headers, timeout=5)
+                if wiki_res_en.status_code == 200:
+                    wiki_data_en = wiki_res_en.json()
+                    discovery_text = wiki_data_en.get("extract", discovery_text)
+                    is_web_augmented = True
+                    print(f"📖 EN Wiki Result: {discovery_text[:100]}...")
+
+    except requests.exceptions.Timeout:
+        print(f"⏱️ Web search TIMEOUT voor '{input_text}'")
     except Exception as e:
-        print(f"⚠️ Web search failed: {e}")
+        print(f"⚠️ Web search ERROR: {e}")
 
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write(f"Web Augmented: {is_web_augmented}\n")
@@ -143,19 +167,19 @@ async def resolve_skill(request: ResolveRequest):
 
     # 4. If no high-confidence match, use AI Categorization from Web Text
     root_categories = [
-        {"id": "muziek", "label": "muziek, instrumenten, dans, ritme, zang, cultuur, music, dance, singing, instrument, guitar, piano, drums"},
-        {"id": "sport", "label": "sport, fitness, training, beweging, coaching, atletiek, exercise, gym, football, basketball, yoga, running, workout"},
-        {"id": "talen", "label": "talen, spreken, schrijven, vertalen, grammatica, languages, speaking, writing, translation, english, french, spanish, dutch, german, italian"},
-        {"id": "tech", "label": "technology, programmeren, software, coding, computers, website, html, css, development, data, ai, network, hardware, programming, app development"},
-        {"id": "creatief", "label": "creatief, design, kunst, tekenen, schilderen, knutselen, visual arts, craft, drawing, painting, handmade"},
-        {"id": "academisch", "label": "academisch, studie, wiskunde, wetenschap, huiswerk, school, education, science, math, history, geography, biology, physics, study, tutor"},
-        {"id": "design", "label": "design, multimedia, grafisch, logo, ui, ux, animation, digital design, photoshop, illustrator, creative media"},
-        {"id": "koken", "label": "koken, culinaire, eten, recepten, keuken, kookles, cooking, culinary, food, chef, recipes, baking, restaurant, nutrition, meal prep"},
-        {"id": "business", "label": "business, marketing, management, sales, finance, entrepreneurship, zakelijk, economie, accounting, strategy, startup"},
-        {"id": "zorg", "label": "gezondheid, zorg, EHBO, medisch, verpleging, health, care, medical, nursing, first aid, wellness, therapy"},
-        {"id": "ambacht", "label": "ambacht, DIY, klussen, houtbewerking, reparatie, hammer, screwdriver, repair, woodworking, construction, building"},
-        {"id": "fotografie", "label": "fotografie, video, film, montage, camera, photography, videography, editing, lens, photoshoot"},
-        {"id": "overig", "label": "overig, divers, extra, other, miscellaneous"},
+        {"id": "muziek", "label": "Muziek maken, instrumenten bespelen zoals viool of gitaar, zingen, dansen, ritme en orkest."},
+        {"id": "sport", "label": "Sporten, fitness, fysieke training, coaching in sport en atletiek, beweging en gym."},
+        {"id": "talen", "label": "Talen leren, vreemde talen spreken en schrijven, grammatica, vertalen en conversatie."},
+        {"id": "tech", "label": "Technologie, computer programmeren, software development, websites maken, coderen en IT hardware."},
+        {"id": "creatief", "label": "Creatieve kunsten, schilderen, tekenen, beeldhouwen, knutselen en handgemaakte kunstwerken."},
+        {"id": "academisch", "label": "Academische vakken, bijles school, wiskunde, wetenschap, geschiedenis en studiebegeleiding."},
+        {"id": "design", "label": "Grafisch design, merkidentiteit, logo's ontwerpen, user interface en digitale vormgeving."},
+        {"id": "koken", "label": "Koken en bakken, culinaire vaardigheden, recepten voorbereiden en voeding in de keuken."},
+        {"id": "business", "label": "Business en zaken, marketing strategie, verkoop, management, financiën en ondernemerschap."},
+        {"id": "zorg", "label": "Gezondheidszorg, medische hulp, verpleging, welzijn, therapie en eerste hulp."},
+        {"id": "ambacht", "label": "Handwerk en ambachten, DIY projecten, houtbewerking, reparatie en bouwen met gereedschap."},
+        {"id": "fotografie", "label": "Fotografie en videografie, fotos maken met camera, film montage en visuele media."},
+        {"id": "overig", "label": "Andere diverse onderwerpen die niet in een specifieke categorie passen."},
     ]
     
     root_labels = [r["label"] for r in root_categories]
@@ -193,5 +217,10 @@ if __name__ == "__main__":
     hostname = socket.gethostname()
     local_ip = socket.gethostbyname(hostname)
     print(f"\n🚀 Service starting on http://{local_ip}:8000")
-    print(f"👉 Use this IP in your React Native 'skillIntelligenceService.ts'\n")
+    print(f"👉 Use this IP in your React Native 'skillIntelligenceService.ts'")
+    
+    # Test print to verify labels are correctly loaded
+    test_cat = "Muziek maken, instrumenten bespelen zoals viool of gitaar"
+    print(f"✅ AI Labels Ready (Check: '{test_cat[:30]}...')\n")
+    
     uvicorn.run(app, host="0.0.0.0", port=8000)
