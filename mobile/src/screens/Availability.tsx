@@ -104,6 +104,28 @@ const Availability: React.FC<AvailabilityProps> = ({ onNavigate }) => {
 
   const handleTimeChange = (selectedDate: Date) => {
     const formatted = formatTime(selectedDate);
+    const currentDay = days[picker.index];
+
+    const startParts = currentDay.start.split(':').map(Number);
+    const endParts = currentDay.end.split(':').map(Number);
+    const newParts = formatted.split(':').map(Number);
+
+    const currentStartMinutes = startParts[0] * 60 + startParts[1];
+    const currentEndMinutes = endParts[0] * 60 + endParts[1];
+    const newMinutes = newParts[0] * 60 + newParts[1];
+
+    if (picker.field === 'start') {
+      if (newMinutes >= currentEndMinutes) {
+        Alert.alert('Ongeldige tijd', 'De starttijd moet voor de eindtijd liggen.');
+        return;
+      }
+    } else {
+      if (newMinutes <= currentStartMinutes) {
+        Alert.alert('Ongeldige tijd', 'De eindtijd moet na de starttijd liggen.');
+        return;
+      }
+    }
+
     const copy = [...days];
     copy[picker.index][picker.field] = formatted;
     setDays(copy);
@@ -347,7 +369,7 @@ const styles = StyleSheet.create({
   },
   timeBox: {
     width: '48%',
-    backgroundColor: background, 
+    backgroundColor: background,
     padding: 12,
     borderRadius: 10,
     borderWidth: 1,
