@@ -396,7 +396,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
         <View style={styles.topRow}>
           <TouchableOpacity style={styles.squareButtonWide} onPress={() => onNavigate?.('availability')}>
             <Ionicons name="calendar-outline" size={18} color={authColors.text} />
-            <Text style={styles.squareButtonText}>Beschikbaarheid</Text>
+            <Text style={styles.squareButtonText}>Agenda</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.squareButtonWide} onPress={handleEditProfile}>
