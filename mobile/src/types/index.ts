@@ -108,6 +108,7 @@ export interface Message {
     createdAt: any;
     type?: 'text' | 'appointmentRequest';
     appointmentDate?: string;
+    appointmentTime?: string;
     appointmentStatus?: 'pending' | 'accepted' | 'rejected';
 }
 

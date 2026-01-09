@@ -26,6 +26,7 @@ type Message = {
     senderId: string;
     type?: 'text' | 'appointmentRequest';
     appointmentDate?: string;
+    appointmentTime?: string;
     appointmentStatus?: 'pending' | 'accepted' | 'rejected';
 };
 
@@ -78,6 +79,7 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                     time: m.createdAt?.toDate ? m.createdAt.toDate().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '',
                     type: m.type || (m.appointmentDate ? 'appointmentRequest' : 'text'),
                     appointmentDate: m.appointmentDate,
+                    appointmentTime: m.appointmentTime,
                     appointmentStatus: m.appointmentStatus,
                 };
             });
@@ -112,16 +114,17 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
         setShowScheduleMatch(true);
     };
 
-    const handleMatchRequest = async (day: string) => {
+    const handleMatchRequest = async (day: string, time: string) => {
         if (!chatId) return;
 
         const currentUserName = auth.currentUser?.displayName || 'Ik';
-        const text = `${currentUserName} verzoekt om op ${day} een afspraak te nemen`;
+        const text = `${currentUserName} verzoekt om op ${day} om ${time} een afspraak te nemen`;
 
         try {
             await sendFirebaseMessage(chatId, text, {
                 type: 'appointmentRequest',
                 appointmentDate: day,
+                appointmentTime: time,
                 appointmentStatus: 'pending'
             });
             setShowScheduleMatch(false);
@@ -149,7 +152,7 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                         title: 'Afspraak',
                         subtitle: `Met ${contactName}`,
                         date: message.appointmentDate,
-                        time: '10:00 - 11:00',
+                        time: message.appointmentTime || '10:00 - 11:00',
                         location: 'fysiek',
                         initials: contactInitials,
                         status: 'confirmed'
