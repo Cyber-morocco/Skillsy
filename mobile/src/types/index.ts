@@ -144,6 +144,8 @@ export interface Appointment {
     tutorPhone?: string;
     tutorEmail?: string;
     createdAt: any;
+    reviewedByStudent?: boolean;
+    reviewedByTutor?: boolean;
 }
 
 export interface Review {
