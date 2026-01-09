@@ -9,6 +9,7 @@ import {
     Modal,
     ScrollView
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { chatStyles as styles, chatColors } from '../styles/ChatStyle';
@@ -142,7 +143,7 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
     };
 
     return (
-        <View style={styles.safeArea}>
+        <SafeAreaView style={styles.safeArea}>
             <StatusBar barStyle="light-content" />
 
             <View style={styles.header}>
@@ -173,19 +174,19 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
                     marginBottom: 10,
                     marginTop: -10,
                     backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                    paddingHorizontal: 12,
-                    paddingVertical: 6,
-                    borderRadius: 20,
+                    paddingHorizontal: 16,
+                    paddingVertical: 10,
+                    borderRadius: 24,
                     borderWidth: 1,
                     borderColor: 'rgba(99, 102, 241, 0.3)',
                     flexDirection: 'row',
                     alignItems: 'center',
-                    gap: 6
+                    gap: 8
                 }}
                 onPress={() => setMatchesModalVisible(true)}
             >
-                <Ionicons name="people-circle-outline" size={18} color="#6366f1" />
-                <Text style={{ color: '#6366f1', fontSize: 13, fontWeight: '600' }}>
+                <Ionicons name="people-circle-outline" size={24} color="#6366f1" />
+                <Text style={{ color: '#6366f1', fontSize: 14, fontWeight: '700' }}>
                     Match Verzoeken {pendingMatches.length > 0 && `(${pendingMatches.length})`}
                 </Text>
             </TouchableOpacity>
@@ -296,7 +297,7 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
                     </View>
                 </View>
             </Modal>
-        </View>
+        </SafeAreaView>
     );
 }
 
