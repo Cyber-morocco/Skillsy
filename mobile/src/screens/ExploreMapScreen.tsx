@@ -113,8 +113,8 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
                   <Text style={styles.talentName}>{talent.name}</Text>
                   <Text style={styles.talentBio}>{talent.shortBio}</Text>
                   <View style={styles.skillsContainer}>
-                    {talent.skills.map((skill, index) => (
-                      <Text key={index} style={styles.skillTag}>{skill.name}</Text>
+                    {(talent.skills || []).slice(0, 3).map((skill, index) => (
+                      <Text key={index} style={styles.skillTag}>{typeof skill === 'string' ? skill : skill.name}</Text>
                     ))}
                   </View>
                 </View>

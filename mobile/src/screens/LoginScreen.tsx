@@ -27,7 +27,6 @@ type AuthScreenProps = {
 const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -70,7 +69,7 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       <StatusBar barStyle="light-content" />
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -132,19 +131,6 @@ const LoginScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
             />
 
             <View style={styles.inlineRow}>
-              <TouchableOpacity
-                style={styles.checkboxRow}
-                activeOpacity={0.8}
-                onPress={() => setRememberMe((prev) => !prev)}
-              >
-                <View
-                  style={[
-                    styles.checkboxBox,
-                    rememberMe && { backgroundColor: authColors.accent },
-                  ]}
-                />
-                <Text style={styles.checkboxLabel}>onthoud me</Text>
-              </TouchableOpacity>
               <TouchableOpacity>
                 <Text style={styles.link}>wachtwoord vergeten</Text>
               </TouchableOpacity>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -8,10 +8,23 @@ import {
   StyleSheet,
   Platform,
   Modal,
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import {
+  subscribeToSpecificDates,
+  addSpecificDate,
+  updateSpecificDate,
+  deleteSpecificDate
+} from '../services/userService';
 
-const purple = '#A020F0';
+const purple = '#7C3AED'; // Updated to match other screens
+const background = '#050816';
+const card = '#101936';
+const text = '#F8FAFC';
+const muted = '#94A3B8';
+const border = 'rgba(148, 163, 184, 0.25)';
 
 const TIMES = [
   '08:00', '09:00', '10:00', '11:00', '12:00',
@@ -24,6 +37,7 @@ type Props = {
 };
 
 type SpecificDate = {
+  id: string;
   date: Date;
   start: string;
   end: string;
@@ -31,6 +45,7 @@ type SpecificDate = {
 
 const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
   const [dates, setDates] = useState<SpecificDate[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
 
@@ -44,16 +59,53 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
     field: 'start',
   });
 
-  const addDate = () => {
-    setDates([
-      ...dates,
-      { date: new Date(), start: '08:00', end: '22:00' },
-    ]);
+  useEffect(() => {
+    try {
+      const unsubscribe = subscribeToSpecificDates((fetched) => {
+        setDates(fetched as SpecificDate[]);
+        setLoading(false);
+      });
+      return () => unsubscribe();
+    } catch (error) {
+      console.error('Error subscribing to specific dates:', error);
+      setLoading(false);
+    }
+  }, []);
+
+  const handleAddDate = async () => {
+    try {
+      await addSpecificDate(new Date(), '08:00', '22:00');
+    } catch (error) {
+      console.error('Error adding date:', error);
+      Alert.alert('Fout', 'Kon de datum niet toevoegen.');
+    }
   };
 
-  const handleSave = () => {
-    console.log('Specifieke datums:', dates);
+  const handleDeleteDate = async (id: string) => {
+    try {
+      await deleteSpecificDate(id);
+    } catch (error) {
+      console.error('Error deleting date:', error);
+      Alert.alert('Fout', 'Kon de datum niet verwijderen.');
+    }
   };
+
+  const handleUpdateDate = async (id: string, updates: Partial<{ date: Date, start: string, end: string }>) => {
+    try {
+      await updateSpecificDate(id, updates);
+    } catch (error) {
+      console.error('Error updating date:', error);
+      Alert.alert('Fout', 'Kon de datum niet bijwerken.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={purple} />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -77,13 +129,13 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
 
         <View style={styles.addCard}>
           <Text style={styles.addLabel}>Specifieke datums</Text>
-          <TouchableOpacity onPress={addDate}>
+          <TouchableOpacity onPress={handleAddDate}>
             <Text style={styles.addAction}>+ Voeg toe</Text>
           </TouchableOpacity>
         </View>
 
         {dates.map((item, i) => (
-          <View key={i} style={styles.dateCard}>
+          <View key={item.id} style={styles.dateCard}>
             <View style={styles.dateHeader}>
               <TouchableOpacity
                 style={styles.dateButton}
@@ -97,13 +149,7 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => {
-                  const copy = [...dates];
-                  copy.splice(i, 1);
-                  setDates(copy);
-                }}
-              >
+              <TouchableOpacity onPress={() => handleDeleteDate(item.id)}>
                 <Text style={styles.remove}>× Verwijder</Text>
               </TouchableOpacity>
             </View>
@@ -131,9 +177,6 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
             </View>
           </View>
         ))}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Opslaan</Text>
-        </TouchableOpacity>
       </ScrollView>
 
       {datePickerVisible && activeIndex !== null && (
@@ -143,29 +186,33 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
           display={Platform.OS === 'ios' ? 'spinner' : 'default'}
           onChange={(event: any, selected?: Date) => {
             setDatePickerVisible(false);
+            if (!selected || activeIndex === null || !dates[activeIndex]) return;
+            handleUpdateDate(dates[activeIndex].id, { date: selected });
             if (!selected) return;
+            if (activeIndex === null || !dates[activeIndex]) return;
             const copy = [...dates];
             copy[activeIndex].date = selected;
             setDates(copy);
           }}
         />
       )}
+
       <Modal visible={timePicker.visible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            {TIMES.map(t => (
-              <TouchableOpacity
-                key={t}
-                onPress={() => {
-                  const copy = [...dates];
-                  copy[timePicker.index][timePicker.field] = t;
-                  setDates(copy);
-                  setTimePicker({ ...timePicker, visible: false });
-                }}
-              >
-                <Text style={styles.modalOption}>{t}</Text>
-              </TouchableOpacity>
-            ))}
+            <ScrollView style={{ maxHeight: 300 }}>
+              {TIMES.map(t => (
+                <TouchableOpacity
+                  key={t}
+                  onPress={() => {
+                    handleUpdateDate(dates[timePicker.index].id, { [timePicker.field]: t });
+                    setTimePicker({ ...timePicker, visible: false });
+                  }}
+                >
+                  <Text style={styles.modalOption}>{t}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
 
             <TouchableOpacity
               style={styles.modalClose}
@@ -183,10 +230,10 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
 export default AvailabilitySpecificDates;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: background },
 
-  headerTitle: { marginTop: 15, fontSize: 24, fontWeight: '700', marginHorizontal: 20 },
-  headerSub: { color: '#777', marginHorizontal: 20, marginBottom: 20 },
+  headerTitle: { marginTop: 15, fontSize: 24, fontWeight: '700', marginHorizontal: 20, color: text },
+  headerSub: { color: muted, marginHorizontal: 20, marginBottom: 20 },
 
   tabs: { flexDirection: 'row', marginHorizontal: 20, marginBottom: 16 },
   tab: {
@@ -194,24 +241,25 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: border,
     alignItems: 'center',
+    backgroundColor: card,
   },
   activeTab: { backgroundColor: purple, borderColor: purple },
-  tabText: { color: '#333', fontWeight: '500' },
+  tabText: { color: muted, fontWeight: '500' },
   activeTabText: { color: '#fff', fontWeight: '600' },
 
   addCard: {
     marginHorizontal: 20,
     padding: 14,
     borderRadius: 12,
-    backgroundColor: '#fafafa',
+    backgroundColor: card,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: border,
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  addLabel: { fontWeight: '600' },
+  addLabel: { fontWeight: '600', color: text },
   addAction: { color: purple, fontWeight: '700' },
 
   dateCard: {
@@ -219,30 +267,25 @@ const styles = StyleSheet.create({
     marginTop: 12,
     padding: 14,
     borderRadius: 12,
-    backgroundColor: '#fff',
+    backgroundColor: card,
     borderWidth: 1,
-    borderColor: '#eee',
+    borderColor: border,
   },
-  dateHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  dateButton: {
-    backgroundColor: '#f3e8ff',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: purple,
-  },
-  dateText: {
-    fontWeight: '700',
-    fontSize: 18,
-    color: purple,
-  },
+  dateHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  dateText: { fontWeight: '600' },
   remove: { color: 'red', fontWeight: '600' },
 
   timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
-  timeBox: { width: '48%', backgroundColor: '#f2f2f2', padding: 12, borderRadius: 10 },
-  timeLabel: { fontSize: 13, color: '#777' },
-  timeValue: { fontSize: 16, fontWeight: '700' },
+  timeBox: {
+    width: '48%',
+    backgroundColor: background,
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: border,
+  },
+  timeLabel: { fontSize: 13, color: muted },
+  timeValue: { fontSize: 16, fontWeight: '700', color: text },
 
   saveButton: {
     marginHorizontal: 20,
@@ -260,15 +303,17 @@ const styles = StyleSheet.create({
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
     width: '75%',
-    backgroundColor: '#fff',
+    backgroundColor: card,
     borderRadius: 12,
     padding: 18,
+    borderWidth: 1,
+    borderColor: border,
   },
   modalOption: {
     fontSize: 18,

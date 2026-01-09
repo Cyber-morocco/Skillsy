@@ -7,14 +7,30 @@ import {
   View,
   Image,
   ActivityIndicator,
+  ScrollView,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Video, ResizeMode } from 'expo-av';
 import {
   subscribeToOtherUserProfile,
   subscribeToOtherUserSkills,
-  subscribeToOtherUserReviews
+  subscribeToOtherUserReviews,
+  subscribeToOtherUserLearnSkills
 } from '../services/userService';
-import { UserProfile, Skill, Review } from '../types';
+import { UserProfile, Skill, Review, LearnSkill } from '../types';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const colors = {
+  background: '#050816',
+  card: '#101936',
+  primary: '#7C3AED',
+  text: '#F8FAFC',
+  textMuted: '#94A3B8',
+  border: 'rgba(148, 163, 184, 0.25)',
+  accent: '#7C3AED',
+};
 
 interface ExploreProfileScreenProps {
   userId: string;
@@ -24,10 +40,11 @@ interface ExploreProfileScreenProps {
 }
 
 const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onBack, onMakeAppointment, onSendMessage }) => {
-  const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews'>('vaardigheden');
+  const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews' | 'wilLeren' | 'videos'>('vaardigheden');
   const [liked, setLiked] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [learnSkills, setLearnSkills] = useState<LearnSkill[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -44,6 +61,10 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
       setSkills(fetchedSkills);
     });
 
+    const unsubscribeLearnSkills = subscribeToOtherUserLearnSkills(userId, (fetchedLearnSkills) => {
+      setLearnSkills(fetchedLearnSkills);
+    });
+
     const unsubscribeReviews = subscribeToOtherUserReviews(userId, (fetchedReviews) => {
       setReviews(fetchedReviews);
       setLoading(false);
@@ -52,6 +73,7 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
     return () => {
       unsubscribeProfile();
       unsubscribeSkills();
+      unsubscribeLearnSkills();
       unsubscribeReviews();
     };
   }, [userId]);
@@ -59,7 +81,7 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
   if (loading) {
     return (
       <View style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#b832ff" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -134,14 +156,7 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
             style={styles.primaryButton}
             onPress={onSendMessage}
           >
-            <Text style={styles.primaryButtonText}>Bericht sturen</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            activeOpacity={0.9}
-            style={styles.ghostButton}
-            onPress={onMakeAppointment}
-          >
-            <Text style={styles.ghostButtonText}>Afspraak maken</Text>
+            <Text style={styles.primaryButtonText}>Match</Text>
           </TouchableOpacity>
         </View>
 
@@ -188,9 +203,45 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
               Reviews
             </Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => setActiveTab('wilLeren')}
+            style={[
+              styles.tabButton,
+              activeTab === 'wilLeren' && styles.tabButtonActive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'wilLeren' && styles.tabTextActive,
+              ]}
+            >
+              Wil leren
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.9}
+            onPress={() => setActiveTab('videos')}
+            style={[
+              styles.tabButton,
+              activeTab === 'videos' && styles.tabButtonActive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'videos' && styles.tabTextActive,
+              ]}
+            >
+              Video's
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={styles.tabContent}>
+        <ScrollView style={styles.tabContent}>
           {activeTab === 'vaardigheden' ? (
             skills.length > 0 ? (
               skills.map((skill) => (
@@ -207,7 +258,19 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
             ) : (
               <Text style={styles.emptyText}>Geen vaardigheden opgegeven.</Text>
             )
-          ) : (
+          ) : activeTab === 'wilLeren' ? (
+            learnSkills.length > 0 ? (
+              learnSkills.map((skill) => (
+                <View key={skill.id} style={styles.skillItem}>
+                  <View style={styles.skillMain}>
+                    <Text style={styles.skillName}>{skill.subject}</Text>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.emptyText}>Geen leerdoelen opgegeven.</Text>
+            )
+          ) : activeTab === 'reviews' ? (
             reviews.length > 0 ? (
               reviews.map((review) => (
                 <View key={review.id} style={styles.reviewItem}>
@@ -221,8 +284,36 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
             ) : (
               <Text style={styles.emptyText}>Nog geen reviews.</Text>
             )
+          ) : (
+            profile?.promoVideos && profile.promoVideos.length > 0 ? (
+              profile.promoVideos.map((videoEntry, index) => {
+                const url = typeof videoEntry === 'string' ? videoEntry : (videoEntry?.url || '');
+                const title = typeof videoEntry === 'string' ? `Promo video ${index + 1}` : (videoEntry?.title || `Promo video ${index + 1}`);
+                const description = typeof videoEntry === 'string' ? '' : (videoEntry?.description || '');
+
+                if (!url) return null;
+
+                return (
+                  <View key={index} style={styles.videoContainer}>
+                    <Video
+                      source={{ uri: url }}
+                      style={styles.video}
+                      useNativeControls
+                      resizeMode={ResizeMode.CONTAIN}
+                      isLooping={false}
+                    />
+                    <View style={styles.videoInfo}>
+                      <Text style={styles.videoTitle}>{title}</Text>
+                      {description ? <Text style={styles.videoDescription}>{description}</Text> : null}
+                    </View>
+                  </View>
+                );
+              })
+            ) : (
+              <Text style={styles.emptyText}>Geen video's beschikbaar.</Text>
+            )
           )}
-        </View>
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
@@ -233,11 +324,11 @@ const AVATAR_SIZE = 88;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f6f6f9',
+    backgroundColor: colors.background,
   },
   headerBackground: {
     height: 180,
-    backgroundColor: '#b832ff',
+    backgroundColor: colors.primary,
   },
   content: {
     flex: 1,
@@ -257,7 +348,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -271,6 +362,7 @@ const styles = StyleSheet.create({
   },
   roundIconText: {
     fontSize: 18,
+    color: colors.text,
   },
   roundIconTextLiked: {
     color: '#e0245e',
@@ -286,16 +378,16 @@ const styles = StyleSheet.create({
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
     borderRadius: AVATAR_SIZE / 2,
-    backgroundColor: '#f0f0f5',
+    backgroundColor: colors.card,
     borderWidth: 3,
-    borderColor: '#ffffff',
+    borderColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
   nameText: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#24253d',
+    color: colors.text,
     marginBottom: 6,
   },
   locationRow: {
@@ -308,7 +400,7 @@ const styles = StyleSheet.create({
   },
   locationText: {
     fontSize: 13,
-    color: '#6b6c80',
+    color: colors.textMuted,
   },
   locationDot: {
     width: 4,
@@ -329,12 +421,12 @@ const styles = StyleSheet.create({
   ratingValue: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#24253d',
+    color: colors.text,
     marginRight: 4,
   },
   ratingReviews: {
     fontSize: 12,
-    color: '#6b6c80',
+    color: colors.textMuted,
   },
   actionRow: {
     flexDirection: 'row',
@@ -343,7 +435,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     flex: 1,
-    backgroundColor: '#7c2cff',
+    backgroundColor: colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -373,7 +465,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.card,
     borderRadius: 14,
     padding: 14,
     marginTop: 16,
@@ -382,42 +474,46 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 3 },
     elevation: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   cardTitle: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#2f3042',
+    color: colors.text,
     marginBottom: 6,
   },
   cardBody: {
     fontSize: 13,
-    color: '#666778',
+    color: colors.textMuted,
     lineHeight: 18,
   },
   tabRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 6,
     marginTop: 18,
   },
   tabButton: {
     flex: 1,
     borderRadius: 12,
-    backgroundColor: '#f0f0f5',
+    backgroundColor: colors.card,
     paddingVertical: 12,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   tabButtonActive: {
-    backgroundColor: '#e8e1ff',
+    backgroundColor: 'rgba(99, 102, 241, 0.15)',
     borderWidth: 1,
-    borderColor: '#7c2cff',
+    borderColor: colors.primary,
   },
   tabText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#4a4b63',
+    color: colors.textMuted,
   },
   tabTextActive: {
-    color: '#7c2cff',
+    color: colors.primary,
   },
   tabContent: {
     marginTop: 12,
@@ -425,7 +521,7 @@ const styles = StyleSheet.create({
   },
   skillItem: {
     padding: 14,
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.card,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOpacity: 0.04,
@@ -435,6 +531,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   skillMain: {
     flexDirection: 'row',
@@ -444,33 +542,35 @@ const styles = StyleSheet.create({
   skillName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#24253d',
+    color: colors.text,
   },
   levelBadge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
-    backgroundColor: '#f0f0f5',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 6,
   },
   levelText: {
     fontSize: 10,
     fontWeight: '500',
-    color: '#666',
+    color: colors.textMuted,
   },
   priceText: {
     fontSize: 13,
-    color: '#7c2cff',
+    color: colors.accent,
     fontWeight: '600',
   },
   reviewItem: {
     padding: 14,
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.card,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOpacity: 0.04,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 2 },
     elevation: 1,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   reviewHeader: {
     flexDirection: 'row',
@@ -480,7 +580,7 @@ const styles = StyleSheet.create({
   reviewName: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#24253d',
+    color: colors.text,
   },
   reviewRating: {
     fontSize: 13,
@@ -488,15 +588,42 @@ const styles = StyleSheet.create({
   },
   reviewComment: {
     fontSize: 13,
-    color: '#666778',
+    color: colors.textMuted,
     lineHeight: 18,
   },
   emptyText: {
     fontSize: 13,
-    color: '#9c9db0',
+    color: colors.textMuted,
     textAlign: 'center',
     marginTop: 20,
     fontStyle: 'italic',
+  },
+  videoContainer: {
+    marginBottom: 20,
+    backgroundColor: '#000',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  video: {
+    width: '100%',
+    height: 200,
+  },
+  videoInfo: {
+    padding: 12,
+    backgroundColor: colors.card,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  videoTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  videoDescription: {
+    fontSize: 12,
+    color: colors.textMuted,
+    lineHeight: 16,
   },
 });
 

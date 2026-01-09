@@ -100,6 +100,9 @@ export const appointmentDetailStyles = StyleSheet.create({
     statusPending: {
         backgroundColor: 'rgba(245, 158, 11, 0.15)',
     },
+    statusPast: {
+        backgroundColor: 'rgba(148, 163, 184, 0.15)',
+    },
     statusText: {
         fontSize: 12,
         fontWeight: '600',
@@ -109,6 +112,9 @@ export const appointmentDetailStyles = StyleSheet.create({
     },
     statusPendingText: {
         color: COLORS.warning,
+    },
+    statusPastText: {
+        color: COLORS.textSecondary,
     },
     sectionCard: {
         backgroundColor: COLORS.card,

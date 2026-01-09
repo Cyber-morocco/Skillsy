@@ -93,7 +93,7 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       <StatusBar barStyle="light-content" />
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}

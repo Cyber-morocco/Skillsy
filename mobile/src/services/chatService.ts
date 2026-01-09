@@ -10,6 +10,8 @@ import {
     orderBy,
     Unsubscribe,
     getDoc,
+    getDocs,
+    deleteDoc,
     Timestamp,
     setDoc
 } from 'firebase/firestore';
@@ -43,6 +45,39 @@ export const sendMatchRequest = async (toUserId: string, toUserName: string, sub
         subject,
         createdAt: serverTimestamp(),
     });
+
+    const toUserSnap = await getDoc(doc(db, 'users', toUserId));
+    const toUserData = toUserSnap.data();
+
+    const participants = [fromUserId, toUserId].sort();
+    const chatId = participants.join('_');
+    const chatRef = doc(db, 'chats', chatId);
+    const chatSnap = await getDoc(chatRef);
+
+    if (!chatSnap.exists()) {
+        await setDoc(chatRef, {
+            participants: [fromUserId, toUserId],
+            participantInfo: {
+                [fromUserId]: {
+                    name: userData?.displayName || 'Onbekend',
+                    initials: (userData?.displayName || 'O').charAt(0).toUpperCase(),
+                    avatarColor: '#6366f1',
+                    photoURL: userData?.photoURL || null
+                },
+                [toUserId]: {
+                    name: toUserData?.displayName || 'Onbekend',
+                    initials: (toUserData?.displayName || 'U').charAt(0).toUpperCase(),
+                    avatarColor: '#10B981',
+                    photoURL: toUserData?.photoURL || null
+                }
+            },
+            lastMessage: `Matchverzoek verstuurd voor ${subject}`,
+            lastMessageTime: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            status: 'pending',
+            matchInitiatorId: fromUserId
+        });
+    }
 };
 
 export const subscribeToMatchRequests = (
@@ -73,34 +108,43 @@ export const respondToMatchRequest = async (matchId: string, status: 'accepted' 
         const matchData = matchSnap.data();
         if (!matchData) return;
 
-        const { fromUserId, toUserId, fromUserName, subject } = matchData;
+        const { fromUserId, toUserId, subject } = matchData;
 
-        // Get toUser data (current user)
+        const participants = [fromUserId, toUserId].sort();
+        const chatId = participants.join('_');
+        const chatRef = doc(db, 'chats', chatId);
+        const chatSnap = await getDoc(chatRef);
+
+        if (chatSnap.exists()) {
+            await updateDoc(chatRef, {
+                status: 'active',
+                lastMessage: `Match geaccepteerd voor ${subject}!`,
+                lastMessageTime: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+        }
+    } else if (status === 'rejected') {
+        const matchSnap = await getDoc(matchRef);
+        const matchData = matchSnap.data();
+        if (!matchData) return;
+
+        const { fromUserId, toUserId } = matchData;
         const toUserSnap = await getDoc(doc(db, 'users', toUserId));
-        const toUserData = toUserSnap.data();
+        const toUserName = toUserSnap.data()?.displayName || 'Gebruiker';
 
-        // Create a new chat
-        const chatRef = doc(collection(db, 'chats'));
-        await setDoc(chatRef, {
-            participants: [fromUserId, toUserId],
-            participantInfo: {
-                [fromUserId]: {
-                    name: fromUserName,
-                    initials: fromUserName.charAt(0).toUpperCase(),
-                    avatarColor: '#6366f1', // Default
-                    photoURL: matchData.fromUserAvatar || null
-                },
-                [toUserId]: {
-                    name: toUserData?.displayName || 'Onbekend',
-                    initials: (toUserData?.displayName || 'U').charAt(0).toUpperCase(),
-                    avatarColor: '#10B981', // Default
-                    photoURL: toUserData?.photoURL || null
-                }
-            },
-            lastMessage: `Match geaccepteerd voor ${subject}!`,
-            lastMessageTime: serverTimestamp(),
-            updatedAt: serverTimestamp()
-        });
+        const participants = [fromUserId, toUserId].sort();
+        const chatId = participants.join('_');
+        const chatRef = doc(db, 'chats', chatId);
+        const chatSnap = await getDoc(chatRef);
+
+        if (chatSnap.exists()) {
+            await updateDoc(chatRef, {
+                status: 'rejected',
+                lastMessage: `Match geweigerd door ${toUserName}`,
+                lastMessageTime: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+        }
     }
 };
 
@@ -127,6 +171,20 @@ export const subscribeToChats = (
     });
 };
 
+export const subscribeToChat = (
+    chatId: string,
+    onUpdate: (chat: Conversation | null) => void
+): Unsubscribe => {
+    const chatRef = doc(db, 'chats', chatId);
+    return onSnapshot(chatRef, (docSnapshot) => {
+        if (docSnapshot.exists()) {
+            onUpdate({ id: docSnapshot.id, ...docSnapshot.data() } as Conversation);
+        } else {
+            onUpdate(null);
+        }
+    });
+};
+
 export const subscribeToMessages = (
     chatId: string,
     onUpdate: (messages: Message[]) => void
@@ -145,21 +203,81 @@ export const subscribeToMessages = (
     });
 };
 
-export const sendMessage = async (chatId: string, text: string): Promise<void> => {
+export const sendMessage = async (chatId: string, text: string, metadata: Partial<Message> = {}): Promise<void> => {
     const userId = getCurrentUserId();
     const messagesRef = collection(db, 'chats', chatId, 'messages');
+
+    // Ensure type from metadata overrides default 'text'
+    const messageType = metadata.type || 'text';
 
     await addDoc(messagesRef, {
         text,
         senderId: userId,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        type: messageType,
+        ...metadata
     });
 
     // Update last message in chat doc
     const chatRef = doc(db, 'chats', chatId);
-    await updateDoc(chatRef, {
-        lastMessage: text,
-        lastMessageTime: serverTimestamp(),
-        updatedAt: serverTimestamp()
-    });
+
+    // Check if we need to auto-accept the match
+    const chatSnap = await getDoc(chatRef);
+    if (chatSnap.exists()) {
+        const chatData = chatSnap.data() as Conversation;
+
+        // If chat is pending AND the sender is NOT the initiator (meaning it's the receiver responding)
+        // Then we auto-accept the match
+        if (chatData.status === 'pending' && chatData.matchInitiatorId && chatData.matchInitiatorId !== userId) {
+            await updateDoc(chatRef, {
+                lastMessage: text,
+                lastMessageTime: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+                status: 'active'
+            });
+
+            // Also update the match request status
+            const matchesRef = collection(db, 'matches');
+            const q = query(
+                matchesRef,
+                where('fromUserId', '==', chatData.matchInitiatorId),
+                where('toUserId', '==', userId),
+                where('status', '==', 'pending')
+            );
+            const matchSnap = await getDocs(q);
+            if (!matchSnap.empty) {
+                const matchDoc = matchSnap.docs[0];
+                await updateDoc(doc(db, 'matches', matchDoc.id), { status: 'accepted' });
+            }
+        } else {
+            // Normal update
+            await updateDoc(chatRef, {
+                lastMessage: text,
+                lastMessageTime: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+        }
+    }
+};
+
+export const updateMessage = async (chatId: string, messageId: string, data: Partial<Message>): Promise<void> => {
+    const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
+    await updateDoc(messageRef, data);
+};
+export const deleteMatchRequest = async (matchId: string): Promise<void> => {
+    const matchRef = doc(db, 'matches', matchId);
+    await deleteDoc(matchRef);
+};
+
+export const clearAllMatchRequests = async (userId: string, subject?: string): Promise<void> => {
+    const matchesRef = collection(db, 'matches');
+    let q = query(matchesRef, where('toUserId', '==', userId), where('status', '==', 'pending'));
+
+    if (subject && subject !== 'All') {
+        q = query(q, where('subject', '==', subject));
+    }
+
+    const snapshot = await getDocs(q);
+    const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
 };
