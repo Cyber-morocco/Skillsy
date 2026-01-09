@@ -665,7 +665,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 <Text style={styles.inputLabel}>Titel</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Titel"
+                  placeholder="Titel..."
                   value={videoTitle}
                   onChangeText={setVideoTitle}
                 />
@@ -676,7 +676,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 </View>
                 <TextInput
                   style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-                  placeholder="Korte beschrijving (max 100 tekens)"
+                  placeholder="Korte beschrijving (max 100 tekens)..."
                   value={videoDescription}
                   onChangeText={setVideoDescription}
                   multiline={true}
@@ -783,7 +783,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 <Text style={styles.inputLabel}>Naam</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Naam"
+                  placeholder="Naam..."
                   value={tempName}
                   onChangeText={setTempName}
                 />
@@ -791,7 +791,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 <Text style={styles.inputLabel}>Locatie</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Locatie"
+                  placeholder="Locatie..."
                   value={tempLocation}
                   onChangeText={setTempLocation}
                 />

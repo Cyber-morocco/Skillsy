@@ -285,7 +285,7 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
               <Text style={styles.emptyText}>Nog geen reviews.</Text>
             )
           ) : (
-            profile?.promoVideos && profile.promoVideos.length > 0 ? (
+            profile?.promoVideos && profile.promoVideos.some(v => typeof v === 'string' ? !!v : !!v?.url) ? (
               profile.promoVideos.map((videoEntry, index) => {
                 const url = typeof videoEntry === 'string' ? videoEntry : (videoEntry?.url || '');
                 const title = typeof videoEntry === 'string' ? `Promo video ${index + 1}` : (videoEntry?.title || `Promo video ${index + 1}`);

@@ -435,5 +435,14 @@ export const uploadVideo = async (uri: string, index: number): Promise<string> =
 export const deleteVideo = async (index: number): Promise<void> => {
     const userId = getCurrentUserId();
     const storageRef = ref(storage, `videos/${userId}/promo_${index}.mp4`);
-    await deleteObject(storageRef);
+    try {
+        await deleteObject(storageRef);
+    } catch (error: any) {
+        if (error.code === 'storage/object-not-found') {
+            console.warn('Video not found in storage, proceeding to update profile.');
+        } else {
+            console.error('Error deleting video from storage:', error);
+
+        }
+    }
 };
