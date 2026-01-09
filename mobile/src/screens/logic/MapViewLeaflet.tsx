@@ -41,13 +41,18 @@ export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({
 
   useEffect(() => {
     if (!isReady) return;
-    postMessage({ type: 'updateRadius', radiusKm: radiusKm ?? 5, talents });
-  }, [isReady, radiusKm, talents]);
+    postMessage({ type: 'updateRadius', radiusKm: radiusKm, talents });
+  }, [isReady, radiusKm]);
 
   useEffect(() => {
     if (!isReady) return;
-    postMessage({ type: 'updateLocation', location: userLocation, radiusKm: radiusKm ?? 5, talents });
-  }, [isReady, userLocation, radiusKm, talents]);
+    postMessage({ type: 'updateLocation', location: userLocation, radiusKm: radiusKm });
+  }, [isReady, userLocation]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    postMessage({ type: 'updateTalents', talents });
+  }, [isReady, talents]);
 
   useEffect(() => {
     if (!isReady || !focusTalent) return;

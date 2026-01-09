@@ -51,7 +51,25 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents }: BuildMapHtmlAr
             let radiusCircle = null;
             let talentMarkers = {};
             
-            const map = L.map('map').setView([centerLat, centerLng], 13);
+            const getZoomForRadius = (radiusKm) => {
+              if (!radiusKm || radiusKm === null) return 13; // Default zoom when no filter
+              
+              // Calculate zoom to fit circle with ~10% padding
+              // At equator: zoom level n shows approximately 40000 / (2^n) km width
+              // We need diameter (2 * radius) + padding to fit in viewport
+              const diameter = radiusKm * 2;
+              const neededWidth = diameter * 1.1; // 10% padding around circle
+              
+              // Calculate zoom: width = 40000 / (2^zoom)
+              // So: zoom = log2(40000 / width)
+              const zoom = Math.log2(40000 / neededWidth);
+              
+              // Clamp between reasonable values and round down for safety
+              return Math.max(6, Math.min(15, Math.floor(zoom)));
+            };
+            
+            const initialZoom = getZoomForRadius(radiusKm);
+            const map = L.map('map').setView([centerLat, centerLng], initialZoom);
             
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
               attribution: '© OpenStreetMap',
@@ -122,41 +140,52 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents }: BuildMapHtmlAr
 
             addTalentMarkers(${initialTalents});
 
-            const updateRadius = (radius) => {
-              const nextRadius = typeof radius === 'number' ? radius : ${safeRadius};
-              radiusKm = nextRadius;
+            const updateCircle = (radius, centerLat, centerLng) => {
               if (radiusCircle) {
                 map.removeLayer(radiusCircle);
+                radiusCircle = null;
               }
-              radiusCircle = L.circle([centerLat, centerLng], {
-                radius: nextRadius * 1000,
-                color: '#7c3aed',
-                fillColor: '#7c3aed',
-                fillOpacity: 0.05,
-                weight: 2,
-                dashArray: '5, 5'
-              }).addTo(map);
+              
+              if (radius && radius !== null) {
+                radiusKm = radius;
+                radiusCircle = L.circle([centerLat, centerLng], {
+                  radius: radius * 1000,
+                  color: '#7c3aed',
+                  fillColor: '#7c3aed',
+                  fillOpacity: 0.05,
+                  weight: 2,
+                  dashArray: '5, 5'
+                }).addTo(map);
+              }
+            };
+
+            const updateRadius = (radius) => {
+              updateCircle(radius, centerLat, centerLng);
+              const zoom = getZoomForRadius(radius);
+              map.setView([centerLat, centerLng], zoom, { animate: true });
             };
 
             document.addEventListener('message', (event) => {
               try {
                 const data = JSON.parse(event.data);
                 if (data.type === 'updateRadius') {
-                  updateRadius(data.radiusKm);
+                  const nextRadius = data.radiusKm;
+                  updateRadius(nextRadius);
+                }
+                if (data.type === 'updateTalents') {
                   if (data.talents) {
                     addTalentMarkers(data.talents);
                   }
                 }
                 if (data.type === 'updateLocation') {
-                  const { location, radiusKm: r, talents } = data;
+                  const { location, radiusKm: r } = data;
                   centerLat = location.lat;
                   centerLng = location.lng;
-                  map.setView([location.lat, location.lng], 13);
-                  userMarker.setLatLng([location.lat, location.lng]);
-                  updateRadius(r);
-                  if (talents) {
-                    addTalentMarkers(talents);
+                  userMarker.setLatLng([centerLat, centerLng]);
+                  if (radiusCircle) {
+                    updateCircle(r, centerLat, centerLng);
                   }
+                  map.setView([centerLat, centerLng], map.getZoom(), { animate: true });
                 }
                 if (data.type === 'focusTalent') {
                   const { talentId, lat, lng } = data;
