@@ -19,7 +19,7 @@ import {
   deleteSpecificDate
 } from '../services/userService';
 
-const purple = '#7C3AED'; // Updated to match other screens
+const purple = '#7C3AED'; 
 const background = '#050816';
 const card = '#101936';
 const text = '#F8FAFC';
@@ -271,8 +271,20 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: border,
   },
-  dateHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  dateText: { fontWeight: '600' },
+  dateHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  dateButton: {
+    backgroundColor: '#f3e8ff',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: purple,
+  },
+  dateText: {
+    fontWeight: '700',
+    fontSize: 18,
+    color: purple,
+  },
   remove: { color: 'red', fontWeight: '600' },
 
   timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
