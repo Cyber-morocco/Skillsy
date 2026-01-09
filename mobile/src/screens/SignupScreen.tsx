@@ -34,17 +34,17 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 
   const handleSignup = async () => {
     if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs');
+      Alert.alert('Fout', 'Vul alle velden in');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Erreur', 'Les mots de passe ne correspondent pas');
+      Alert.alert('Fout', 'Wachtwoorden komen niet overeen');
       return;
     }
 
     if (password.length < 8) {
-      Alert.alert('Erreur', 'Le mot de passe doit contenir au moins 8 caractères');
+      Alert.alert('Fout', 'Wachtwoord moet minimaal 8 tekens bevatten');
       return;
     }
 
@@ -66,23 +66,23 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 
       navigation?.navigate?.('ProfileCreationStep1');
     } catch (error: any) {
-      let errorMessage = 'Une erreur est survenue';
+      let errorMessage = 'Er is een fout opgetreden';
 
       switch (error.code) {
         case 'auth/email-already-in-use':
-          errorMessage = 'Cette adresse email est déjà utilisée';
+          errorMessage = 'Dit e-mailadres is al in gebruik';
           break;
         case 'auth/invalid-email':
-          errorMessage = 'Adresse email invalide';
+          errorMessage = 'Ongeldig e-mailadres';
           break;
         case 'auth/weak-password':
-          errorMessage = 'Le mot de passe est trop faible';
+          errorMessage = 'Wachtwoord is te zwak';
           break;
         default:
           errorMessage = error.message;
       }
 
-      Alert.alert('Erreur d\'inscription', errorMessage);
+      Alert.alert('Registratiefout', errorMessage);
     } finally {
       setLoading(false);
     }

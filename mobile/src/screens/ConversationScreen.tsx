@@ -26,6 +26,7 @@ type Message = {
     senderId: string;
     type?: 'text' | 'appointmentRequest';
     appointmentDate?: string;
+    appointmentTime?: string;
     appointmentStatus?: 'pending' | 'accepted' | 'rejected';
 };
 
@@ -42,6 +43,7 @@ type ConversationProps = {
     };
     navigation?: {
         goBack: () => void;
+        navigate: (screen: string, params?: any) => void;
     };
 };
 
@@ -75,6 +77,7 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                     time: m.createdAt?.toDate ? m.createdAt.toDate().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : '',
                     type: m.type || (m.appointmentDate ? 'appointmentRequest' : 'text'),
                     appointmentDate: m.appointmentDate,
+                    appointmentTime: m.appointmentTime,
                     appointmentStatus: m.appointmentStatus,
                 };
             });
@@ -109,16 +112,17 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
         setShowScheduleMatch(true);
     };
 
-    const handleMatchRequest = async (day: string) => {
+    const handleMatchRequest = async (day: string, time: string) => {
         if (!chatId) return;
 
         const currentUserName = auth.currentUser?.displayName || 'Ik';
-        const text = `${currentUserName} verzoekt om op ${day} een afspraak te nemen`;
+        const text = `${currentUserName} verzoekt om op ${day} om ${time} een afspraak te nemen`;
 
         try {
             await sendFirebaseMessage(chatId, text, {
                 type: 'appointmentRequest',
                 appointmentDate: day,
+                appointmentTime: time,
                 appointmentStatus: 'pending'
             });
             setShowScheduleMatch(false);
@@ -146,7 +150,7 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                         title: 'Afspraak',
                         subtitle: `Met ${contactName}`,
                         date: message.appointmentDate,
-                        time: '10:00 - 11:00',
+                        time: message.appointmentTime || '10:00 - 11:00',
                         location: 'fysiek',
                         initials: contactInitials,
                         status: 'confirmed'
@@ -270,13 +274,23 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                 <TouchableOpacity onPress={() => navigation?.goBack()} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
                 </TouchableOpacity>
-                <View style={[styles.contactAvatar, { backgroundColor: contactColor }]}>
-                    <Text style={styles.contactInitials}>{contactInitials}</Text>
-                </View>
-                <View style={styles.headerInfo}>
-                    <Text style={styles.contactName}>{contactName}</Text>
-                    <Text style={styles.contactStatus}>{contactSubtitle || 'Online'}</Text>
-                </View>
+                <TouchableOpacity
+                    style={{ flexDirection: 'row', alignItems: 'center', flex: 1, marginLeft: 8 }}
+                    onPress={() => {
+                        const targetId = route?.params?.contactId;
+                        if (targetId) {
+                            navigation?.navigate('ExploreProfile', { userId: targetId });
+                        }
+                    }}
+                >
+                    <View style={[styles.contactAvatar, { backgroundColor: contactColor }]}>
+                        <Text style={styles.contactInitials}>{contactInitials}</Text>
+                    </View>
+                    <View style={styles.headerInfo}>
+                        <Text style={styles.contactName}>{contactName}</Text>
+                        <Text style={styles.contactStatus}>{contactSubtitle || 'Online'}</Text>
+                    </View>
+                </TouchableOpacity>
                 <TouchableOpacity style={styles.appointmentButton} onPress={handleAppointmentPress}>
                     <Ionicons name="calendar-outline" size={16} color="#F8FAFC" />
                     <Text style={styles.appointmentButtonText}>Afspraak</Text>

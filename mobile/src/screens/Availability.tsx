@@ -9,11 +9,14 @@ import {
   Modal,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { subscribeToAvailability, saveAvailability } from '../services/userService';
 import { AvailabilityDay } from '../types';
 
-const purple = '#7C3AED'; // Updated to match other screens
+const purple = '#7C3AED';
 const background = '#050816';
 const card = '#101936';
 const text = '#F8FAFC';
@@ -33,6 +36,17 @@ type DayAvailability = {
 interface AvailabilityProps {
   onNavigate?: (screen: any) => void;
 }
+
+const parseTime = (timeStr: string): Date => {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date;
+};
+
+const formatTime = (date: Date): string => {
+  return date.toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit' });
+};
 
 const Availability: React.FC<AvailabilityProps> = ({ onNavigate }) => {
   const [activeTab, setActiveTab] = useState<'week' | 'dates'>('week');
@@ -76,6 +90,8 @@ const Availability: React.FC<AvailabilityProps> = ({ onNavigate }) => {
     visible: false,
   });
 
+  const [tempTime, setTempTime] = useState<Date | null>(null);
+
   const toggleDay = (index: number) => {
     const copy = [...days];
     copy[index].enabled = !copy[index].enabled;
@@ -84,16 +100,42 @@ const Availability: React.FC<AvailabilityProps> = ({ onNavigate }) => {
 
   const openPicker = (index: number, field: 'start' | 'end') => {
     setPicker({ index, field, visible: true });
+    setTempTime(null);
   };
 
-  const selectTime = (time: string) => {
+  const handleTimeChange = (selectedDate: Date) => {
+    const formatted = formatTime(selectedDate);
+    const currentDay = days[picker.index];
+
+    const startParts = currentDay.start.split(':').map(Number);
+    const endParts = currentDay.end.split(':').map(Number);
+    const newParts = formatted.split(':').map(Number);
+
+    const currentStartMinutes = startParts[0] * 60 + startParts[1];
+    const currentEndMinutes = endParts[0] * 60 + endParts[1];
+    const newMinutes = newParts[0] * 60 + newParts[1];
+
+    if (picker.field === 'start') {
+      if (newMinutes >= currentEndMinutes) {
+        Alert.alert('Ongeldige tijd', 'De starttijd moet voor de eindtijd liggen.');
+        return;
+      }
+    } else {
+      if (newMinutes <= currentStartMinutes) {
+        Alert.alert('Ongeldige tijd', 'De eindtijd moet na de starttijd liggen.');
+        return;
+      }
+    }
+
     const copy = [...days];
-    copy[picker.index][picker.field] = time;
+    copy[picker.index][picker.field] = formatted;
     setDays(copy);
-    setPicker({ ...picker, visible: false });
+    if (Platform.OS === 'android') {
+      setPicker({ ...picker, visible: false });
+    }
   };
 
-  const handleSave = async () => { // stuurt naar DB  
+  const handleSave = async () => {
     setSaving(true);
     try {
       await saveAvailability(days);
@@ -105,12 +147,6 @@ const Availability: React.FC<AvailabilityProps> = ({ onNavigate }) => {
       setSaving(false);
     }
   };
-
-  const TIMES = [
-    '08:00', '09:00', '10:00', '11:00', '12:00',
-    '13:00', '14:00', '15:00', '16:00', '17:00',
-    '18:00', '19:00', '20:00', '21:00', '22:00',
-  ];
 
   if (loading) {
     return (
@@ -127,10 +163,20 @@ const Availability: React.FC<AvailabilityProps> = ({ onNavigate }) => {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
 
-        <Text style={styles.headerTitle}>Beschikbaarheid</Text>
-        <Text style={styles.headerSub}>
-          Stel in wanneer je beschikbaar bent
-        </Text>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.headerTitle}>Beschikbaarheid</Text>
+            <Text style={styles.headerSub}>
+              Stel in wanneer je beschikbaar bent
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => onNavigate && onNavigate('profile')}
+          >
+            <Ionicons name="close" size={28} color={text} />
+          </TouchableOpacity>
+        </View>
 
 
         <View style={styles.tabs}>
@@ -198,26 +244,58 @@ const Availability: React.FC<AvailabilityProps> = ({ onNavigate }) => {
         </TouchableOpacity>
 
       </ScrollView>
-      <Modal visible={picker.visible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Kies een tijd</Text>
 
-            {TIMES.map(time => (
-              <TouchableOpacity key={time} onPress={() => selectTime(time)}>
-                <Text style={styles.modalOption}>{time}</Text>
-              </TouchableOpacity>
-            ))}
-
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setPicker({ ...picker, visible: false })}
-            >
-              <Text style={styles.closeButtonText}>Annuleer</Text>
-            </TouchableOpacity>
+      {picker.visible && Platform.OS === 'ios' && (
+        <Modal transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity onPress={() => setPicker({ ...picker, visible: false })}>
+                  <Text style={styles.modalCloseText}>Annuleer</Text>
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>
+                  {picker.field === 'start' ? 'Starttijd' : 'Eindtijd'}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    const originalTimeStr = days[picker.index][picker.field];
+                    const dateToSave = tempTime || parseTime(originalTimeStr);
+                    handleTimeChange(dateToSave);
+                    setPicker({ ...picker, visible: false });
+                    setTempTime(null);
+                  }}
+                >
+                  <Text style={styles.modalDoneText}>Klaar</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                value={tempTime || parseTime(days[picker.index][picker.field])}
+                mode="time"
+                display="spinner"
+                onChange={(event: any, selected?: Date) => {
+                  if (selected) setTempTime(selected);
+                }}
+                textColor={purple}
+              />
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      )}
+
+      {picker.visible && Platform.OS === 'android' && (
+        <DateTimePicker
+          value={parseTime(days[picker.index][picker.field])}
+          mode="time"
+          display="default"
+          onChange={(event: any, selected?: Date) => {
+            if (event.type === 'set' && selected) {
+              handleTimeChange(selected);
+            } else {
+              setPicker({ ...picker, visible: false });
+            }
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -228,8 +306,14 @@ export default Availability;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: background },
 
-  headerTitle: {
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginRight: 20,
     marginTop: 15,
+  },
+  headerTitle: {
     fontSize: 24,
     fontWeight: '700',
     marginHorizontal: 20,
@@ -239,6 +323,9 @@ const styles = StyleSheet.create({
     color: muted,
     marginHorizontal: 20,
     marginBottom: 20,
+  },
+  closeButton: {
+    padding: 5,
   },
 
   tabs: {
@@ -302,11 +389,12 @@ const styles = StyleSheet.create({
   },
   timeBox: {
     width: '48%',
-    backgroundColor: background, // Slightly darker than card
+    backgroundColor: background,
     padding: 12,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: border,
+    alignItems: 'center',
   },
   timeLabel: { fontSize: 13, color: muted },
   timeValue: { fontSize: 16, fontWeight: '700', color: text },
@@ -327,39 +415,41 @@ const styles = StyleSheet.create({
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
-    width: '75%',
+    width: '85%',
     padding: 20,
-    borderRadius: 12,
+    borderRadius: 16,
     backgroundColor: card,
     borderWidth: 1,
     borderColor: border,
   },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 16,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: border,
+    alignItems: 'center',
+  },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontSize: 17,
+    fontWeight: '600',
     color: text,
   },
-  modalOption: {
-    fontSize: 18,
-    paddingVertical: 10,
-    textAlign: 'center',
+  modalDoneText: {
     color: purple,
+    fontWeight: '700',
+    fontSize: 16,
   },
-  closeButton: {
-    marginTop: 20,
-    backgroundColor: purple,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  closeButtonText: {
-    color: '#fff',
-    textAlign: 'center',
+  modalCloseText: {
+    color: muted,
     fontWeight: '600',
+    fontSize: 16
   },
 });

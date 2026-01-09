@@ -19,7 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { authColors } from '../styles/authStyles';
 import { Review, Appointment } from '../types';
-import { subscribeToAppointments, updateAppointmentStatus } from '../services/appointmentService';
+import { subscribeToAppointments, updateAppointmentStatus, updateAppointmentReviewStatus } from '../services/appointmentService';
 import { saveReview } from '../services/userService';
 import { auth } from '../config/firebase';
 
@@ -39,6 +39,7 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [submittingReview, setSubmittingReview] = useState(false);
 
     const [ratings, setRatings] = useState({
         q1: 0,
@@ -93,6 +94,11 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
     };
 
     const handleOpenReview = (item: Appointment) => {
+        const isMeAsTutor = item.tutorId === auth.currentUser?.uid;
+        const isReviewed = isMeAsTutor ? item.reviewedByTutor : item.reviewedByStudent;
+
+        if (isReviewed) return;
+
         setSelectedAppointment(item);
         setRatings({ q1: 0, q2: 0, q3: 0 });
         setReviewModalVisible(true);
@@ -107,33 +113,38 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
         const averageRating = (ratings.q1 + ratings.q2 + ratings.q3) / 3;
 
         if (selectedAppointment) {
+            setSubmittingReview(true);
             try {
+                const isMeAsTutor = selectedAppointment.tutorId === auth.currentUser?.uid;
+                const recipientId = isMeAsTutor ? selectedAppointment.studentId : selectedAppointment.tutorId;
+
                 await saveReview({
-                    userId: selectedAppointment.tutorId,
+                    userId: recipientId,
                     fromName: auth.currentUser?.displayName || 'Gebruiker',
                     rating: averageRating,
-                    comment: 'Review via afspraken',
                 });
+
+                await updateAppointmentReviewStatus(selectedAppointment.id, isMeAsTutor ? 'tutor' : 'student');
 
                 if (onSubmitReview) {
                     onSubmitReview({
                         id: Date.now().toString(),
-                        userId: selectedAppointment.tutorId,
+                        userId: recipientId,
                         fromName: auth.currentUser?.displayName || 'Gebruiker',
                         rating: averageRating,
-                        comment: 'Review via afspraken',
                         createdAt: new Date(),
-                    }, selectedAppointment.tutorId);
+                    }, recipientId);
                 }
+
+                setReviewModalVisible(false);
+                Alert.alert('Bedankt!', 'Je review is opgeslagen.');
             } catch (error) {
                 console.error('Error saving review:', error);
                 Alert.alert('Fout', 'Kon de review niet opslaan.');
-                return;
+            } finally {
+                setSubmittingReview(false);
             }
         }
-
-        setReviewModalVisible(false);
-        Alert.alert('Bedankt!', 'Je review is opgeslagen.');
     };
 
     const getStatusText = (status: Appointment['status']) => {
@@ -165,7 +176,8 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                 key={item.id}
                 style={styles.appointmentCard}
                 onPress={() => {
-                    if (item.status === 'completed') {
+                    const isReviewed = isMeAsTutor ? item.reviewedByTutor : item.reviewedByStudent;
+                    if (item.status === 'completed' && !isReviewed) {
                         handleOpenReview(item);
                     } else if (navigation) {
                         navigation.navigate('AppointmentDetail', { appointment: item });
@@ -179,7 +191,7 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                         </View>
                         <View>
                             <Text style={styles.subjectText}>{item.title}</Text>
-                            <Text style={styles.personNameText}>{item.subtitle}</Text>
+                            <Text style={styles.personNameText}>Afspraak met {otherName}</Text>
                         </View>
                     </View>
                     <View style={[
@@ -259,12 +271,19 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                     </View>
                 )}
 
-                {item.status === 'completed' && !reviewedUsers.includes(item.tutorId) && (
+                {item.status === 'completed' && (
                     <View style={styles.actionButtons}>
-                        <TouchableOpacity style={styles.reviewButton} onPress={() => handleOpenReview(item)}>
-                            <Ionicons name="star-outline" size={16} color={authColors.accent} />
-                            <Text style={styles.reviewButtonText}>Review schrijven</Text>
-                        </TouchableOpacity>
+                        {((isMeAsTutor && !item.reviewedByTutor) || (!isMeAsTutor && !item.reviewedByStudent)) ? (
+                            <TouchableOpacity style={styles.reviewButton} onPress={() => handleOpenReview(item)}>
+                                <Ionicons name="star-outline" size={16} color={authColors.accent} />
+                                <Text style={styles.reviewButtonText}>Review achterlaten</Text>
+                            </TouchableOpacity>
+                        ) : (
+                            <View style={[styles.reviewButton, { borderColor: 'rgba(148, 163, 184, 0.2)' }]}>
+                                <Ionicons name="checkmark-circle-outline" size={16} color={authColors.muted} />
+                                <Text style={[styles.reviewButtonText, { color: authColors.muted }]}>Review gegeven</Text>
+                            </View>
+                        )}
                     </View>
                 )}
             </TouchableOpacity>
@@ -343,7 +362,7 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                                     </View>
                                     <Text style={styles.reviewTitle}>Hoe was je ervaring?</Text>
                                     <Text style={styles.reviewSubtitle}>
-                                        Met {selectedAppointment?.tutorName} voor {selectedAppointment?.title}
+                                        Met {selectedAppointment?.tutorId === auth.currentUser?.uid ? (selectedAppointment?.studentName || '...') : selectedAppointment?.tutorName} voor {selectedAppointment?.title}
                                     </Text>
                                 </View>
 
@@ -381,10 +400,15 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                                         <Text style={styles.modalCancelText}>Annuleren</Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
-                                        style={styles.modalSubmitButton}
+                                        style={[styles.modalSubmitButton, submittingReview && { opacity: 0.7 }]}
                                         onPress={handleSubmitReview}
+                                        disabled={submittingReview}
                                     >
-                                        <Text style={styles.modalSubmitText}>Verzenden</Text>
+                                        {submittingReview ? (
+                                            <ActivityIndicator size="small" color={authColors.text} />
+                                        ) : (
+                                            <Text style={styles.modalSubmitText}>Verzenden</Text>
+                                        )}
                                     </TouchableOpacity>
                                 </View>
                             </View>

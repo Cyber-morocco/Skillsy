@@ -11,15 +11,37 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Video, ResizeMode } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import {
   subscribeToOtherUserProfile,
   subscribeToOtherUserSkills,
-  subscribeToOtherUserReviews
+  subscribeToOtherUserReviews,
+  subscribeToOtherUserLearnSkills
 } from '../services/userService';
-import { UserProfile, Skill, Review } from '../types';
+import { UserProfile, Skill, Review, LearnSkill } from '../types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Separate component for video item to avoid hook violation
+const VideoItem: React.FC<{ url: string; title: string; description: string }> = ({ url, title, description }) => {
+  const player = useVideoPlayer(url, (player) => {
+    player.loop = false;
+  });
+
+  return (
+    <View style={styles.videoContainer}>
+      <VideoView
+        player={player}
+        style={styles.video}
+        nativeControls
+      />
+      <View style={styles.videoInfo}>
+        <Text style={styles.videoTitle}>{title}</Text>
+        {description ? <Text style={styles.videoDescription}>{description}</Text> : null}
+      </View>
+    </View>
+  );
+};
 
 const colors = {
   background: '#050816',
@@ -39,10 +61,10 @@ interface ExploreProfileScreenProps {
 }
 
 const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onBack, onMakeAppointment, onSendMessage }) => {
-  const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews' | 'videos'>('vaardigheden');
-  const [liked, setLiked] = useState(false);
+  const [activeTab, setActiveTab] = useState<'vaardigheden' | 'wilLeren' | 'videos'>('vaardigheden');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [learnSkills, setLearnSkills] = useState<LearnSkill[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,6 +81,10 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
       setSkills(fetchedSkills);
     });
 
+    const unsubscribeLearnSkills = subscribeToOtherUserLearnSkills(userId, (fetchedLearnSkills) => {
+      setLearnSkills(fetchedLearnSkills);
+    });
+
     const unsubscribeReviews = subscribeToOtherUserReviews(userId, (fetchedReviews) => {
       setReviews(fetchedReviews);
       setLoading(false);
@@ -67,6 +93,7 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
     return () => {
       unsubscribeProfile();
       unsubscribeSkills();
+      unsubscribeLearnSkills();
       unsubscribeReviews();
     };
   }, [userId]);
@@ -96,26 +123,6 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
           <TouchableOpacity activeOpacity={0.8} style={styles.roundIconButton} onPress={onBack}>
             <Text style={styles.roundIconText}>←</Text>
           </TouchableOpacity>
-
-          <View style={styles.topRightIcons}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={[
-                styles.roundIconButton,
-                liked && styles.roundIconButtonLiked,
-              ]}
-              onPress={() => setLiked((prev) => !prev)}
-            >
-              <Text
-                style={[
-                  styles.roundIconText,
-                  liked && styles.roundIconTextLiked,
-                ]}
-              >
-                {liked ? '♥' : '♡'}
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
         <View style={styles.profileHeader}>
@@ -136,11 +143,13 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
             <Text style={styles.locationText}>-- km</Text>
           </View>
 
-          <View style={styles.ratingRow}>
-            <Text style={styles.ratingIcon}>⭐</Text>
-            <Text style={styles.ratingValue}>{averageRating}</Text>
-            <Text style={styles.ratingReviews}>({reviews.length} reviews)</Text>
-          </View>
+          {reviews.length >= 5 && (
+            <View style={styles.ratingRow}>
+              <Text style={styles.ratingIcon}>⭐</Text>
+              <Text style={styles.ratingValue}>{averageRating}</Text>
+              <Text style={styles.ratingReviews}>({reviews.length} reviews)</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.actionRow}>
@@ -179,21 +188,23 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
             </Text>
           </TouchableOpacity>
 
+
+
           <TouchableOpacity
             activeOpacity={0.9}
-            onPress={() => setActiveTab('reviews')}
+            onPress={() => setActiveTab('wilLeren')}
             style={[
               styles.tabButton,
-              activeTab === 'reviews' && styles.tabButtonActive,
+              activeTab === 'wilLeren' && styles.tabButtonActive,
             ]}
           >
             <Text
               style={[
                 styles.tabText,
-                activeTab === 'reviews' && styles.tabTextActive,
+                activeTab === 'wilLeren' && styles.tabTextActive,
               ]}
             >
-              Reviews
+              Wil leren
             </Text>
           </TouchableOpacity>
 
@@ -233,35 +244,37 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
             ) : (
               <Text style={styles.emptyText}>Geen vaardigheden opgegeven.</Text>
             )
-          ) : activeTab === 'reviews' ? (
-            reviews.length > 0 ? (
-              reviews.map((review) => (
-                <View key={review.id} style={styles.reviewItem}>
-                  <View style={styles.reviewHeader}>
-                    <Text style={styles.reviewName}>{review.fromName || 'Anoniem'}</Text>
-                    <Text style={styles.reviewRating}>⭐ {review.rating}</Text>
+          ) : activeTab === 'wilLeren' ? (
+            learnSkills.length > 0 ? (
+              learnSkills.map((skill) => (
+                <View key={skill.id} style={styles.skillItem}>
+                  <View style={styles.skillMain}>
+                    <Text style={styles.skillName}>{skill.subject}</Text>
                   </View>
-                  <Text style={styles.reviewComment}>{review.comment}</Text>
                 </View>
               ))
             ) : (
-              <Text style={styles.emptyText}>Nog geen reviews.</Text>
+              <Text style={styles.emptyText}>Geen leerdoelen opgegeven.</Text>
             )
+
           ) : (
-            // Videos tab
-            profile?.promoVideos && profile.promoVideos.length > 0 ? (
-              profile.promoVideos.map((videoUrl, index) => (
-                <View key={index} style={styles.videoContainer}>
-                  <Video
-                    source={{ uri: videoUrl }}
-                    style={styles.video}
-                    useNativeControls
-                    resizeMode={ResizeMode.CONTAIN}
-                    isLooping={false}
+            profile?.promoVideos && profile.promoVideos.some(v => typeof v === 'string' ? !!v : !!v?.url) ? (
+              profile.promoVideos.map((videoEntry, index) => {
+                const url = typeof videoEntry === 'string' ? videoEntry : (videoEntry?.url || '');
+                const title = typeof videoEntry === 'string' ? `Promo video ${index + 1}` : (videoEntry?.title || `Promo video ${index + 1}`);
+                const description = typeof videoEntry === 'string' ? '' : (videoEntry?.description || '');
+
+                if (!url) return null;
+
+                return (
+                  <VideoItem
+                    key={index}
+                    url={url}
+                    title={title}
+                    description={description}
                   />
-                  <Text style={styles.videoLabel}>Promo video {index + 1}</Text>
-                </View>
-              ))
+                );
+              })
             ) : (
               <Text style={styles.emptyText}>Geen video's beschikbaar.</Text>
             )
@@ -293,10 +306,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  topRightIcons: {
-    flexDirection: 'row',
-    gap: 10,
-  } as const,
   roundIconButton: {
     width: 38,
     height: 38,
@@ -310,15 +319,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
-  roundIconButtonLiked: {
-    backgroundColor: '#ffe5ec',
-  },
   roundIconText: {
     fontSize: 18,
     color: colors.text,
-  },
-  roundIconTextLiked: {
-    color: '#e0245e',
   },
   profileHeader: {
     alignItems: 'center',
@@ -443,7 +446,7 @@ const styles = StyleSheet.create({
   },
   tabRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 6,
     marginTop: 18,
   },
   tabButton: {
@@ -561,12 +564,22 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
   },
-  videoLabel: {
+  videoInfo: {
+    padding: 12,
+    backgroundColor: colors.card,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  videoTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  videoDescription: {
     fontSize: 12,
-    color: '#666778',
-    textAlign: 'center',
-    paddingVertical: 8,
-    backgroundColor: '#ffffff',
+    color: colors.textMuted,
+    lineHeight: 16,
   },
 });
 

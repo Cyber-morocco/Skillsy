@@ -5,11 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
 import { auth, } from '../config/firebase';
 import { authColors } from '../styles/authStyles';
-import { Skill, LearnSkill, SkillLevel, UserProfile } from '../types';
+import { Skill, LearnSkill, SkillLevel, UserProfile, Review } from '../types';
 import {
   subscribeToSkills,
   subscribeToLearnSkills,
   subscribeToUserProfile,
+  subscribeToOtherUserReviews,
   addSkill,
   deleteSkill,
   addLearnSkill,
@@ -30,6 +31,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [activeTab, setActiveTab] = useState<'skills' | 'wilLeren' | 'promoVideo' | 'reviews'>('skills');
   const [skills, setSkills] = useState<Skill[]>([]);
   const [learnSkills, setLearnSkills] = useState<LearnSkill[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -38,9 +40,16 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [newSubject, setNewSubject] = useState('');
   const [newPrice, setNewPrice] = useState('');
   const [newLevel, setNewLevel] = useState<SkillLevel>('Beginner');
+  const [newSkillType, setNewSkillType] = useState<'paid' | 'swap'>('paid');
 
   const [learnModalVisible, setLearnModalVisible] = useState(false);
   const [newLearnSubject, setNewLearnSubject] = useState('');
+
+  const [videoModalVisible, setVideoModalVisible] = useState(false);
+  const [editingVideoIndex, setEditingVideoIndex] = useState<number | null>(null);
+  const [videoTitle, setVideoTitle] = useState('');
+  const [videoDescription, setVideoDescription] = useState('');
+  const [selectedVideoUri, setSelectedVideoUri] = useState<string | null>(null);
 
   const [profileName, setProfileName] = useState('');
   const [profileLocation, setProfileLocation] = useState('');
@@ -84,10 +93,21 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
       }
     );
 
+    const unsubscribeReviews = auth.currentUser?.uid ? subscribeToOtherUserReviews(
+      auth.currentUser.uid,
+      (fetchedReviews) => {
+        setReviews(fetchedReviews);
+      },
+      (error) => {
+        console.error('Error loading reviews:', error);
+      }
+    ) : () => { };
+
     return () => {
       unsubscribeProfile();
       unsubscribeSkills();
       unsubscribeLearnSkills();
+      unsubscribeReviews();
     };
   }, []);
 
@@ -152,7 +172,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
           city: tempLocation,
         },
         bio: tempAbout,
-        photoURL: finalImageUrl || undefined,
+        photoURL: finalImageUrl,
       });
 
       setProfileName(tempName);
@@ -199,24 +219,60 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
     });
 
     if (!result.canceled) {
-      setSaving(true);
-      try {
-        const videoUrl = await uploadVideo(result.assets[0].uri, index);
-        const currentVideos = [...(userProfile?.promoVideos || [])];
+      setSelectedVideoUri(result.assets[0].uri);
+      setEditingVideoIndex(index);
+      setVideoTitle('');
+      setVideoDescription('');
+      setVideoModalVisible(true);
+    }
+  };
 
-        while (currentVideos.length <= index) {
-          currentVideos.push('');
-        }
+  const handleSaveVideoMetadata = async () => {
+    if (editingVideoIndex === null) return;
 
-        currentVideos[index] = videoUrl;
-        await updateUserProfile({ promoVideos: currentVideos });
-        Alert.alert('Succes', 'Video geüpload');
-      } catch (error) {
-        console.error('Error uploading video:', error);
-        Alert.alert('Fout', 'Kon video niet uploaden');
-      } finally {
-        setSaving(false);
+    if (!videoTitle.trim()) {
+      Alert.alert('Fout', 'Voer een titel in');
+      return;
+    }
+    if (videoDescription.length > 100) {
+      Alert.alert('Fout', 'Beschrijving mag maximaal 100 karakters bevatten');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const currentVideos = [...(userProfile?.promoVideos || [])];
+
+      while (currentVideos.length <= editingVideoIndex) {
+        currentVideos.push({ url: '', title: '', description: '' });
       }
+
+      if (selectedVideoUri) {
+        const videoUrl = await uploadVideo(selectedVideoUri, editingVideoIndex);
+        currentVideos[editingVideoIndex] = {
+          url: videoUrl,
+          title: videoTitle.trim(),
+          description: videoDescription.trim(),
+        };
+      } else {
+        const existing = currentVideos[editingVideoIndex];
+        const existingUrl = typeof existing === 'string' ? existing : (existing?.url || '');
+
+        currentVideos[editingVideoIndex] = {
+          url: existingUrl,
+          title: videoTitle.trim(),
+          description: videoDescription.trim(),
+        };
+      }
+
+      await updateUserProfile({ promoVideos: currentVideos });
+      setVideoModalVisible(false);
+      setSelectedVideoUri(null);
+    } catch (error) {
+      console.error('Error saving video metadata:', error);
+      Alert.alert('Fout', 'Kon gegevens niet opslaan');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -234,7 +290,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             try {
               await deleteVideo(index);
               const currentVideos = [...(userProfile?.promoVideos || [])];
-              currentVideos[index] = '';
+              currentVideos[index] = { url: '', title: '', description: '' };
               await updateUserProfile({ promoVideos: currentVideos });
               Alert.alert('Succes', 'Video verwijderd');
             } catch (error) {
@@ -254,19 +310,31 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   };
 
   const SaveSkill = async () => {
-    if (!newSubject || !newPrice) return;
+    if (!newSubject) return;
+    if (newSkillType === 'paid') {
+      if (!newPrice) return;
+      const priceNum = parseFloat(newPrice.replace(',', '.'));
+      if (isNaN(priceNum) || priceNum > 12) {
+        Alert.alert('Prijs te hoog', 'De maximale prijs is €12 per uur om het platform toegankelijk te houden.');
+        return;
+      }
+    }
 
     setSaving(true);
     try {
+      const finalPrice = newSkillType === 'paid' ? `€${newPrice}/uur` : 'Ruilen';
+
       await addSkill({
         subject: newSubject,
         level: newLevel,
-        price: `€${newPrice}/uur`,
+        price: finalPrice,
+        type: newSkillType,
       });
       setModalVisible(false);
       setNewSubject('');
       setNewPrice('');
       setNewLevel('Beginner');
+      setNewSkillType('paid');
     } catch (error) {
       console.error('Error saving skill:', error);
       Alert.alert('Fout', 'Kon vaardigheid niet opslaan');
@@ -341,7 +409,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
         <View style={styles.topRow}>
           <TouchableOpacity style={styles.squareButtonWide} onPress={() => onNavigate?.('availability')}>
             <Ionicons name="calendar-outline" size={18} color={authColors.text} />
-            <Text style={styles.squareButtonText}>Beschikbaarheid</Text>
+            <Text style={styles.squareButtonText}>Agenda</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.squareButtonWide} onPress={handleEditProfile}>
@@ -378,8 +446,16 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
           </View>
 
           <View style={styles.reviewsContainer}>
-            <Ionicons name="star" size={16} color="#FFD700" />
-            <Text style={styles.reviewsText}>Nieuw profiel</Text>
+            {reviews.length >= 5 ? (
+              <>
+                <Ionicons name="star" size={16} color="#FFD700" />
+                <Text style={styles.reviewsText}>
+                  {(reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)} ({reviews.length} reviews)
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.reviewsText}>Nieuw profiel</Text>
+            )}
             <Text style={styles.punt}>•</Text>
             <Ionicons name="laptop-outline" size={16} color="rgba(255,255,255,0.9)" />
             <Text style={styles.reviewsText}>Lid sinds {formatDate(userProfile?.createdAt)}</Text>
@@ -489,8 +565,11 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
 
             <View style={{ flexDirection: 'row', gap: 10 }}>
               {[0, 1, 2].map((index) => {
-                const videoUrl = userProfile?.promoVideos?.[index];
-                const hasVideo = videoUrl && videoUrl !== '';
+                const videoEntry = userProfile?.promoVideos?.[index];
+                const videoUrl = typeof videoEntry === 'string' ? videoEntry : (videoEntry?.url || '');
+                const videoTitleVal = typeof videoEntry === 'string' ? '' : (videoEntry?.title || '');
+                const videoDescVal = typeof videoEntry === 'string' ? '' : (videoEntry?.description || '');
+                const hasVideo = !!videoUrl;
 
                 return (
                   <TouchableOpacity
@@ -521,6 +600,32 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                     {hasVideo ? (
                       <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center' }}>
                         <Ionicons name="play-circle" size={40} color={authColors.accent} />
+
+                        {videoTitleVal ? (
+                          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.6)', padding: 4 }}>
+                            <Text numberOfLines={1} style={{ color: '#fff', fontSize: 10, textAlign: 'center' }}>{videoTitleVal}</Text>
+                          </View>
+                        ) : null}
+
+                        <TouchableOpacity
+                          onPress={() => {
+                            setEditingVideoIndex(index);
+                            setVideoTitle(videoTitleVal);
+                            setVideoDescription(videoDescVal);
+                            setVideoModalVisible(true);
+                          }}
+                          style={{
+                            position: 'absolute',
+                            top: 5,
+                            left: 5,
+                            backgroundColor: 'rgba(0,0,0,0.5)',
+                            padding: 4,
+                            borderRadius: 12
+                          }}
+                        >
+                          <Ionicons name="create-outline" size={16} color="#fff" />
+                        </TouchableOpacity>
+
                         <TouchableOpacity
                           onPress={() => handleDeleteVideo(index)}
                           style={{
@@ -542,6 +647,28 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 );
               })}
             </View>
+          </View>
+        )}
+        {activeTab === 'reviews' && (
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Reviews ({reviews.length})</Text>
+            </View>
+            {reviews.length > 0 ? (
+              reviews.map((review) => (
+                <View key={review.id} style={styles.reviewItem}>
+                  <View style={styles.reviewHeader}>
+                    <Text style={styles.reviewName}>{review.fromName || 'Anoniem'}</Text>
+                    <Text style={styles.reviewRating}>⭐ {review.rating}</Text>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="chatbubbles-outline" size={48} color={authColors.muted} style={{ opacity: 0.5 }} />
+                <Text style={styles.emptyText}>Je hebt nog geen reviews ontvangen.</Text>
+              </View>
+            )}
           </View>
         )}
 
@@ -580,6 +707,71 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
         <Modal
           animationType="slide"
           transparent={true}
+          visible={videoModalVisible}
+          onRequestClose={() => {
+            setVideoModalVisible(false);
+            setSelectedVideoUri(null);
+          }}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>{selectedVideoUri ? 'Video toevoegen' : 'Video bewerken'}</Text>
+
+                <Text style={styles.inputLabel}>Titel</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Titel..."
+                  value={videoTitle}
+                  onChangeText={setVideoTitle}
+                />
+
+                <View style={styles.labelContainer}>
+                  <Text style={styles.inputLabel}>Beschrijving</Text>
+                  <Text style={styles.charCount}>{videoDescription.length}/100</Text>
+                </View>
+                <TextInput
+                  style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+                  placeholder="Korte beschrijving (max 100 tekens)..."
+                  value={videoDescription}
+                  onChangeText={setVideoDescription}
+                  multiline={true}
+                  numberOfLines={4}
+                  maxLength={100}
+                />
+
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setVideoModalVisible(false);
+                      setSelectedVideoUri(null);
+                      setVideoTitle('');
+                      setVideoDescription('');
+                    }}
+                    style={styles.cancelButton}
+                  >
+                    <Text style={styles.cancelButtonText}>Annuleren</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleSaveVideoMetadata}
+                    style={[styles.saveButton, saving && { opacity: 0.7 }]}
+                    disabled={saving}
+                  >
+                    {saving ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={styles.saveButtonText}>{selectedVideoUri ? 'Plaatsen' : 'Opslaan'}</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+
+        <Modal
+          animationType="slide"
+          transparent={true}
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}
         >
@@ -596,14 +788,38 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                   onChangeText={setNewSubject}
                 />
 
-                <Text style={styles.inputLabel}>Prijs (per uur)</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Bijv. €25"
-                  value={newPrice}
-                  onChangeText={setNewPrice}
-                  keyboardType="numeric"
-                />
+                <Text style={styles.inputLabel}>Type</Text>
+                <View style={styles.levelSelector}>
+                  <TouchableOpacity
+                    style={[styles.levelOption, newSkillType === 'paid' && styles.levelOptionActive]}
+                    onPress={() => setNewSkillType('paid')}
+                  >
+                    <Text style={[styles.levelOptionText, newSkillType === 'paid' && styles.levelOptionTextActive]}>
+                      Betaalde dienst
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.levelOption, newSkillType === 'swap' && styles.levelOptionActive]}
+                    onPress={() => setNewSkillType('swap')}
+                  >
+                    <Text style={[styles.levelOptionText, newSkillType === 'swap' && styles.levelOptionTextActive]}>
+                      Ruilen
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {newSkillType === 'paid' && (
+                  <>
+                    <Text style={styles.inputLabel}>Prijs (per uur)</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Bijv. €25"
+                      value={newPrice}
+                      onChangeText={setNewPrice}
+                      keyboardType="numeric"
+                    />
+                  </>
+                )}
 
                 <Text style={styles.inputLabel}>Niveau</Text>
                 <View style={styles.levelSelector}>
@@ -647,7 +863,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 <Text style={styles.inputLabel}>Naam</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Naam"
+                  placeholder="Naam..."
                   value={tempName}
                   onChangeText={setTempName}
                 />
@@ -655,7 +871,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 <Text style={styles.inputLabel}>Locatie</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Locatie"
+                  placeholder="Locatie..."
                   value={tempLocation}
                   onChangeText={setTempLocation}
                 />
@@ -952,6 +1168,40 @@ const styles = StyleSheet.create({
   priceText: {
     fontSize: 14,
     color: authColors.muted,
+  },
+  reviewItem: {
+    padding: 16,
+    backgroundColor: authColors.card,
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.15)',
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  reviewName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: authColors.text,
+  },
+  reviewRating: {
+    fontSize: 13,
+    color: '#fbbf24',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 40,
+    gap: 12,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: authColors.muted,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   modalOverlay: {
     flex: 1,

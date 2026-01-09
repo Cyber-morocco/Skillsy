@@ -160,6 +160,14 @@ export const subscribeToLearnSkills = (
     onError?: (error: Error) => void
 ): Unsubscribe => {
     const userId = getCurrentUserId();
+    return subscribeToOtherUserLearnSkills(userId, onSkillsChange, onError);
+};
+
+export const subscribeToOtherUserLearnSkills = (
+    userId: string,
+    onSkillsChange: (skills: LearnSkill[]) => void,
+    onError?: (error: Error) => void
+): Unsubscribe => {
     const skillsRef = collection(db, 'users', userId, 'learnSkills');
 
     return onSnapshot(
@@ -393,6 +401,28 @@ export const deleteProfileImage = async (): Promise<void> => {
     await deleteObject(storageRef);
     await updateUserProfile({ photoURL: "" });
 };
+
+export const uploadProfileVideo = async (uri: string, filename?: string): Promise<{ downloadURL: string; storagePath: string }> => {
+    const userId = getCurrentUserId();
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const name = filename || `${Date.now()}.mp4`;
+    const storagePath = `profiles/${userId}/videos/${name}`;
+    const storageRef = ref(storage, storagePath);
+    await uploadBytes(storageRef, blob);
+    const downloadURL = await getDownloadURL(storageRef);
+    return { downloadURL, storagePath };
+};
+
+export const addProfileVideo = async (video: { title: string; description: string; downloadURL: string; storagePath: string; }): Promise<string> => {
+    const userId = getCurrentUserId();
+    const videosRef = collection(db, 'users', userId, 'videos');
+    const docRef = await addDoc(videosRef, {
+        ...video,
+        createdAt: serverTimestamp(),
+    });
+    return docRef.id;
+};
 export const uploadVideo = async (uri: string, index: number): Promise<string> => {
     const userId = getCurrentUserId();
     const response = await fetch(uri);
@@ -408,5 +438,14 @@ export const uploadVideo = async (uri: string, index: number): Promise<string> =
 export const deleteVideo = async (index: number): Promise<void> => {
     const userId = getCurrentUserId();
     const storageRef = ref(storage, `videos/${userId}/promo_${index}.mp4`);
-    await deleteObject(storageRef);
+    try {
+        await deleteObject(storageRef);
+    } catch (error: any) {
+        if (error.code === 'storage/object-not-found') {
+            console.warn('Video not found in storage, proceeding to update profile.');
+        } else {
+            console.error('Error deleting video from storage:', error);
+
+        }
+    }
 };

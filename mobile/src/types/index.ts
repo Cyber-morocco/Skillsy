@@ -5,6 +5,7 @@ export interface Skill {
     subject: string;
     level: SkillLevel;
     price: string;
+    type?: 'paid' | 'swap';
     rootId?: string;
 }
 
@@ -12,6 +13,18 @@ export interface LearnSkill {
     id: string;
     subject: string;
     rootId?: string;
+}
+
+export interface PromoVideo {
+    url: string;
+    title: string;
+    description: string;
+}
+
+export interface PromoVideo {
+    url: string;
+    title: string;
+    description: string;
 }
 
 export type PostType = 'Vraag' | 'Succes' | 'Materiaal';
@@ -44,7 +57,7 @@ export interface UserProfile {
     displayName: string;
     email: string;
     profileComplete: boolean;
-    photoURL?: string;
+    photoURL?: string | null;
     bio?: string;
     location?: {
         lat?: number;
@@ -55,7 +68,7 @@ export interface UserProfile {
         city?: string;
     };
     createdAt: any;
-    promoVideos?: string[];
+    promoVideos?: PromoVideo[];
 }
 
 export interface AvailabilityDay {
@@ -75,6 +88,13 @@ export interface Talent {
     lng: number;
     skills?: { name: string }[];
     skillNames?: string[];
+    skillsWithPrices?: { subject: string; price: string }[];
+    location?: {
+        city?: string;
+        street?: string;
+    };
+    averageRating?: number;
+    reviewCount?: number;
     rootCategoryIds?: string[];
     isActive: boolean;
 }
@@ -105,6 +125,7 @@ export interface Message {
     createdAt: any;
     type?: 'text' | 'appointmentRequest';
     appointmentDate?: string;
+    appointmentTime?: string;
     appointmentStatus?: 'pending' | 'accepted' | 'rejected';
 }
 
@@ -141,6 +162,8 @@ export interface Appointment {
     tutorPhone?: string;
     tutorEmail?: string;
     createdAt: any;
+    reviewedByStudent?: boolean;
+    reviewedByTutor?: boolean;
 }
 
 export interface Review {
@@ -148,7 +171,6 @@ export interface Review {
     userId: string;
     fromName: string;
     rating: number;
-    comment: string;
     createdAt: any;
 }
 
