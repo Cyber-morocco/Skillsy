@@ -34,7 +34,6 @@ const VideoItem: React.FC<{ url: string; title: string; description: string }> =
         player={player}
         style={styles.video}
         nativeControls
-        allowsFullscreen
       />
       <View style={styles.videoInfo}>
         <Text style={styles.videoTitle}>{title}</Text>
