@@ -34,7 +34,6 @@ const VideoItem: React.FC<{ url: string; title: string; description: string }> =
         player={player}
         style={styles.video}
         nativeControls
-        allowsFullscreen
       />
       <View style={styles.videoInfo}>
         <Text style={styles.videoTitle}>{title}</Text>
@@ -288,24 +287,13 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
 
                 if (!url) return null;
 
-                const player = useVideoPlayer(url, (player) => {
-                  player.play();
-                });
-
                 return (
-                  <View key={index} style={styles.videoContainer}>
-                    <Video
-                      source={{ uri: url }}
-                      style={styles.video}
-                      useNativeControls
-                      resizeMode={ResizeMode.CONTAIN}
-                      isLooping={false}
-                    />
-                    <View style={styles.videoInfo}>
-                      <Text style={styles.videoTitle}>{title}</Text>
-                      {description ? <Text style={styles.videoDescription}>{description}</Text> : null}
-                    </View>
-                  </View>
+                  <VideoItem
+                    key={index}
+                    url={url}
+                    title={title}
+                    description={description}
+                  />
                 );
               })
             ) : (
