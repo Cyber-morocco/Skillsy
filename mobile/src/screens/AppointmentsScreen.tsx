@@ -19,7 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { authColors } from '../styles/authStyles';
 import { Review, Appointment } from '../types';
-import { subscribeToAppointments, updateAppointmentStatus } from '../services/appointmentService';
+import { subscribeToAppointments, updateAppointmentStatus, updateAppointmentReviewStatus } from '../services/appointmentService';
 import { saveReview } from '../services/userService';
 import { auth } from '../config/firebase';
 
@@ -93,6 +93,11 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
     };
 
     const handleOpenReview = (item: Appointment) => {
+        const isMeAsTutor = item.tutorId === auth.currentUser?.uid;
+        const isReviewed = isMeAsTutor ? item.reviewedByTutor : item.reviewedByStudent;
+
+        if (isReviewed) return;
+
         setSelectedAppointment(item);
         setRatings({ q1: 0, q2: 0, q3: 0 });
         setReviewModalVisible(true);
@@ -108,20 +113,25 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
 
         if (selectedAppointment) {
             try {
+                const isMeAsTutor = selectedAppointment.tutorId === auth.currentUser?.uid;
+                const recipientId = isMeAsTutor ? selectedAppointment.studentId : selectedAppointment.tutorId;
+
                 await saveReview({
-                    userId: selectedAppointment.tutorId,
+                    userId: recipientId,
                     fromName: auth.currentUser?.displayName || 'Gebruiker',
                     rating: averageRating,
                 });
 
+                await updateAppointmentReviewStatus(selectedAppointment.id, isMeAsTutor ? 'tutor' : 'student');
+
                 if (onSubmitReview) {
                     onSubmitReview({
                         id: Date.now().toString(),
-                        userId: selectedAppointment.tutorId,
+                        userId: recipientId,
                         fromName: auth.currentUser?.displayName || 'Gebruiker',
                         rating: averageRating,
                         createdAt: new Date(),
-                    }, selectedAppointment.tutorId);
+                    }, recipientId);
                 }
             } catch (error) {
                 console.error('Error saving review:', error);
@@ -163,7 +173,8 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                 key={item.id}
                 style={styles.appointmentCard}
                 onPress={() => {
-                    if (item.status === 'completed') {
+                    const isReviewed = isMeAsTutor ? item.reviewedByTutor : item.reviewedByStudent;
+                    if (item.status === 'completed' && !isReviewed) {
                         handleOpenReview(item);
                     } else if (navigation) {
                         navigation.navigate('AppointmentDetail', { appointment: item });
@@ -257,12 +268,19 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                     </View>
                 )}
 
-                {item.status === 'completed' && !reviewedUsers.includes(item.tutorId) && (
+                {item.status === 'completed' && (
                     <View style={styles.actionButtons}>
-                        <TouchableOpacity style={styles.reviewButton} onPress={() => handleOpenReview(item)}>
-                            <Ionicons name="star-outline" size={16} color={authColors.accent} />
-                            <Text style={styles.reviewButtonText}>Review achterlaten</Text>
-                        </TouchableOpacity>
+                        {((isMeAsTutor && !item.reviewedByTutor) || (!isMeAsTutor && !item.reviewedByStudent)) ? (
+                            <TouchableOpacity style={styles.reviewButton} onPress={() => handleOpenReview(item)}>
+                                <Ionicons name="star-outline" size={16} color={authColors.accent} />
+                                <Text style={styles.reviewButtonText}>Review achterlaten</Text>
+                            </TouchableOpacity>
+                        ) : (
+                            <View style={[styles.reviewButton, { borderColor: 'rgba(148, 163, 184, 0.2)' }]}>
+                                <Ionicons name="checkmark-circle-outline" size={16} color={authColors.muted} />
+                                <Text style={[styles.reviewButtonText, { color: authColors.muted }]}>Review gegeven</Text>
+                            </View>
+                        )}
                     </View>
                 )}
             </TouchableOpacity>

@@ -61,3 +61,11 @@ export const updateAppointmentStatus = async (appointmentId: string, status: App
         updatedAt: serverTimestamp()
     });
 };
+export const updateAppointmentReviewStatus = async (appointmentId: string, role: 'student' | 'tutor'): Promise<void> => {
+    const appointmentRef = doc(db, 'appointments', appointmentId);
+    const updateData = role === 'student' ? { reviewedByStudent: true } : { reviewedByTutor: true };
+    await updateDoc(appointmentRef, {
+        ...updateData,
+        updatedAt: serverTimestamp()
+    });
+};
