@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { Alert, Linking, Platform } from 'react-native';
 import { Location, GeocodingResult, Talent } from '../../types';
 import { subscribeToTalents } from '../../services/userService';
 import { CATEGORY_OPTIONS, DISTANCE_OPTIONS } from '../../constants/exploreMap';
@@ -119,7 +120,24 @@ export const useExploreMap = () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
 
       if (status !== 'granted') {
-        console.log('Location permission not granted');
+        // Show alert to user to go to settings
+        Alert.alert(
+          'Locatietoegang geweigerd',
+          'Je hebt locatietoegang geweigerd. Ga naar je telefooninstellingen > Apps > Skillsy > Locatie en sta locatietoegang toe om deze functie te gebruiken.',
+          [
+            { text: 'Annuleren', style: 'cancel' },
+            {
+              text: 'Naar instellingen',
+              onPress: () => {
+                if (Platform.OS === 'ios') {
+                  Linking.openURL('app-settings:');
+                } else {
+                  Linking.openSettings();
+                }
+              }
+            }
+          ]
+        );
         return;
       }
 
@@ -155,6 +173,12 @@ export const useExploreMap = () => {
       }
     } catch (error) {
       console.error('Error getting location:', error);
+      // Show alert on any error
+      Alert.alert(
+        'Fout bij ophalen locatie',
+        'Er is een fout opgetreden bij het ophalen van je locatie. Controleer je locatie-instellingen.',
+        [{ text: 'OK' }]
+      );
     }
   };
 
