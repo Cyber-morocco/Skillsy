@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Alert, Linking, Platform } from 'react-native';
-import { Location, GeocodingResult, Talent } from '../../types';
-import { subscribeToTalents } from '../../services/userService';
+import { Location, GeocodingResult, Talent, LearnSkill } from '../../types';
+import { subscribeToTalents, subscribeToOtherUserSkills, subscribeToOtherUserReviews, subscribeToLearnSkills } from '../../services/userService';
 import { CATEGORY_OPTIONS, DISTANCE_OPTIONS } from '../../constants/exploreMap';
 import { calculateDistance } from './distance';
 
@@ -74,6 +74,7 @@ export const useExploreMap = () => {
   const [searchType, setSearchType] = useState<'skill' | 'address'>('skill');
   const [focusTalent, setFocusTalent] = useState<{ id: string; lat: number; lng: number } | null>(null);
   const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
+  const [userLearnSkills, setUserLearnSkills] = useState<LearnSkill[]>([]);
 
   useEffect(() => {
     const unsubscribe = subscribeToTalents((fetchedTalents) => {
@@ -86,9 +87,54 @@ export const useExploreMap = () => {
         shortBio: u.bio || '',
         avatar: u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName || 'U'}`,
         skillNames: u.skillNames || [],
+        skillsWithPrices: [],
+        location: {
+          city: u.location?.city,
+          street: u.location?.street
+        },
+        averageRating: undefined,
+        reviewCount: 0,
         isActive: true
       }));
+      
+      // For each talent, subscribe to their skills and reviews
+      mappedTalents.forEach((talent) => {
+        // Subscribe to skills
+        subscribeToOtherUserSkills(talent.userId, (skills) => {
+          setAllTalents((prev) => 
+            prev.map((t) => 
+              t.id === talent.id 
+                ? { ...t, skillsWithPrices: skills.map(s => ({ subject: s.subject, price: s.price })) }
+                : t
+            )
+          );
+        });
+        
+        // Subscribe to reviews
+        subscribeToOtherUserReviews(talent.userId, (reviews) => {
+          const avgRating = reviews.length > 0
+            ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
+            : undefined;
+          
+          setAllTalents((prev) => 
+            prev.map((t) => 
+              t.id === talent.id 
+                ? { ...t, averageRating: avgRating, reviewCount: reviews.length }
+                : t
+            )
+          );
+        });
+      });
+      
       setAllTalents(mappedTalents);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Subscribe to current user's learn skills
+  useEffect(() => {
+    const unsubscribe = subscribeToLearnSkills((learnSkills) => {
+      setUserLearnSkills(learnSkills);
     });
     return () => unsubscribe();
   }, []);
@@ -102,8 +148,19 @@ export const useExploreMap = () => {
       userLocation,
     });
 
+    // Sort talents: those with matching skills first
+    const sorted = filtered.sort((a, b) => {
+      const aHasMatch = (a.skillsWithPrices || []).some(skill =>
+        userLearnSkills.some(ls => ls.subject.toLowerCase() === skill.subject.toLowerCase())
+      );
+      const bHasMatch = (b.skillsWithPrices || []).some(skill =>
+        userLearnSkills.some(ls => ls.subject.toLowerCase() === skill.subject.toLowerCase())
+      );
+      return aHasMatch === bHasMatch ? 0 : aHasMatch ? -1 : 1;
+    });
+
     // Apply fuzzy locations for map display (GDPR)
-    return filtered.map(talent => {
+    return sorted.map(talent => {
       const fuzzy = fuzzyLocation(talent.lat, talent.lng, talent.id);
       return {
         ...talent,
@@ -111,7 +168,7 @@ export const useExploreMap = () => {
         lng: fuzzy.lng
       };
     });
-  }, [allTalents, selectedDistance, selectedCategories, skillSearch, userLocation]);
+  }, [allTalents, selectedDistance, selectedCategories, skillSearch, userLocation, userLearnSkills]);
 
   // Center map on user's actual GPS location
   const centerToUserLocation = async () => {
@@ -290,6 +347,7 @@ export const useExploreMap = () => {
     skillSearch,
     toggleSearchType,
     userLocation,
+    userLearnSkills,
     viewMode,
     centerToUserLocation,
   };

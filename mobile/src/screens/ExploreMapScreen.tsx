@@ -37,6 +37,7 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
     skillSearch,
     toggleSearchType,
     userLocation,
+    userLearnSkills,
     viewMode,
   } = useExploreMap();
 
@@ -110,12 +111,35 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
               >
                 <Image source={{ uri: talent.avatar }} style={styles.talentAvatar} />
                 <View style={styles.talentInfo}>
-                  <Text style={styles.talentName}>{talent.name}</Text>
-                  <Text style={styles.talentBio}>{talent.shortBio}</Text>
+                  <View style={styles.talentHeader}>
+                    <Text style={styles.talentName}>{talent.name}</Text>
+                    {talent.averageRating && talent.reviewCount && talent.reviewCount >= 5 ? (
+                      <View style={styles.ratingContainer}>
+                        <Text style={styles.ratingIcon}>⭐</Text>
+                        <Text style={styles.ratingText}>{talent.averageRating.toFixed(1)}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  {talent.location?.city && (
+                    <Text style={styles.talentLocation}>📍 {talent.location.city}</Text>
+                  )}
                   <View style={styles.skillsContainer}>
-                    {(talent.skills || []).slice(0, 3).map((skill, index) => (
-                      <Text key={index} style={styles.skillTag}>{typeof skill === 'string' ? skill : skill.name}</Text>
-                    ))}
+                    {(talent.skillsWithPrices || []).slice(0, 2).map((skill, index) => {
+                      const isMatch = userLearnSkills.some(ls => ls.subject.toLowerCase() === skill.subject.toLowerCase());
+                      return (
+                        <View key={index} style={[styles.skillBadge, isMatch && styles.skillBadgeMatch]}>
+                          {isMatch && <Text style={styles.matchIndicator}>✓</Text>}
+                          <Text style={styles.skillText}>{skill.subject}</Text>
+                          <Text style={styles.skillDivider}>·</Text>
+                          <Text style={styles.priceText}>{skill.price || 'Ruilen'}</Text>
+                        </View>
+                      );
+                    })}
+                    {(talent.skillsWithPrices || []).length > 2 ? (
+                      <View style={styles.moreSkillsBadge}>
+                        <Text style={styles.moreSkillsText}>+{(talent.skillsWithPrices || []).length - 2} meer</Text>
+                      </View>
+                    ) : null}
                   </View>
                 </View>
               </TouchableOpacity>

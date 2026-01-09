@@ -79,6 +79,13 @@ export interface Talent {
     lng: number;
     skills?: { name: string }[];
     skillNames?: string[];
+    skillsWithPrices?: { subject: string; price: string }[];
+    location?: {
+        city?: string;
+        street?: string;
+    };
+    averageRating?: number;
+    reviewCount?: number;
     isActive: boolean;
 }
 
