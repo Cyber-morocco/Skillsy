@@ -43,6 +43,7 @@ type ConversationProps = {
     navigation?: {
         goBack: () => void;
         navigate: (screen: string, params?: any) => void;
+        canGoBack: () => boolean;
     };
 };
 
@@ -57,6 +58,7 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
     const [showScheduleMatch, setShowScheduleMatch] = useState(false);
     const [messages, setMessages] = useState<any[]>([]);
     const [chatData, setChatData] = useState<Conversation | null>(null);
+    const flatListRef = React.useRef<FlatList>(null);
 
     useEffect(() => {
         if (!chatId) return;
@@ -268,7 +270,7 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
         >
             <StatusBar barStyle="light-content" />
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation?.goBack()} style={styles.backButton}>
+                <TouchableOpacity onPress={() => navigation?.canGoBack() ? navigation.goBack() : navigation?.navigate('ChatList')} style={styles.backButton}>
                     <Ionicons name="arrow-back" size={24} color="#F8FAFC" />
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -310,6 +312,7 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                 keyExtractor={item => item.id}
                 contentContainerStyle={styles.messagesList}
                 showsVerticalScrollIndicator={false}
+                inverted
             />
             <View style={[styles.inputContainer, !canSendMessage && { opacity: 0.5 }]}>
                 <TextInput

@@ -26,11 +26,9 @@ const getCurrentUserId = (): string => {
     return user.uid;
 };
 
-/**
- * Match Requests
- */
 
-export const sendMatchRequest = async (toUserId: string, toUserName: string, subject: string): Promise<void> => {
+
+export const sendMatchRequest = async (toUserId: string, toUserName: string, subject: string): Promise<string> => {
     const fromUserId = getCurrentUserId();
     const userSnap = await getDoc(doc(db, 'users', fromUserId));
     const userData = userSnap.data();
@@ -78,6 +76,8 @@ export const sendMatchRequest = async (toUserId: string, toUserName: string, sub
             matchInitiatorId: fromUserId
         });
     }
+
+    return chatId;
 };
 
 export const subscribeToMatchRequests = (
@@ -148,9 +148,7 @@ export const respondToMatchRequest = async (matchId: string, status: 'accepted' 
     }
 };
 
-/**
- * Chats & Messages
- */
+
 
 export const subscribeToChats = (
     onUpdate: (chats: Conversation[]) => void
@@ -191,7 +189,7 @@ export const subscribeToMessages = (
 ): Unsubscribe => {
     const q = query(
         collection(db, 'chats', chatId, 'messages'),
-        orderBy('createdAt', 'asc')
+        orderBy('createdAt', 'desc')
     );
 
     return onSnapshot(q, (snapshot) => {
@@ -207,7 +205,6 @@ export const sendMessage = async (chatId: string, text: string, metadata: Partia
     const userId = getCurrentUserId();
     const messagesRef = collection(db, 'chats', chatId, 'messages');
 
-    // Ensure type from metadata overrides default 'text'
     const messageType = metadata.type || 'text';
 
     await addDoc(messagesRef, {
@@ -218,16 +215,13 @@ export const sendMessage = async (chatId: string, text: string, metadata: Partia
         ...metadata
     });
 
-    // Update last message in chat doc
     const chatRef = doc(db, 'chats', chatId);
 
-    // Check if we need to auto-accept the match
     const chatSnap = await getDoc(chatRef);
     if (chatSnap.exists()) {
         const chatData = chatSnap.data() as Conversation;
 
-        // If chat is pending AND the sender is NOT the initiator (meaning it's the receiver responding)
-        // Then we auto-accept the match
+
         if (chatData.status === 'pending' && chatData.matchInitiatorId && chatData.matchInitiatorId !== userId) {
             await updateDoc(chatRef, {
                 lastMessage: text,
@@ -236,7 +230,6 @@ export const sendMessage = async (chatId: string, text: string, metadata: Partia
                 status: 'active'
             });
 
-            // Also update the match request status
             const matchesRef = collection(db, 'matches');
             const q = query(
                 matchesRef,
@@ -250,7 +243,6 @@ export const sendMessage = async (chatId: string, text: string, metadata: Partia
                 await updateDoc(doc(db, 'matches', matchDoc.id), { status: 'accepted' });
             }
         } else {
-            // Normal update
             await updateDoc(chatRef, {
                 lastMessage: text,
                 lastMessageTime: serverTimestamp(),

@@ -30,6 +30,7 @@ export default function App() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [reviews, setReviews] = useState<{ [userId: string]: Review[] }>({});
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [pendingChatParams, setPendingChatParams] = useState<any>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -91,20 +92,43 @@ export default function App() {
   };
 
   const handleSendMatch = async (userId: string, userName: string) => {
-    // Check if a conversation already exists
     const existingChat = conversations.find(conv =>
       conv.participants.includes(userId)
     );
 
     if (existingChat) {
-      // If chat exists, just go to messages
+      setPendingChatParams({
+        chatId: existingChat.id,
+        contactName: userName,
+        contactInitials: userName.slice(0, 2).toUpperCase(),
+        contactColor: '#6366f1', 
+        contactId: userId
+      });
       setActiveScreen('messages');
       return;
     }
 
     try {
-      await sendMatchRequest(userId, userName, 'Samen leren');
-      Alert.alert('Match verstuurd', `Je hebt een matchverzoek gestuurd naar ${userName}.`);
+      const chatId = await sendMatchRequest(userId, userName, 'Samen leren');
+      Alert.alert(
+        'Match verstuurd',
+        `Je hebt een matchverzoek gestuurd naar ${userName}.`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setPendingChatParams({
+                chatId,
+                contactName: userName,
+                contactInitials: userName.slice(0, 2).toUpperCase(),
+                contactColor: '#6366f1',
+                contactId: userId
+              });
+              setActiveScreen('messages');
+            }
+          }
+        ]
+      );
     } catch (error) {
       console.error('Send match error:', error);
       Alert.alert('Fout', 'Kon matchverzoek niet versturen.');
