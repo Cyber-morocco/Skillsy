@@ -188,176 +188,148 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
             </View>
           </View>
         ))}
+
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={() => {
+            Alert.alert('Succes', 'Beschikbaarheid opgeslagen', [
+              { text: 'OK', onPress: () => onNavigate && onNavigate('availability') }
+            ]);
+          }}
+        >
+          <Text style={styles.saveButtonText}>Opslaan</Text>
+        </TouchableOpacity>
       </ScrollView>
 
-      {datePickerVisible && Platform.OS === 'ios' && (
-        <Modal transparent animationType="slide">
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <TouchableOpacity onPress={() => setDatePickerVisible(false)}>
-                  <Text style={styles.modalCloseText}>Annuleer</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => {
-                    if (activeIndex !== null && dates[activeIndex]) {
-                      const dateToSave = tempDate || dates[activeIndex].date;
-                      handleUpdateDate(dates[activeIndex].id, { date: dateToSave });
-                      const copy = [...dates];
-                      copy[activeIndex].date = dateToSave;
-                      setDates(copy);
-                    }
-                    setDatePickerVisible(false);
-                    setTempDate(null);
-                  }}
-                >
-                  <Text style={styles.modalDoneText}>Klaar</Text>
-                </TouchableOpacity>
-              </View>
-              <DateTimePicker
-                value={tempDate || (activeIndex !== null && dates[activeIndex]?.date ? dates[activeIndex].date : new Date())}
-                mode="date"
-                display="spinner"
-                onChange={(event: any, selected?: Date) => {
-                  if (selected) setTempDate(selected);
-                }}
-                textColor={purple}
-              />
-            </View>
-          </View>
-        </Modal>
-      )}
-
-      {datePickerVisible && Platform.OS === 'android' && activeIndex !== null && (
-        <DateTimePicker
-          value={dates[activeIndex]?.date ?? new Date()}
-          mode="date"
-          display="default"
-          onChange={(event: any, selected?: Date) => {
-            setDatePickerVisible(false);
-            if (event.type === 'set' && selected && activeIndex !== null && dates[activeIndex]) {
-              handleUpdateDate(dates[activeIndex].id, { date: selected });
-              const copy = [...dates];
-              copy[activeIndex].date = selected;
-              setDates(copy);
-            }
-          }}
-        />
-      )}
-
-      {timePicker.visible && Platform.OS === 'ios' && (
-        <Modal transparent animationType="slide">
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <TouchableOpacity onPress={() => setTimePicker({ ...timePicker, visible: false })}>
-                  <Text style={styles.modalCloseText}>Annuleer</Text>
-                </TouchableOpacity>
-                <Text style={styles.modalTitle}>
-                  {timePicker.field === 'start' ? 'Starttijd' : 'Eindtijd'}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    if (timePicker.index !== null && dates[timePicker.index]) {
-                      const originalTimeStr = dates[timePicker.index][timePicker.field];
-                      const dateToSave = tempTime || parseTime(originalTimeStr);
-                      const formatted = formatTime(dateToSave);
-
-                      const currentStart = dates[timePicker.index].start;
-                      const currentEnd = dates[timePicker.index].end;
-
-                      const [sH, sM] = currentStart.split(':').map(Number);
-                      const [eH, eM] = currentEnd.split(':').map(Number);
-                      const [nH, nM] = formatted.split(':').map(Number);
-
-                      const startMins = sH * 60 + sM;
-                      const endMins = eH * 60 + eM;
-                      const newMins = nH * 60 + nM;
-
-                      if (timePicker.field === 'start') {
-                        if (newMins >= endMins) {
-                          Alert.alert('Ongeldige tijd', 'De starttijd moet voor de eindtijd liggen.');
-                          return;
-                        }
-                      } else {
-                        if (newMins <= startMins) {
-                          Alert.alert('Ongeldige tijd', 'De eindtijd moet na de starttijd liggen.');
-                          return;
-                        }
+      {
+        datePickerVisible && Platform.OS === 'ios' && (
+          <Modal transparent animationType="slide">
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <TouchableOpacity onPress={() => setDatePickerVisible(false)}>
+                    <Text style={styles.modalCloseText}>Annuleer</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (activeIndex !== null && dates[activeIndex]) {
+                        const dateToSave = tempDate || dates[activeIndex].date;
+                        handleUpdateDate(dates[activeIndex].id, { date: dateToSave });
+                        const copy = [...dates];
+                        copy[activeIndex].date = dateToSave;
+                        setDates(copy);
                       }
-
-                      handleUpdateDate(dates[timePicker.index].id, { [timePicker.field]: formatted });
-
-                      const copy = [...dates];
-                      copy[timePicker.index][timePicker.field] = formatted;
-                      setDates(copy);
-                    }
-                    setTimePicker({ ...timePicker, visible: false });
-                    setTempTime(null);
+                      setDatePickerVisible(false);
+                      setTempDate(null);
+                    }}
+                  >
+                    <Text style={styles.modalDoneText}>Klaar</Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePicker
+                  value={tempDate || (activeIndex !== null && dates[activeIndex]?.date ? dates[activeIndex].date : new Date())}
+                  mode="date"
+                  display="spinner"
+                  onChange={(event: any, selected?: Date) => {
+                    if (selected) setTempDate(selected);
                   }}
-                >
-                  <Text style={styles.modalDoneText}>Klaar</Text>
-                </TouchableOpacity>
+                  textColor={purple}
+                />
               </View>
-              <DateTimePicker
-                key={timePicker.field}
-                value={tempTime || (timePicker.index !== null && dates[timePicker.index] ? parseTime(dates[timePicker.index][timePicker.field]) : new Date())}
-                mode="time"
-                display="spinner"
-                onChange={(event: any, selected?: Date) => {
-                  if (selected) setTempTime(selected);
-                }}
-                textColor={purple}
-              />
             </View>
-          </View>
-        </Modal>
-      )}
+          </Modal>
+        )
+      }
 
-      {timePicker.visible && Platform.OS === 'android' && timePicker.index !== null && (
-        <DateTimePicker
-          key={timePicker.field}
-          value={dates[timePicker.index] ? parseTime(dates[timePicker.index][timePicker.field]) : new Date()}
-          mode="time"
-          display="default"
-          onChange={(event: any, selected?: Date) => {
-            setTimePicker({ ...timePicker, visible: false });
-            if (event.type === 'set' && selected && timePicker.index !== null && dates[timePicker.index]) {
-              const formattedTime = formatTime(selected);
-
-              const currentStart = dates[timePicker.index].start;
-              const currentEnd = dates[timePicker.index].end;
-
-              const [sH, sM] = currentStart.split(':').map(Number);
-              const [eH, eM] = currentEnd.split(':').map(Number);
-              const [nH, nM] = formattedTime.split(':').map(Number);
-
-              const startMins = sH * 60 + sM;
-              const endMins = eH * 60 + eM;
-              const newMins = nH * 60 + nM;
-
-              if (timePicker.field === 'start') {
-                if (newMins >= endMins) {
-                  Alert.alert('Ongeldige tijd', 'De starttijd moet voor de eindtijd liggen.');
-                  return;
-                }
-              } else {
-                if (newMins <= startMins) {
-                  Alert.alert('Ongeldige tijd', 'De eindtijd moet na de starttijd liggen.');
-                  return;
-                }
+      {
+        datePickerVisible && Platform.OS === 'android' && activeIndex !== null && (
+          <DateTimePicker
+            value={dates[activeIndex]?.date ?? new Date()}
+            mode="date"
+            display="default"
+            onChange={(event: any, selected?: Date) => {
+              setDatePickerVisible(false);
+              if (event.type === 'set' && selected && activeIndex !== null && dates[activeIndex]) {
+                handleUpdateDate(dates[activeIndex].id, { date: selected });
+                const copy = [...dates];
+                copy[activeIndex].date = selected;
+                setDates(copy);
               }
+            }}
+          />
+        )
+      }
 
-              handleUpdateDate(dates[timePicker.index].id, { [timePicker.field]: formattedTime });
+      {
+        timePicker.visible && Platform.OS === 'ios' && (
+          <Modal transparent animationType="slide">
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <TouchableOpacity onPress={() => setTimePicker({ ...timePicker, visible: false })}>
+                    <Text style={styles.modalCloseText}>Annuleer</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.modalTitle}>
+                    {timePicker.field === 'start' ? 'Starttijd' : 'Eindtijd'}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (timePicker.index !== null && dates[timePicker.index]) {
+                        const originalTimeStr = dates[timePicker.index][timePicker.field];
+                        const dateToSave = tempTime || parseTime(originalTimeStr);
+                        const formatted = formatTime(dateToSave);
 
-              const copy = [...dates];
-              copy[timePicker.index][timePicker.field] = formattedTime;
-              setDates(copy);
-            }
-          }}
-        />
-      )}
-    </SafeAreaView>
+                        handleUpdateDate(dates[timePicker.index].id, { [timePicker.field]: formatted });
+
+                        const copy = [...dates];
+                        copy[timePicker.index][timePicker.field] = formatted;
+                        setDates(copy);
+                      }
+                      setTimePicker({ ...timePicker, visible: false });
+                      setTempTime(null);
+                    }}
+                  >
+                    <Text style={styles.modalDoneText}>Klaar</Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePicker
+                  key={timePicker.field}
+                  value={tempTime || (timePicker.index !== null && dates[timePicker.index] ? parseTime(dates[timePicker.index][timePicker.field]) : new Date())}
+                  mode="time"
+                  display="spinner"
+                  onChange={(event: any, selected?: Date) => {
+                    if (selected) setTempTime(selected);
+                  }}
+                  textColor={purple}
+                />
+              </View>
+            </View>
+          </Modal>
+        )
+      }
+
+      {
+        timePicker.visible && Platform.OS === 'android' && timePicker.index !== null && (
+          <DateTimePicker
+            key={timePicker.field}
+            value={dates[timePicker.index] ? parseTime(dates[timePicker.index][timePicker.field]) : new Date()}
+            mode="time"
+            display="default"
+            onChange={(event: any, selected?: Date) => {
+              setTimePicker({ ...timePicker, visible: false });
+              if (event.type === 'set' && selected && timePicker.index !== null && dates[timePicker.index]) {
+                const formattedTime = formatTime(selected);
+                handleUpdateDate(dates[timePicker.index].id, { [timePicker.field]: formattedTime });
+
+                const copy = [...dates];
+                copy[timePicker.index][timePicker.field] = formattedTime;
+                setDates(copy);
+              }
+            }}
+          />
+        )
+      }
+    </SafeAreaView >
   );
 };
 

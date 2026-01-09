@@ -5,11 +5,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
 import { auth, } from '../config/firebase';
 import { authColors } from '../styles/authStyles';
-import { Skill, LearnSkill, SkillLevel, UserProfile } from '../types';
+import { Skill, LearnSkill, SkillLevel, UserProfile, Review } from '../types';
 import {
   subscribeToSkills,
   subscribeToLearnSkills,
   subscribeToUserProfile,
+  subscribeToOtherUserReviews,
   addSkill,
   deleteSkill,
   addLearnSkill,
@@ -30,6 +31,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [activeTab, setActiveTab] = useState<'skills' | 'wilLeren' | 'promoVideo' | 'reviews'>('skills');
   const [skills, setSkills] = useState<Skill[]>([]);
   const [learnSkills, setLearnSkills] = useState<LearnSkill[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -90,10 +92,21 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
       }
     );
 
+    const unsubscribeReviews = auth.currentUser?.uid ? subscribeToOtherUserReviews(
+      auth.currentUser.uid,
+      (fetchedReviews) => {
+        setReviews(fetchedReviews);
+      },
+      (error) => {
+        console.error('Error loading reviews:', error);
+      }
+    ) : () => { };
+
     return () => {
       unsubscribeProfile();
       unsubscribeSkills();
       unsubscribeLearnSkills();
+      unsubscribeReviews();
     };
   }, []);
 
@@ -383,7 +396,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
         <View style={styles.topRow}>
           <TouchableOpacity style={styles.squareButtonWide} onPress={() => onNavigate?.('availability')}>
             <Ionicons name="calendar-outline" size={18} color={authColors.text} />
-            <Text style={styles.squareButtonText}>Beschikbaarheid</Text>
+            <Text style={styles.squareButtonText}>Agenda</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.squareButtonWide} onPress={handleEditProfile}>
@@ -420,8 +433,16 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
           </View>
 
           <View style={styles.reviewsContainer}>
-            <Ionicons name="star" size={16} color="#FFD700" />
-            <Text style={styles.reviewsText}>Nieuw profiel</Text>
+            {reviews.length >= 5 ? (
+              <>
+                <Ionicons name="star" size={16} color="#FFD700" />
+                <Text style={styles.reviewsText}>
+                  {(reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)} ({reviews.length} reviews)
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.reviewsText}>Nieuw profiel</Text>
+            )}
             <Text style={styles.punt}>•</Text>
             <Ionicons name="laptop-outline" size={16} color="rgba(255,255,255,0.9)" />
             <Text style={styles.reviewsText}>Lid sinds {formatDate(userProfile?.createdAt)}</Text>
@@ -615,6 +636,28 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             </View>
           </View>
         )}
+        {activeTab === 'reviews' && (
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Reviews ({reviews.length})</Text>
+            </View>
+            {reviews.length > 0 ? (
+              reviews.map((review) => (
+                <View key={review.id} style={styles.reviewItem}>
+                  <View style={styles.reviewHeader}>
+                    <Text style={styles.reviewName}>{review.fromName || 'Anoniem'}</Text>
+                    <Text style={styles.reviewRating}>⭐ {review.rating}</Text>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="chatbubbles-outline" size={48} color={authColors.muted} style={{ opacity: 0.5 }} />
+                <Text style={styles.emptyText}>Je hebt nog geen reviews ontvangen.</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         <Modal
           animationType="slide"
@@ -665,7 +708,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 <Text style={styles.inputLabel}>Titel</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Titel"
+                  placeholder="Titel..."
                   value={videoTitle}
                   onChangeText={setVideoTitle}
                 />
@@ -676,7 +719,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 </View>
                 <TextInput
                   style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-                  placeholder="Korte beschrijving (max 100 tekens)"
+                  placeholder="Korte beschrijving (max 100 tekens)..."
                   value={videoDescription}
                   onChangeText={setVideoDescription}
                   multiline={true}
@@ -783,7 +826,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 <Text style={styles.inputLabel}>Naam</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Naam"
+                  placeholder="Naam..."
                   value={tempName}
                   onChangeText={setTempName}
                 />
@@ -791,7 +834,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 <Text style={styles.inputLabel}>Locatie</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Locatie"
+                  placeholder="Locatie..."
                   value={tempLocation}
                   onChangeText={setTempLocation}
                 />
@@ -1088,6 +1131,40 @@ const styles = StyleSheet.create({
   priceText: {
     fontSize: 14,
     color: authColors.muted,
+  },
+  reviewItem: {
+    padding: 16,
+    backgroundColor: authColors.card,
+    borderRadius: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.15)',
+  },
+  reviewHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  reviewName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: authColors.text,
+  },
+  reviewRating: {
+    fontSize: 13,
+    color: '#fbbf24',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 40,
+    gap: 12,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: authColors.muted,
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
   modalOverlay: {
     flex: 1,
