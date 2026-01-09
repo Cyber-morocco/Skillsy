@@ -14,7 +14,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { chatStyles as styles, chatColors } from '../styles/ChatStyle';
 import { ChatStackParamList } from '../navigation/ChatStack';
 import { MatchRequest, Conversation } from '../types';
-import { subscribeToChats, respondToMatchRequest, clearAllMatchRequests } from '../services/chatService';
+import { subscribeToChats } from '../services/chatService';
 import { auth } from '../config/firebase';
 import { Unsubscribe } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,9 +23,11 @@ import { Ionicons } from '@expo/vector-icons';
 
 interface ChatScreenProps {
     matchRequests?: MatchRequest[];
+    onRespondMatch: (matchId: string, status: 'accepted' | 'rejected') => Promise<void>;
+    onClearAllMatches: (subject?: string) => Promise<void>;
 }
 
-function ChatScreen({ matchRequests = [] }: ChatScreenProps) {
+function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: ChatScreenProps) {
     const navigation = useNavigation<NativeStackNavigationProp<ChatStackParamList>>();
     const [searchQuery, setSearchQuery] = useState('');
     const [matchesModalVisible, setMatchesModalVisible] = useState(false);
@@ -130,7 +132,7 @@ function ChatScreen({ matchRequests = [] }: ChatScreenProps) {
 
     const handleRespondWithClose = async (matchId: string, status: 'accepted' | 'rejected') => {
         try {
-            await respondToMatchRequest(matchId, status);
+            await onRespondMatch(matchId, status);
             if (status === 'accepted') {
                 setMatchesModalVisible(false);
             }
@@ -241,10 +243,7 @@ function ChatScreen({ matchRequests = [] }: ChatScreenProps) {
                         {pendingMatches.length > 0 && (
                             <TouchableOpacity
                                 onPress={async () => {
-                                    const userId = auth.currentUser?.uid;
-                                    if (userId) {
-                                        await clearAllMatchRequests(userId, selectedFilter === 'All' ? undefined : selectedFilter);
-                                    }
+                                    await onClearAllMatches(selectedFilter === 'All' ? undefined : selectedFilter);
                                 }}
                                 style={{
                                     flexDirection: 'row',

@@ -25,9 +25,11 @@ import { MatchRequest } from '../types';
 
 interface ChatStackProps {
     matchRequests?: MatchRequest[];
+    onRespondMatch: (matchId: string, status: 'accepted' | 'rejected') => Promise<void>;
+    onClearAllMatches: (subject?: string) => Promise<void>;
 }
 
-function ChatStackNavigator({ matchRequests }: ChatStackProps) {
+function ChatStackNavigator({ matchRequests, onRespondMatch, onClearAllMatches }: ChatStackProps) {
     return (
         <NavigationContainer>
             <Stack.Navigator
@@ -36,7 +38,12 @@ function ChatStackNavigator({ matchRequests }: ChatStackProps) {
                 }}
             >
                 <Stack.Screen name="ChatList">
-                    {props => <ChatScreen {...props} matchRequests={matchRequests} />}
+                    {props => <ChatScreen
+                        {...props}
+                        matchRequests={matchRequests}
+                        onRespondMatch={onRespondMatch}
+                        onClearAllMatches={onClearAllMatches}
+                    />}
                 </Stack.Screen>
                 <Stack.Screen name="Conversation" component={ConversationScreen} />
                 <Stack.Screen name="ExploreProfile">

@@ -62,7 +62,6 @@ interface ExploreProfileScreenProps {
 
 const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onBack, onMakeAppointment, onSendMessage }) => {
   const [activeTab, setActiveTab] = useState<'vaardigheden' | 'wilLeren' | 'videos'>('vaardigheden');
-  const [liked, setLiked] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [learnSkills, setLearnSkills] = useState<LearnSkill[]>([]);
@@ -124,26 +123,6 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
           <TouchableOpacity activeOpacity={0.8} style={styles.roundIconButton} onPress={onBack}>
             <Text style={styles.roundIconText}>←</Text>
           </TouchableOpacity>
-
-          <View style={styles.topRightIcons}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              style={[
-                styles.roundIconButton,
-                liked && styles.roundIconButtonLiked,
-              ]}
-              onPress={() => setLiked((prev) => !prev)}
-            >
-              <Text
-                style={[
-                  styles.roundIconText,
-                  liked && styles.roundIconTextLiked,
-                ]}
-              >
-                {liked ? '♥' : '♡'}
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
 
         <View style={styles.profileHeader}>
@@ -327,10 +306,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  topRightIcons: {
-    flexDirection: 'row',
-    gap: 10,
-  } as const,
   roundIconButton: {
     width: 38,
     height: 38,
@@ -344,15 +319,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
-  roundIconButtonLiked: {
-    backgroundColor: '#ffe5ec',
-  },
   roundIconText: {
     fontSize: 18,
     color: colors.text,
-  },
-  roundIconTextLiked: {
-    color: '#e0245e',
   },
   profileHeader: {
     alignItems: 'center',

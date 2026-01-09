@@ -5,6 +5,7 @@ export interface Skill {
     subject: string;
     level: SkillLevel;
     price: string;
+    type?: 'paid' | 'swap';
 }
 
 export interface LearnSkill {
