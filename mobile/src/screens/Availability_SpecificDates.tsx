@@ -263,6 +263,29 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
                       const dateToSave = tempTime || parseTime(originalTimeStr);
                       const formatted = formatTime(dateToSave);
 
+                      const currentStart = dates[timePicker.index].start;
+                      const currentEnd = dates[timePicker.index].end;
+
+                      const [sH, sM] = currentStart.split(':').map(Number);
+                      const [eH, eM] = currentEnd.split(':').map(Number);
+                      const [nH, nM] = formatted.split(':').map(Number);
+
+                      const startMins = sH * 60 + sM;
+                      const endMins = eH * 60 + eM;
+                      const newMins = nH * 60 + nM;
+
+                      if (timePicker.field === 'start') {
+                        if (newMins >= endMins) {
+                          Alert.alert('Ongeldige tijd', 'De starttijd moet voor de eindtijd liggen.');
+                          return;
+                        }
+                      } else {
+                        if (newMins <= startMins) {
+                          Alert.alert('Ongeldige tijd', 'De eindtijd moet na de starttijd liggen.');
+                          return;
+                        }
+                      }
+
                       handleUpdateDate(dates[timePicker.index].id, { [timePicker.field]: formatted });
 
                       const copy = [...dates];
@@ -277,7 +300,7 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
                 </TouchableOpacity>
               </View>
               <DateTimePicker
-                key={timePicker.field} 
+                key={timePicker.field}
                 value={tempTime || (timePicker.index !== null && dates[timePicker.index] ? parseTime(dates[timePicker.index][timePicker.field]) : new Date())}
                 mode="time"
                 display="spinner"
@@ -301,6 +324,30 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
             setTimePicker({ ...timePicker, visible: false });
             if (event.type === 'set' && selected && timePicker.index !== null && dates[timePicker.index]) {
               const formattedTime = formatTime(selected);
+
+              const currentStart = dates[timePicker.index].start;
+              const currentEnd = dates[timePicker.index].end;
+
+              const [sH, sM] = currentStart.split(':').map(Number);
+              const [eH, eM] = currentEnd.split(':').map(Number);
+              const [nH, nM] = formattedTime.split(':').map(Number);
+
+              const startMins = sH * 60 + sM;
+              const endMins = eH * 60 + eM;
+              const newMins = nH * 60 + nM;
+
+              if (timePicker.field === 'start') {
+                if (newMins >= endMins) {
+                  Alert.alert('Ongeldige tijd', 'De starttijd moet voor de eindtijd liggen.');
+                  return;
+                }
+              } else {
+                if (newMins <= startMins) {
+                  Alert.alert('Ongeldige tijd', 'De eindtijd moet na de starttijd liggen.');
+                  return;
+                }
+              }
+
               handleUpdateDate(dates[timePicker.index].id, { [timePicker.field]: formattedTime });
 
               const copy = [...dates];
