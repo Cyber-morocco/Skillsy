@@ -177,7 +177,7 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                         </View>
                         <View>
                             <Text style={styles.subjectText}>{item.title}</Text>
-                            <Text style={styles.personNameText}>{item.subtitle}</Text>
+                            <Text style={styles.personNameText}>Afspraak met {otherName}</Text>
                         </View>
                     </View>
                     <View style={[
@@ -341,7 +341,7 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                                     </View>
                                     <Text style={styles.reviewTitle}>Hoe was je ervaring?</Text>
                                     <Text style={styles.reviewSubtitle}>
-                                        Met {selectedAppointment?.tutorName} voor {selectedAppointment?.title}
+                                        Met {selectedAppointment?.tutorId === auth.currentUser?.uid ? (selectedAppointment?.studentName || '...') : selectedAppointment?.tutorName} voor {selectedAppointment?.title}
                                     </Text>
                                 </View>
 
