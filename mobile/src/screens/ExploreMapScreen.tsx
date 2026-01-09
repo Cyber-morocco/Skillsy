@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { StatusBar, View, TouchableOpacity, ScrollView, Image, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ExploreSearchBar } from '../features/explore/ExploreSearchBar';
 import { FiltersBar } from '../features/explore/FiltersBar';
 import { MapViewLeaflet } from './logic/MapViewLeaflet';
@@ -34,6 +33,7 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
     selectedDistance,
     setSearchQuery,
     setViewMode,
+    setSearchType,
     skillSearch,
     toggleSearchType,
     userLocation,
@@ -47,29 +47,15 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
   const filtersActive = (selectedDistance !== null) || (selectedCategories.length > 0) || (Boolean(skillSearch && skillSearch.trim().length > 0));
 
   useEffect(() => {
-    (async () => {
-      try {
-        const saved = await AsyncStorage.getItem('exploreFiltersVisible');
-        if (saved !== null) {
-          setFiltersVisible(saved === 'true');
-        }
-      } catch {}
-    })();
-  }, []);
-
-  useEffect(() => {
     // Hide filters whenever switching into map mode (covers entering from other pages when remounted)
     if (viewMode !== 'list') {
       setFiltersVisible(false);
     }
   }, [viewMode]);
 
-  const toggleFiltersVisible = async () => {
+  const toggleFiltersVisible = () => {
     const next = !filtersVisible;
     setFiltersVisible(next);
-    try {
-      await AsyncStorage.setItem('exploreFiltersVisible', next ? 'true' : 'false');
-    } catch {}
   };
 
   const handleTalentPress = (talentId: string) => {
@@ -93,7 +79,7 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
         isSearching={isSearching}
         onChangeQuery={setSearchQuery}
         onSubmit={handleSearch}
-        onToggleSearchType={toggleSearchType}
+        onSelectSearchType={setSearchType}
         onClear={resetSearch}
         onToggleFilters={toggleFiltersVisible}
         filtersActive={filtersActive}
