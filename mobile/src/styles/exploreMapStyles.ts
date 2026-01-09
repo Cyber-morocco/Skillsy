@@ -150,7 +150,7 @@ export const exploreMapStyles = StyleSheet.create({
   },
   locationButton: {
     position: 'absolute',
-    bottom: 60,
+    bottom: 120,
     right: 16,
     width: 56,
     height: 56,

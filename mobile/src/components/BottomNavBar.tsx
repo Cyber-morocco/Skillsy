@@ -19,7 +19,7 @@ interface BottomNavBarProps {
 
 const NAV_ITEMS: NavBarItem[] = [
   { name: 'home', label: 'Home', icon: 'home', type: 'ionicons' },
-  { name: 'explore', label: 'Ontdekken', icon: 'search', type: 'ionicons' },
+  { name: 'explore', label: 'Ontdekken', icon: 'map-marker', type: 'material' },
   { name: 'appointments', label: 'Afspraken', icon: 'calendar', type: 'ionicons' },
   { name: 'messages', label: 'Berichten', icon: 'chatbubble', type: 'ionicons' },
   { name: 'profile', label: 'Profiel', icon: 'person', type: 'ionicons' },

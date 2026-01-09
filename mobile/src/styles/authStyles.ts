@@ -12,7 +12,7 @@ export const authColors = {
   card: CARD,
   text: TEXT_PRIMARY,
   muted: TEXT_SECONDARY,
-  placeholder: '#64748B',
+  placeholder: '#a49999ff',
 };
 
 const sharedShadow =

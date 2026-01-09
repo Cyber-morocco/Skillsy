@@ -11,13 +11,14 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { VideoView, useVideoPlayer } from 'expo-video';
+import { Video, ResizeMode } from 'expo-av';
 import {
   subscribeToOtherUserProfile,
   subscribeToOtherUserSkills,
-  subscribeToOtherUserReviews
+  subscribeToOtherUserReviews,
+  subscribeToOtherUserLearnSkills
 } from '../services/userService';
-import { UserProfile, Skill, Review } from '../types';
+import { UserProfile, Skill, Review, LearnSkill } from '../types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -39,10 +40,11 @@ interface ExploreProfileScreenProps {
 }
 
 const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onBack, onMakeAppointment, onSendMessage }) => {
-  const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews' | 'videos'>('vaardigheden');
+  const [activeTab, setActiveTab] = useState<'vaardigheden' | 'reviews' | 'wilLeren' | 'videos'>('vaardigheden');
   const [liked, setLiked] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [learnSkills, setLearnSkills] = useState<LearnSkill[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -59,6 +61,10 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
       setSkills(fetchedSkills);
     });
 
+    const unsubscribeLearnSkills = subscribeToOtherUserLearnSkills(userId, (fetchedLearnSkills) => {
+      setLearnSkills(fetchedLearnSkills);
+    });
+
     const unsubscribeReviews = subscribeToOtherUserReviews(userId, (fetchedReviews) => {
       setReviews(fetchedReviews);
       setLoading(false);
@@ -67,6 +73,7 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
     return () => {
       unsubscribeProfile();
       unsubscribeSkills();
+      unsubscribeLearnSkills();
       unsubscribeReviews();
     };
   }, [userId]);
@@ -199,6 +206,24 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
 
           <TouchableOpacity
             activeOpacity={0.9}
+            onPress={() => setActiveTab('wilLeren')}
+            style={[
+              styles.tabButton,
+              activeTab === 'wilLeren' && styles.tabButtonActive,
+            ]}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'wilLeren' && styles.tabTextActive,
+              ]}
+            >
+              Wil leren
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.9}
             onPress={() => setActiveTab('videos')}
             style={[
               styles.tabButton,
@@ -233,6 +258,18 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
             ) : (
               <Text style={styles.emptyText}>Geen vaardigheden opgegeven.</Text>
             )
+          ) : activeTab === 'wilLeren' ? (
+            learnSkills.length > 0 ? (
+              learnSkills.map((skill) => (
+                <View key={skill.id} style={styles.skillItem}>
+                  <View style={styles.skillMain}>
+                    <Text style={styles.skillName}>{skill.subject}</Text>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.emptyText}>Geen leerdoelen opgegeven.</Text>
+            )
           ) : activeTab === 'reviews' ? (
             reviews.length > 0 ? (
               reviews.map((review) => (
@@ -248,21 +285,27 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
               <Text style={styles.emptyText}>Nog geen reviews.</Text>
             )
           ) : (
-            // Videos tab
             profile?.promoVideos && profile.promoVideos.length > 0 ? (
-              profile.promoVideos.map((videoUrl, index) => {
-                const player = useVideoPlayer(videoUrl, (player) => {
-                  player.loop = false;
-                });
+              profile.promoVideos.map((videoEntry, index) => {
+                const url = typeof videoEntry === 'string' ? videoEntry : (videoEntry?.url || '');
+                const title = typeof videoEntry === 'string' ? `Promo video ${index + 1}` : (videoEntry?.title || `Promo video ${index + 1}`);
+                const description = typeof videoEntry === 'string' ? '' : (videoEntry?.description || '');
+
+                if (!url) return null;
+
                 return (
                   <View key={index} style={styles.videoContainer}>
-                    <VideoView
-                      player={player}
+                    <Video
+                      source={{ uri: url }}
                       style={styles.video}
-                      allowsFullscreen
-                      allowsPictureInPicture
+                      useNativeControls
+                      resizeMode={ResizeMode.CONTAIN}
+                      isLooping={false}
                     />
-                    <Text style={styles.videoLabel}>Promo video {index + 1}</Text>
+                    <View style={styles.videoInfo}>
+                      <Text style={styles.videoTitle}>{title}</Text>
+                      {description ? <Text style={styles.videoDescription}>{description}</Text> : null}
+                    </View>
                   </View>
                 );
               })
@@ -447,7 +490,7 @@ const styles = StyleSheet.create({
   },
   tabRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 6,
     marginTop: 18,
   },
   tabButton: {
@@ -565,12 +608,22 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
   },
-  videoLabel: {
+  videoInfo: {
+    padding: 12,
+    backgroundColor: colors.card,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  videoTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text,
+    marginBottom: 4,
+  },
+  videoDescription: {
     fontSize: 12,
-    color: '#666778',
-    textAlign: 'center',
-    paddingVertical: 8,
-    backgroundColor: '#ffffff',
+    color: colors.textMuted,
+    lineHeight: 16,
   },
 });
 

@@ -12,6 +12,12 @@ export interface LearnSkill {
     subject: string;
 }
 
+export interface PromoVideo {
+    url: string;
+    title: string;
+    description: string;
+}
+
 export type PostType = 'Vraag' | 'Succes' | 'Materiaal';
 
 export interface Post {
@@ -53,7 +59,7 @@ export interface UserProfile {
         city?: string;
     };
     createdAt: any;
-    promoVideos?: string[];
+    promoVideos?: PromoVideo[];
 }
 
 export interface AvailabilityDay {
