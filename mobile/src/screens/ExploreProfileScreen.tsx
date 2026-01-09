@@ -11,7 +11,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Video, ResizeMode } from 'expo-av';
+import { VideoView, useVideoPlayer } from 'expo-video';
 import {
   subscribeToOtherUserProfile,
   subscribeToOtherUserSkills,
@@ -21,6 +21,28 @@ import {
 import { UserProfile, Skill, Review, LearnSkill } from '../types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Separate component for video item to avoid hook violation
+const VideoItem: React.FC<{ url: string; title: string; description: string }> = ({ url, title, description }) => {
+  const player = useVideoPlayer(url, (player) => {
+    player.loop = false;
+  });
+
+  return (
+    <View style={styles.videoContainer}>
+      <VideoView
+        player={player}
+        style={styles.video}
+        nativeControls
+        allowsFullscreen
+      />
+      <View style={styles.videoInfo}>
+        <Text style={styles.videoTitle}>{title}</Text>
+        {description ? <Text style={styles.videoDescription}>{description}</Text> : null}
+      </View>
+    </View>
+  );
+};
 
 const colors = {
   background: '#050816',
@@ -267,19 +289,12 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
                 if (!url) return null;
 
                 return (
-                  <View key={index} style={styles.videoContainer}>
-                    <Video
-                      source={{ uri: url }}
-                      style={styles.video}
-                      useNativeControls
-                      resizeMode={ResizeMode.CONTAIN}
-                      isLooping={false}
-                    />
-                    <View style={styles.videoInfo}>
-                      <Text style={styles.videoTitle}>{title}</Text>
-                      {description ? <Text style={styles.videoDescription}>{description}</Text> : null}
-                    </View>
-                  </View>
+                  <VideoItem
+                    key={index}
+                    url={url}
+                    title={title}
+                    description={description}
+                  />
                 );
               })
             ) : (
