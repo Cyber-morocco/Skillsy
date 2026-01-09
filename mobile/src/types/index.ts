@@ -49,7 +49,7 @@ export interface UserProfile {
     displayName: string;
     email: string;
     profileComplete: boolean;
-    photoURL?: string;
+    photoURL?: string | null;
     bio?: string;
     location?: {
         lat?: number;
@@ -80,6 +80,13 @@ export interface Talent {
     lng: number;
     skills?: { name: string }[];
     skillNames?: string[];
+    skillsWithPrices?: { subject: string; price: string }[];
+    location?: {
+        city?: string;
+        street?: string;
+    };
+    averageRating?: number;
+    reviewCount?: number;
     isActive: boolean;
 }
 

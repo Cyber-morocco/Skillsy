@@ -11,6 +11,7 @@ import {
   Alert,
   Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { subscribeToAvailability, saveAvailability } from '../services/userService';
 import { AvailabilityDay } from '../types';
@@ -162,10 +163,20 @@ const Availability: React.FC<AvailabilityProps> = ({ onNavigate }) => {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
 
-        <Text style={styles.headerTitle}>Beschikbaarheid</Text>
-        <Text style={styles.headerSub}>
-          Stel in wanneer je beschikbaar bent
-        </Text>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.headerTitle}>Beschikbaarheid</Text>
+            <Text style={styles.headerSub}>
+              Stel in wanneer je beschikbaar bent
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => onNavigate && onNavigate('profile')}
+          >
+            <Ionicons name="close" size={28} color={text} />
+          </TouchableOpacity>
+        </View>
 
 
         <View style={styles.tabs}>
@@ -295,8 +306,14 @@ export default Availability;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: background },
 
-  headerTitle: {
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginRight: 20,
     marginTop: 15,
+  },
+  headerTitle: {
     fontSize: 24,
     fontWeight: '700',
     marginHorizontal: 20,
@@ -306,6 +323,9 @@ const styles = StyleSheet.create({
     color: muted,
     marginHorizontal: 20,
     marginBottom: 20,
+  },
+  closeButton: {
+    padding: 5,
   },
 
   tabs: {

@@ -172,7 +172,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
           city: tempLocation,
         },
         bio: tempAbout,
-        photoURL: finalImageUrl || undefined,
+        photoURL: finalImageUrl,
       });
 
       setProfileName(tempName);
