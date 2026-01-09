@@ -40,6 +40,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [newSubject, setNewSubject] = useState('');
   const [newPrice, setNewPrice] = useState('');
   const [newLevel, setNewLevel] = useState<SkillLevel>('Beginner');
+  const [newSkillType, setNewSkillType] = useState<'paid' | 'swap'>('paid');
 
   const [learnModalVisible, setLearnModalVisible] = useState(false);
   const [newLearnSubject, setNewLearnSubject] = useState('');
@@ -309,19 +310,31 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   };
 
   const SaveSkill = async () => {
-    if (!newSubject || !newPrice) return;
+    if (!newSubject) return;
+    if (newSkillType === 'paid') {
+      if (!newPrice) return;
+      const priceNum = parseFloat(newPrice.replace(',', '.'));
+      if (isNaN(priceNum) || priceNum > 12) {
+        Alert.alert('Prijs te hoog', 'De maximale prijs is €12 per uur om het platform toegankelijk te houden.');
+        return;
+      }
+    }
 
     setSaving(true);
     try {
+      const finalPrice = newSkillType === 'paid' ? `€${newPrice}/uur` : 'Ruilen';
+
       await addSkill({
         subject: newSubject,
         level: newLevel,
-        price: `€${newPrice}/uur`,
+        price: finalPrice,
+        type: newSkillType,
       });
       setModalVisible(false);
       setNewSubject('');
       setNewPrice('');
       setNewLevel('Beginner');
+      setNewSkillType('paid');
     } catch (error) {
       console.error('Error saving skill:', error);
       Alert.alert('Fout', 'Kon vaardigheid niet opslaan');
@@ -775,14 +788,38 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                   onChangeText={setNewSubject}
                 />
 
-                <Text style={styles.inputLabel}>Prijs (per uur)</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Bijv. €25"
-                  value={newPrice}
-                  onChangeText={setNewPrice}
-                  keyboardType="numeric"
-                />
+                <Text style={styles.inputLabel}>Type</Text>
+                <View style={styles.levelSelector}>
+                  <TouchableOpacity
+                    style={[styles.levelOption, newSkillType === 'paid' && styles.levelOptionActive]}
+                    onPress={() => setNewSkillType('paid')}
+                  >
+                    <Text style={[styles.levelOptionText, newSkillType === 'paid' && styles.levelOptionTextActive]}>
+                      Betaalde dienst
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.levelOption, newSkillType === 'swap' && styles.levelOptionActive]}
+                    onPress={() => setNewSkillType('swap')}
+                  >
+                    <Text style={[styles.levelOptionText, newSkillType === 'swap' && styles.levelOptionTextActive]}>
+                      Ruilen
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {newSkillType === 'paid' && (
+                  <>
+                    <Text style={styles.inputLabel}>Prijs (per uur)</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Bijv. €25"
+                      value={newPrice}
+                      onChangeText={setNewPrice}
+                      keyboardType="numeric"
+                    />
+                  </>
+                )}
 
                 <Text style={styles.inputLabel}>Niveau</Text>
                 <View style={styles.levelSelector}>
