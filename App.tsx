@@ -186,6 +186,7 @@ export default function App() {
   if (!user || !profileComplete) {
     return (
       <AuthStackNavigator
+        key={user ? 'logged-in' : 'guest'}
         initialRouteName={user ? "ProfileCreationStep1" : "PrePagina"}
       />
     );
