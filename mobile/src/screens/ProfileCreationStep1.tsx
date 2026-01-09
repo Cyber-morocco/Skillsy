@@ -245,7 +245,11 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                                     onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                                 />
                                 {showSuggestions && (
-                                    <View style={styles.autocompleteDropdown}>
+                                    <ScrollView
+                                        style={[styles.autocompleteDropdown, { maxHeight: 200 }]}
+                                        nestedScrollEnabled={true}
+                                        keyboardShouldPersistTaps="handled"
+                                    >
                                         {suggestions.map((item, index) => {
                                             const { properties } = item;
                                             const mainText = properties.street
@@ -266,7 +270,7 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                                                 </TouchableOpacity>
                                             );
                                         })}
-                                    </View>
+                                    </ScrollView>
                                 )}
                             </View>
 
