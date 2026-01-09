@@ -213,6 +213,10 @@ export const exploreMapStyles = StyleSheet.create({
     fontWeight: '600',
     color: '#F8FAFC',
   },
+  reviewCount: {
+    fontSize: 11,
+    color: '#94A3B8',
+  },
   talentLocation: {
     fontSize: 12,
     color: '#94A3B8',
@@ -274,6 +278,25 @@ export const exploreMapStyles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     color: '#7c3aed',
+  },
+  skillWithPrice: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(124, 58, 237, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  skillName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#7c3aed',
+  },
+  skillPrice: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#94A3B8',
   },
   resultsContainer: {
     flexDirection: 'row',

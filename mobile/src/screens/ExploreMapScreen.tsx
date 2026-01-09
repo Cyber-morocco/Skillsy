@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { ExploreSearchBar } from '../features/explore/ExploreSearchBar';
 import { FiltersBar } from '../features/explore/FiltersBar';
 import { MapViewLeaflet } from './logic/MapViewLeaflet';
-import { TalentList } from './logic/TalentList';
 import { useExploreMap } from './logic/useExploreMap';
 import { exploreMapStyles as styles } from '../styles/exploreMapStyles';
 import { Talent } from '../types';
