@@ -20,6 +20,8 @@ import {
 } from '../services/userService';
 import { UserProfile, Skill, Review, LearnSkill } from '../types';
 
+import { Avatar } from '../components/Avatar';
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Separate component for video item to avoid hook violation
@@ -127,11 +129,12 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
 
         <View style={styles.profileHeader}>
           <View style={styles.avatarWrapper}>
-            {avatar ? (
-              <Image source={{ uri: avatar }} style={styles.avatarCircle} />
-            ) : (
-              <View style={styles.avatarCircle} />
-            )}
+            <Avatar
+              uri={avatar}
+              name={displayName}
+              size={AVATAR_SIZE}
+              style={styles.avatarCircle}
+            />
           </View>
 
           <Text style={styles.nameText}>{displayName}</Text>
@@ -238,7 +241,6 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
                       <Text style={styles.levelText}>{skill.level}</Text>
                     </View>
                   </View>
-                  <Text style={styles.priceText}>{skill.price}</Text>
                 </View>
               ))
             ) : (
@@ -334,7 +336,6 @@ const styles = StyleSheet.create({
     width: AVATAR_SIZE,
     height: AVATAR_SIZE,
     borderRadius: AVATAR_SIZE / 2,
-    backgroundColor: colors.card,
     borderWidth: 3,
     borderColor: colors.background,
     alignItems: 'center',

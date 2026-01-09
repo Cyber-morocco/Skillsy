@@ -19,8 +19,14 @@ import { Appointment } from '../types';
  */
 export const createAppointment = async (appointmentData: Omit<Appointment, 'id' | 'createdAt'>): Promise<string> => {
     const appointmentsRef = collection(db, 'appointments');
+
+    // Filter out undefined values as Firestore doesn't support them
+    const sanitizedData = Object.fromEntries(
+        Object.entries(appointmentData).filter(([_, v]) => v !== undefined)
+    );
+
     const docRef = await addDoc(appointmentsRef, {
-        ...appointmentData,
+        ...sanitizedData,
         createdAt: serverTimestamp()
     });
     return docRef.id;
@@ -66,6 +72,23 @@ export const updateAppointmentReviewStatus = async (appointmentId: string, role:
     const updateData = role === 'student' ? { reviewedByStudent: true } : { reviewedByTutor: true };
     await updateDoc(appointmentRef, {
         ...updateData,
+        updatedAt: serverTimestamp()
+    });
+};
+
+export const updateAppointmentPaymentStatus = async (appointmentId: string, paymentStatus: Appointment['paymentStatus']): Promise<void> => {
+    const appointmentRef = doc(db, 'appointments', appointmentId);
+    await updateDoc(appointmentRef, {
+        paymentStatus,
+        updatedAt: serverTimestamp()
+    });
+};
+
+export const updateAppointmentConfirmations = async (appointmentId: string, role: 'student' | 'tutor'): Promise<void> => {
+    const appointmentRef = doc(db, 'appointments', appointmentId);
+    const field = role === 'student' ? 'confirmations.studentConfirmed' : 'confirmations.tutorConfirmed';
+    await updateDoc(appointmentRef, {
+        [field]: true,
         updatedAt: serverTimestamp()
     });
 };

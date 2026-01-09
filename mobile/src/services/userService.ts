@@ -100,6 +100,15 @@ export const subscribeToOtherUserSkills = (
     );
 };
 
+export const fetchOtherUserSkills = async (userId: string): Promise<Skill[]> => {
+    const skillsRef = collection(db, 'users', userId, 'skills');
+    const snapshot = await getDocs(skillsRef);
+    return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    } as Skill));
+};
+
 export const addSkill = async (skill: Omit<Skill, 'id'>): Promise<string> => {
     const userId = getCurrentUserId();
     const skillsRef = collection(db, 'users', userId, 'skills');
@@ -258,10 +267,19 @@ export const fetchUserAvailability = async (userId: string): Promise<Availabilit
 export const saveAvailability = async (days: AvailabilityDay[]): Promise<void> => {
     const userId = getCurrentUserId();
     const availabilityRef = doc(db, 'users', userId, 'availability', 'weekly');
-    await setDoc(availabilityRef, {
+    const userRef = doc(db, 'users', userId);
+
+    const batch = writeBatch(db);
+    batch.set(availabilityRef, {
         days,
         updatedAt: serverTimestamp(),
     });
+    batch.update(userRef, {
+        availabilityMode: 'weekly',
+        updatedAt: serverTimestamp()
+    });
+
+    await batch.commit();
 };
 
 export const subscribeToSpecificDates = (
@@ -295,13 +313,36 @@ export const subscribeToSpecificDates = (
 export const addSpecificDate = async (date: Date, start: string, end: string): Promise<string> => {
     const userId = getCurrentUserId();
     const datesRef = collection(db, 'users', userId, 'availability', 'specific', 'dates');
+    const userRef = doc(db, 'users', userId);
+
     const docRef = await addDoc(datesRef, {
         date: Timestamp.fromDate(date),
         start,
         end,
         createdAt: serverTimestamp()
     });
+
+    await updateDoc(userRef, {
+        availabilityMode: 'specific',
+        updatedAt: serverTimestamp()
+    });
+
     return docRef.id;
+};
+
+export const fetchOtherUserSpecificDates = async (userId: string): Promise<any[]> => {
+    const datesRef = collection(db, 'users', userId, 'availability', 'specific', 'dates');
+    const q = query(datesRef, orderBy('date', 'asc'));
+    const snapshot = await getDocs(q);
+
+    return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            id: doc.id,
+            ...data,
+            date: data.date instanceof Timestamp ? data.date.toDate() : new Date(data.date),
+        };
+    });
 };
 
 export const updateSpecificDate = async (dateId: string, updates: Partial<{ date: Date, start: string, end: string }>): Promise<void> => {

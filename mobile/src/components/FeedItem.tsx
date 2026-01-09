@@ -7,6 +7,8 @@ import { auth } from '../config/firebase';
 
 export { PostType };
 
+import { Avatar } from './Avatar';
+
 interface FeedItemProps {
     post: Post;
     onUserPress?: () => void;
@@ -41,7 +43,12 @@ const FeedItem: React.FC<FeedItemProps> = ({ post, onUserPress, onLike, onCommen
         <View style={styles.container}>
             <View style={styles.header}>
                 <TouchableOpacity style={styles.userInfo} onPress={onUserPress}>
-                    <Image source={{ uri: post.userAvatar }} style={styles.avatar} />
+                    <Avatar
+                        uri={post.userAvatar}
+                        name={post.userName}
+                        size={40}
+                        style={styles.avatar}
+                    />
                     <View>
                         <Text style={styles.userName}>{post.userName}</Text>
                         <Text style={styles.date}>{formatDate(post.createdAt)}</Text>
@@ -110,7 +117,6 @@ const styles = StyleSheet.create({
         height: 40,
         borderRadius: 20,
         marginRight: 12,
-        backgroundColor: '#333',
     },
     userName: {
         color: authColors.text,

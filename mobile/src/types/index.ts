@@ -4,7 +4,7 @@ export interface Skill {
     id: string;
     subject: string;
     level: SkillLevel;
-    price: string;
+    price?: string;
     type?: 'paid' | 'swap';
     rootId?: string;
 }
@@ -13,12 +13,6 @@ export interface LearnSkill {
     id: string;
     subject: string;
     rootId?: string;
-}
-
-export interface PromoVideo {
-    url: string;
-    title: string;
-    description: string;
 }
 
 export interface PromoVideo {
@@ -67,6 +61,7 @@ export interface UserProfile {
         zipCode?: string;
         city?: string;
     };
+    availabilityMode?: 'weekly' | 'specific';
     createdAt: any;
     promoVideos?: PromoVideo[];
 }
@@ -126,7 +121,9 @@ export interface Message {
     type?: 'text' | 'appointmentRequest';
     appointmentDate?: string;
     appointmentTime?: string;
-    appointmentStatus?: 'pending' | 'accepted' | 'rejected';
+    appointmentStatus?: 'pending' | 'accepted' | 'rejected' | 'countered';
+    duration?: number;
+    proposedPrice?: number;
 }
 
 export interface MatchRequest {
@@ -153,8 +150,19 @@ export interface Appointment {
     subtitle: string;
     date: string;
     time: string;
+    duration: number; // in hours
     location: 'fysiek' | 'online';
     status: 'confirmed' | 'pending' | 'cancelled' | 'completed';
+    paymentStatus: 'none' | 'pending' | 'escrow' | 'released';
+    price: number;
+    type: 'pay' | 'swap';
+    swapSkillId?: string;
+    swapSkillName?: string;
+    confirmations: {
+        studentConfirmed: boolean;
+        tutorConfirmed: boolean;
+    };
+    availabilityMode?: 'weekly' | 'specific';
     initials: string;
     fee?: number;
     address?: string;

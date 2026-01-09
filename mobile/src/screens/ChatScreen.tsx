@@ -22,6 +22,10 @@ import { Ionicons } from '@expo/vector-icons';
 
 
 
+import { Avatar } from '../components/Avatar';
+
+
+
 interface ChatScreenProps {
     matchRequests?: MatchRequest[];
     onRespondMatch: (matchId: string, status: 'accepted' | 'rejected') => Promise<void>;
@@ -80,6 +84,7 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
             contactName: otherInfo.name,
             contactInitials: otherInfo.initials,
             contactColor: otherInfo.avatarColor,
+            contactPhotoURL: otherInfo.photoURL,
         });
     };
 
@@ -95,9 +100,13 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
                 onPress={() => openConversation(item)}
             >
                 <View style={styles.avatarContainer}>
-                    <View style={[styles.contactAvatar, { backgroundColor: otherInfo.avatarColor || '#6366f1' }]}>
-                        <Text style={styles.contactAvatarText}>{otherInfo.initials}</Text>
-                    </View>
+                    <Avatar
+                        uri={otherInfo.photoURL}
+                        name={otherInfo.name}
+                        initials={otherInfo.initials}
+                        backgroundColor={otherInfo.avatarColor}
+                        size={54}
+                    />
                 </View>
                 <View style={styles.contactInfo}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -149,9 +158,11 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>Messages</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                    <View style={styles.userAvatar}>
-                        <Text style={styles.avatarText}>{auth.currentUser?.displayName?.charAt(0) || 'U'}</Text>
-                    </View>
+                    <Avatar
+                        uri={auth.currentUser?.photoURL}
+                        name={auth.currentUser?.displayName || 'User'}
+                        size={36}
+                    />
                 </View>
             </View>
 
@@ -272,9 +283,12 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
                                 displayedMatches.map(match => (
                                     <View key={match.id} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, backgroundColor: 'rgba(255,255,255,0.05)', padding: 12, borderRadius: 12 }}>
                                         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                                            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center', marginRight: 12 }}>
-                                                <Text style={{ color: '#fff', fontWeight: '700' }}>{match.fromUserName.charAt(0)}</Text>
-                                            </View>
+                                            <Avatar
+                                                uri={match.fromUserAvatar}
+                                                name={match.fromUserName}
+                                                size={40}
+                                                style={{ marginRight: 12 }}
+                                            />
                                             <View style={{ flex: 1 }}>
                                                 <TouchableOpacity onPress={() => handleOpenMatchChat(match)}>
                                                     <Text style={{ color: '#fff', fontWeight: '600' }}>{match.fromUserName}</Text>

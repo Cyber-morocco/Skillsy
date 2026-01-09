@@ -203,12 +203,12 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
         <TouchableOpacity
           style={styles.saveButton}
           onPress={() => {
-            Alert.alert('Succes', 'Beschikbaarheid opgeslagen', [
-              { text: 'OK', onPress: () => onNavigate && onNavigate('availability') }
+            Alert.alert('Modus Bijgewerkt', 'Je gebruikt nu Specifieke Datums voor je beschikbaarheid.', [
+              { text: 'OK', onPress: () => onNavigate && onNavigate('profile') }
             ]);
           }}
         >
-          <Text style={styles.saveButtonText}>Opslaan</Text>
+          <Text style={styles.saveButtonText}>Gereed</Text>
         </TouchableOpacity>
       </ScrollView>
 

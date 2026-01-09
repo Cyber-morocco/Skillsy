@@ -19,9 +19,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { authColors } from '../styles/authStyles';
 import { Review, Appointment } from '../types';
-import { subscribeToAppointments, updateAppointmentStatus, updateAppointmentReviewStatus } from '../services/appointmentService';
+import { subscribeToAppointments, updateAppointmentStatus, updateAppointmentReviewStatus, updateAppointmentPaymentStatus } from '../services/appointmentService';
 import { saveReview } from '../services/userService';
 import { auth } from '../config/firebase';
+import { Avatar } from '../components/Avatar';
 
 type Tab = 'upcoming' | 'past';
 
@@ -164,6 +165,14 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
             console.error('Error updating appointment status:', error);
             Alert.alert('Fout', 'Kon de status niet bijwerken.');
         }
+    }; const handleSimulatePayment = async (id: string) => {
+        try {
+            await updateAppointmentPaymentStatus(id, 'escrow');
+            Alert.alert('Betaling geslaagd!', 'Het geld wordt veilig vastgehouden in escrow tot de les is voltooid.');
+        } catch (error) {
+            console.error('Error simulating payment:', error);
+            Alert.alert('Fout', 'Kon de betaling niet verwerken.');
+        }
     };
 
     const renderAppointmentCard = (item: Appointment) => {
@@ -186,9 +195,12 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
             >
                 <View style={styles.cardHeader}>
                     <View style={styles.personContainer}>
-                        <View style={styles.avatarPlaceholder}>
-                            <Text style={styles.avatarText}>{initials}</Text>
-                        </View>
+                        <Avatar
+                            uri={isMeAsTutor ? item.studentAvatar : item.tutorAvatar}
+                            name={otherName}
+                            size={44}
+                            style={styles.avatarPlaceholder}
+                        />
                         <View>
                             <Text style={styles.subjectText}>{item.title}</Text>
                             <Text style={styles.personNameText}>Afspraak met {otherName}</Text>
@@ -220,13 +232,46 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                     </View>
                     <View style={[styles.detailRow, { marginLeft: 20 }]}>
                         <Ionicons name="time-outline" size={16} color={authColors.muted} />
-                        <Text style={styles.detailText}>{item.time}</Text>
+                        <Text style={styles.detailText}>{item.time} ({item.duration || 1}u)</Text>
                     </View>
                 </View>
 
-                <View style={styles.detailRow}>
-                    <Ionicons name="location-outline" size={16} color={authColors.muted} />
-                    <Text style={styles.detailText}>{item.address || item.location}</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <View style={styles.detailRow}>
+                        <Ionicons name="location-outline" size={16} color={authColors.muted} />
+                        <Text style={styles.detailText}>{item.address || item.location}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={{ color: item.type === 'swap' ? '#7C3AED' : '#22C55E', fontWeight: '800', fontSize: 18 }}>
+                            {item.type === 'swap' ? 'Ruil' : `€${item.price || 0}`}
+                        </Text>
+                    </View>
+                </View>
+
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <View style={[
+                        { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, flexDirection: 'row', alignItems: 'center' },
+                        item.type === 'swap' ? { backgroundColor: 'rgba(124, 58, 237, 0.1)' } :
+                            (item.paymentStatus === 'escrow' ? { backgroundColor: 'rgba(59, 130, 246, 0.1)' } :
+                                item.paymentStatus === 'released' ? { backgroundColor: 'rgba(16, 185, 129, 0.1)' } :
+                                    { backgroundColor: 'rgba(255, 255, 255, 0.05)' })
+                    ]}>
+                        <Ionicons
+                            name={item.type === 'swap' ? "swap-horizontal" : (item.paymentStatus === 'released' ? "checkmark-circle" : "shield-checkmark-outline")}
+                            size={14}
+                            color={item.type === 'swap' ? "#7C3AED" : (item.paymentStatus === 'released' ? "#10B981" : item.paymentStatus === 'escrow' ? "#3B82F6" : "#94A3B8")}
+                            style={{ marginRight: 4 }}
+                        />
+                        <Text style={{
+                            fontSize: 12,
+                            fontWeight: '700',
+                            color: item.type === 'swap' ? "#7C3AED" : (item.paymentStatus === 'released' ? "#10B981" : item.paymentStatus === 'escrow' ? "#3B82F6" : "#94A3B8")
+                        }}>
+                            {item.type === 'swap' ? 'GEEN BETALING NODIG' :
+                                (item.paymentStatus === 'released' ? 'BETAALD' :
+                                    item.paymentStatus === 'escrow' ? 'IN ESCROW' : 'NIET BETAALD')}
+                        </Text>
+                    </View>
                 </View>
 
                 {item.status === 'pending' && !isMeAsTutor && (
@@ -256,18 +301,40 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
 
                 {item.status === 'confirmed' && (
                     <View style={styles.actionButtons}>
-                        <TouchableOpacity
-                            style={styles.cancelButton}
-                            onPress={() => handleUpdateAppointmentStatus(item.id, 'cancelled')}
-                        >
-                            <Text style={styles.cancelButtonText}>Annuleren</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={styles.acceptButton}
-                            onPress={() => handleUpdateAppointmentStatus(item.id, 'completed')}
-                        >
-                            <Text style={styles.acceptButtonText}>Afronden</Text>
-                        </TouchableOpacity>
+                        {(!isMeAsTutor && item.type === 'pay' && (item.paymentStatus === 'none' || item.paymentStatus === 'pending')) ? (
+                            <TouchableOpacity
+                                style={[styles.acceptButton, { backgroundColor: '#3B82F6' }]}
+                                onPress={() => handleSimulatePayment(item.id)}
+                            >
+                                <Ionicons name="card-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
+                                <Text style={styles.acceptButtonText}>Nu Betalen (€{item.price})</Text>
+                            </TouchableOpacity>
+                        ) : (
+                            <>
+                                <TouchableOpacity
+                                    style={styles.cancelButton}
+                                    onPress={() => handleUpdateAppointmentStatus(item.id, 'cancelled')}
+                                >
+                                    <Text style={styles.cancelButtonText}>Annuleren</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.acceptButton, (item.type === 'pay' && (item.paymentStatus === 'none' || item.paymentStatus === 'pending') && !isMeAsTutor) && { opacity: 0.5 }]}
+                                    onPress={() => {
+                                        if (item.type === 'pay' && (item.paymentStatus === 'none' || item.paymentStatus === 'pending') && !isMeAsTutor) {
+                                            Alert.alert('Betaal eerst', 'Je moet de afspraak eerst betalen voordat je deze kunt afronden.');
+                                            return;
+                                        }
+                                        if (navigation) {
+                                            navigation.navigate('AppointmentDetail', { appointment: item });
+                                        } else {
+                                            handleUpdateAppointmentStatus(item.id, 'completed');
+                                        }
+                                    }}
+                                >
+                                    <Text style={styles.acceptButtonText}>Details & Afronden</Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
                     </View>
                 )}
 
