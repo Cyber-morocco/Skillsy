@@ -13,6 +13,8 @@ interface ExploreSearchBarProps {
   onSubmit: () => void;
   onToggleSearchType: () => void;
   onClear: () => void;
+  onToggleFilters: () => void;
+  filtersActive: boolean;
 }
 
 export const ExploreSearchBar: React.FC<ExploreSearchBarProps> = ({
@@ -23,6 +25,8 @@ export const ExploreSearchBar: React.FC<ExploreSearchBarProps> = ({
   onSubmit,
   onToggleSearchType,
   onClear,
+  onToggleFilters,
+  filtersActive,
 }) => (
   <View style={styles.header}>
     <TouchableOpacity style={styles.searchTypeToggleButton} onPress={onToggleSearchType}>
@@ -39,21 +43,19 @@ export const ExploreSearchBar: React.FC<ExploreSearchBarProps> = ({
         onSubmitEditing={onSubmit}
         returnKeyType="search"
       />
-      {searchQuery.length > 0 && (
-        <TouchableOpacity onPress={onClear} style={styles.searchButton}>
-          <Ionicons name="close" size={18} color="#7c3aed" />
-        </TouchableOpacity>
-      )}
-      {!isSearching && (
-        <TouchableOpacity onPress={onSubmit} style={styles.searchButton}>
-          <Ionicons name="arrow-forward" size={18} color="#7c3aed" />
-        </TouchableOpacity>
-      )}
+      {/* Removed clear (close) and submit (arrow) buttons as requested */}
       {isSearching && (
         <View style={styles.searchButton}>
           <Text style={{ color: '#7c3aed' }}>...</Text>
         </View>
       )}
+      <TouchableOpacity onPress={onToggleFilters} style={styles.searchButton}>
+        <MaterialCommunityIcons
+          name="filter-variant"
+          size={20}
+          color={filtersActive ? '#10b981' : '#7c3aed'}
+        />
+      </TouchableOpacity>
     </View>
   </View>
 );

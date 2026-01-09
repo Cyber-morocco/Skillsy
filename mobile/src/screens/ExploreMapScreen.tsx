@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StatusBar, View, TouchableOpacity, ScrollView, Image, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ExploreSearchBar } from '../features/explore/ExploreSearchBar';
 import { FiltersBar } from '../features/explore/FiltersBar';
 import { MapViewLeaflet } from './logic/MapViewLeaflet';
@@ -41,7 +42,28 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
     profileReady,
   } = useExploreMap();
 
+  const [filtersVisible, setFiltersVisible] = useState<boolean>(true);
+
   const filtersActive = (selectedDistance !== null) || (selectedCategories.length > 0) || (Boolean(skillSearch && skillSearch.trim().length > 0));
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const saved = await AsyncStorage.getItem('exploreFiltersVisible');
+        if (saved !== null) {
+          setFiltersVisible(saved === 'true');
+        }
+      } catch {}
+    })();
+  }, []);
+
+  const toggleFiltersVisible = async () => {
+    const next = !filtersVisible;
+    setFiltersVisible(next);
+    try {
+      await AsyncStorage.setItem('exploreFiltersVisible', next ? 'true' : 'false');
+    } catch {}
+  };
 
   const handleTalentPress = (talentId: string) => {
     const talent = filteredTalents.find(t => t.id === talentId);
@@ -66,19 +88,23 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
         onSubmit={handleSearch}
         onToggleSearchType={toggleSearchType}
         onClear={resetSearch}
+        onToggleFilters={toggleFiltersVisible}
+        filtersActive={filtersActive}
       />
 
-      <FiltersBar
-        selectedDistance={selectedDistance}
-        onSelectDistance={handleDistanceSelect}
-        selectedCategories={selectedCategories}
-        onToggleCategory={handleCategorySelect}
-        onClearCategories={clearCategories}
-        viewMode={viewMode}
-        onToggleViewMode={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
-        distanceOptions={DISTANCE_OPTIONS}
-        categoryOptions={CATEGORY_OPTIONS}
-      />
+      {filtersVisible && (
+        <FiltersBar
+          selectedDistance={selectedDistance}
+          onSelectDistance={handleDistanceSelect}
+          selectedCategories={selectedCategories}
+          onToggleCategory={handleCategorySelect}
+          onClearCategories={clearCategories}
+          viewMode={viewMode}
+          onToggleViewMode={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
+          distanceOptions={DISTANCE_OPTIONS}
+          categoryOptions={CATEGORY_OPTIONS}
+        />
+      )}
 
       <View style={styles.mapContainer}>
         {viewMode === 'map' ? (
