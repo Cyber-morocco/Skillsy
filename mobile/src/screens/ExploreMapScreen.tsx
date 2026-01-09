@@ -42,7 +42,7 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
     profileReady,
   } = useExploreMap();
 
-  const [filtersVisible, setFiltersVisible] = useState<boolean>(true);
+  const [filtersVisible, setFiltersVisible] = useState<boolean>(false);
 
   const filtersActive = (selectedDistance !== null) || (selectedCategories.length > 0) || (Boolean(skillSearch && skillSearch.trim().length > 0));
 
@@ -56,6 +56,13 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
       } catch {}
     })();
   }, []);
+
+  useEffect(() => {
+    // Hide filters whenever switching into map mode (covers entering from other pages when remounted)
+    if (viewMode !== 'list') {
+      setFiltersVisible(false);
+    }
+  }, [viewMode]);
 
   const toggleFiltersVisible = async () => {
     const next = !filtersVisible;
