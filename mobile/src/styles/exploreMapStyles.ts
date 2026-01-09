@@ -190,10 +190,37 @@ export const exploreMapStyles = StyleSheet.create({
   talentInfo: {
     flex: 1,
   },
+  talentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   talentName: {
     fontSize: 16,
     fontWeight: '700',
     color: '#F8FAFC',
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  ratingIcon: {
+    fontSize: 12,
+  },
+  ratingText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#F8FAFC',
+  },
+  reviewCount: {
+    fontSize: 11,
+    color: '#94A3B8',
+  },
+  talentLocation: {
+    fontSize: 12,
+    color: '#94A3B8',
+    marginTop: 4,
   },
   talentBio: {
     fontSize: 12,
@@ -206,13 +233,70 @@ export const exploreMapStyles = StyleSheet.create({
     marginTop: 8,
     gap: 6,
   },
-  skillTag: {
+  skillBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#7c3aed',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    gap: 6,
+  },
+  skillBadgeMatch: {
+    backgroundColor: '#10b981',
+    borderWidth: 1,
+    borderColor: '#059669',
+  },
+  matchIndicator: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#F8FAFC',
+  },
+  skillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#F8FAFC',
+  },
+  skillDivider: {
     fontSize: 11,
-    backgroundColor: 'rgba(124, 58, 237, 0.1)',
+    color: '#E0E7FF',
+  },
+  priceText: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#E0E7FF',
+  },
+  moreSkillsBadge: {
+    backgroundColor: 'rgba(124, 58, 237, 0.3)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#7c3aed',
+  },
+  moreSkillsText: {
+    fontSize: 12,
+    fontWeight: '500',
     color: '#7c3aed',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+  },
+  skillWithPrice: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(124, 58, 237, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  skillName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#7c3aed',
+  },
+  skillPrice: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#94A3B8',
   },
   resultsContainer: {
     flexDirection: 'row',
