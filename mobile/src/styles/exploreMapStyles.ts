@@ -322,7 +322,17 @@ export const exploreMapStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#059669',
   },
+  skillBadgeTeachingMatch: {
+    backgroundColor: '#f59e0b',
+    borderWidth: 1,
+    borderColor: '#d97706',
+  },
   matchIndicator: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#F8FAFC',
+  },
+  teachingMatchIndicator: {
     fontSize: 14,
     fontWeight: 'bold',
     color: '#F8FAFC',

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { VideoView, useVideoPlayer } from 'expo-video';
+import { Ionicons } from '@expo/vector-icons';
 import {
   subscribeToOtherUserProfile,
   subscribeToOtherUserSkills,
@@ -129,8 +130,15 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({
 
       <View style={styles.content}>
         <View style={styles.topRow}>
-          <TouchableOpacity activeOpacity={0.8} style={styles.roundIconButton} onPress={onBack}>
-            <Text style={styles.roundIconText}>←</Text>
+          <TouchableOpacity 
+            activeOpacity={0.7} 
+            style={styles.backButton} 
+            onPress={onBack}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <View style={styles.backButtonInner}>
+              <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -336,6 +344,24 @@ const styles = StyleSheet.create({
   roundIconText: {
     fontSize: 18,
     color: colors.text,
+  },
+  backButton: {
+    marginLeft: 0,
+  },
+  backButtonInner: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(20, 20, 30, 0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
   },
   profileHeader: {
     alignItems: 'center',
