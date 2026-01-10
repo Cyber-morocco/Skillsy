@@ -107,6 +107,9 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
                         backgroundColor={otherInfo.avatarColor}
                         size={54}
                     />
+                    {(item.unreadCount?.[auth.currentUser?.uid || ''] || 0) > 0 && (
+                        <View style={styles.unreadIndicator} />
+                    )}
                 </View>
                 <View style={styles.contactInfo}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>

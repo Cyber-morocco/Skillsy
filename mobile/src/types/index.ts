@@ -122,11 +122,19 @@ export interface Message {
     senderId: string;
     createdAt: any;
     type?: 'text' | 'appointmentRequest';
+    duration?: number;
+    proposedPrice?: number;
+    matchType?: 'pay' | 'swap';
+    swapSkillName?: string;
+    tutorSkillName?: string;
     appointmentDate?: string;
     appointmentTime?: string;
     appointmentStatus?: 'pending' | 'accepted' | 'rejected' | 'countered';
-    duration?: number;
-    proposedPrice?: number;
+    dateKey?: string;
+    startTimeMinutes?: number;
+    endTimeMinutes?: number;
+    tutorId?: string;
+    studentId?: string;
 }
 
 export interface MatchRequest {
@@ -152,15 +160,19 @@ export interface Appointment {
     title: string;
     subtitle: string;
     date: string;
+    dateKey: string; // YYYY-MM-DD for easier querying
     time: string;
+    startTimeMinutes: number; // minutes from midnight
+    endTimeMinutes: number;
     duration: number; // in hours
-    location: 'fysiek' | 'online';
     status: 'confirmed' | 'pending' | 'cancelled' | 'completed';
     paymentStatus: 'none' | 'pending' | 'escrow' | 'released';
     price: number;
     type: 'pay' | 'swap';
     swapSkillId?: string;
     swapSkillName?: string;
+    tutorSkillName?: string;
+    location: 'fysiek' | 'online';
     confirmations: {
         studentConfirmed: boolean;
         tutorConfirmed: boolean;

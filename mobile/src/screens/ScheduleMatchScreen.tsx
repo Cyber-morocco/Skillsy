@@ -12,14 +12,16 @@ import {
     TextInput,
     KeyboardAvoidingView,
     Platform,
+    TouchableWithoutFeedback,
+    Keyboard,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { scheduleMatchStyles as styles, scheduleMatchColors } from '../styles/ScheduleMatchStyles';
 import { fetchUserAvailability, fetchOtherUserSpecificDates, subscribeToOtherUserProfile, fetchOtherUserSkills } from '../services/userService';
-import { createAppointment } from '../services/appointmentService';
+import { createAppointment, fetchAppointmentsByDate, isOverlapping } from '../services/appointmentService';
 import { auth } from '../config/firebase';
-import { AvailabilityDay, UserProfile, Skill } from '../types';
+import { AvailabilityDay, UserProfile, Skill, Appointment } from '../types';
 
 interface PersonAvailability {
     name: string;
@@ -40,7 +42,7 @@ interface ScheduleMatchScreenProps {
     contactColor: string;
     contactSubtitle?: string;
     onBack: () => void;
-    onMatch?: (day: string, time: string, duration: number, price: number, type: 'pay' | 'swap', swapSkillName?: string, tutorSkillName?: string) => void;
+    onMatch?: (day: string, time: string, duration: number, price: number, type: 'pay' | 'swap', swapSkillName?: string, tutorSkillName?: string, dateKey?: string) => void;
     initialData?: {
         duration?: number;
         price?: number;
@@ -70,12 +72,13 @@ export default function ScheduleMatchScreen({
     const [selectedMatch, setSelectedMatch] = useState<MatchEntry | null>(null);
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
     const [selectedDuration, setSelectedDuration] = useState(initialData?.duration || 1);
-    const [proposedPrice, setProposedPrice] = useState(initialData?.price?.toString() || '25');
+    const [proposedPrice, setProposedPrice] = useState('');
     const [tutorSkills, setTutorSkills] = useState<Skill[]>([]);
     const [mySkills, setMySkills] = useState<Skill[]>([]);
     const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
     const [selectedMySkill, setSelectedMySkill] = useState<Skill | null>(null);
     const [matchType, setMatchType] = useState<'pay' | 'swap'>(initialData?.type || 'pay');
+    const [existingAppointments, setExistingAppointments] = useState<{ [dateKey: string]: Appointment[] }>({});
 
     useEffect(() => {
         const loadAllAvailability = async () => {
@@ -138,7 +141,39 @@ export default function ScheduleMatchScreen({
             }
         };
 
+        const loadExistingAppointments = async () => {
+            const myId = auth.currentUser?.uid;
+            if (!myId) return;
+
+            const dates: string[] = [];
+            const today = new Date();
+            for (let i = 0; i < 14; i++) {
+                const d = new Date(today);
+                d.setDate(today.getDate() + i);
+                dates.push(d.toISOString().split('T')[0]);
+            }
+
+            const appointmentsMap: { [dateKey: string]: Appointment[] } = {};
+
+            // This is a bit heavy (2 requests per day per user). 
+            // Better would be a bulk fetch for 14 days.
+            // But let's stick to the current service structure or optimize.
+            // Let's do a single promise per user for all 14 days if possible.
+            // Actually, fetchAppointmentsByDate already Existe.
+
+            await Promise.all(dates.map(async (dateKey) => {
+                const [myApps, otherApps] = await Promise.all([
+                    fetchAppointmentsByDate(myId, dateKey),
+                    fetchAppointmentsByDate(contactId, dateKey)
+                ]);
+                appointmentsMap[dateKey] = [...myApps, ...otherApps];
+            }));
+
+            setExistingAppointments(appointmentsMap);
+        };
+
         loadAllAvailability();
+        loadExistingAppointments();
     }, [contactId]);
 
     // Live filtering when duration or rawAvailability changes
@@ -188,7 +223,7 @@ export default function ScheduleMatchScreen({
         };
 
         generateMatches();
-    }, [rawAvailability, selectedDuration]);
+    }, [rawAvailability, selectedDuration, existingAppointments]);
 
     const calculateOverlaps = (entry: MatchEntry): string[] => {
         const mySlot = entry.people[0].times[0];
@@ -200,6 +235,9 @@ export default function ScheduleMatchScreen({
             const [h, m] = t.split(':').map(Number);
             return h * 60 + m;
         };
+
+        const dateKey = entry.date.toISOString().split('T')[0];
+        const dayAppointments = existingAppointments[dateKey] || [];
 
         const myStart = parseTime(mySlot.start);
         const myEnd = parseTime(mySlot.end);
@@ -220,8 +258,15 @@ export default function ScheduleMatchScreen({
                 const m = mins % 60;
                 return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
             };
-            slots.push(`${format(current)} - ${format(current + durationMins)}`);
-            current += 30; // 30 min steps to allow choosing any 2h in a larger window
+
+            const currentEnd = current + durationMins;
+
+            // Check if this specific slot overlaps with an existing appointment
+            if (!isOverlapping(current, currentEnd, dayAppointments)) {
+                slots.push(`${format(current)} - ${format(currentEnd)}`);
+            }
+
+            current += 30; // 30 min steps
         }
         return slots;
     };
@@ -235,6 +280,19 @@ export default function ScheduleMatchScreen({
 
     const confirmMatch = async (timeSlot: string) => {
         if (!selectedMatch) return;
+
+        if (matchType === 'pay') {
+            const price = parseFloat(proposedPrice);
+            if (isNaN(price) || price <= 0) {
+                Alert.alert('Fout', 'Voer un geldig bedrag in.');
+                return;
+            }
+            if (price > 15) {
+                Alert.alert('Limiët bereikt', 'De maximum prijs voor een les is €15.');
+                return;
+            }
+        }
+
         setModalVisible(false);
 
         try {
@@ -245,6 +303,13 @@ export default function ScheduleMatchScreen({
                 weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             });
 
+            const dateKey = selectedMatch.date.toISOString().split('T')[0];
+            const [startStr, endStr] = timeSlot.split(' - ');
+            const parseTime = (t: string) => {
+                const [h, m] = t.split(':').map(Number);
+                return h * 60 + m;
+            };
+
             await createAppointment({
                 tutorId: contactId,
                 studentId: myId,
@@ -254,7 +319,10 @@ export default function ScheduleMatchScreen({
                 title: selectedSkill?.subject || contactSubtitle || 'Skill Swap',
                 subtitle: `Les ${selectedSkill?.subject || ''} met ${contactName}`,
                 date: fullFormattedDate,
+                dateKey: dateKey,
                 time: timeSlot,
+                startTimeMinutes: parseTime(startStr),
+                endTimeMinutes: parseTime(endStr),
                 duration: selectedDuration,
                 price: matchType === 'pay' ? (parseFloat(proposedPrice) || 0) : 0,
                 type: matchType,
@@ -271,7 +339,7 @@ export default function ScheduleMatchScreen({
             });
 
             if (onMatch) {
-                onMatch(fullFormattedDate, timeSlot, selectedDuration, matchType === 'pay' ? (parseFloat(proposedPrice) || 0) : 0, matchType, selectedMySkill?.subject, selectedSkill?.subject);
+                onMatch(fullFormattedDate, timeSlot, selectedDuration, matchType === 'pay' ? (parseFloat(proposedPrice) || 0) : 0, matchType, selectedMySkill?.subject, selectedSkill?.subject, dateKey);
             } else {
                 const message = matchType === 'pay'
                     ? `Verzoek verzonden naar ${contactName} voor ${fullFormattedDate}.`
@@ -470,62 +538,79 @@ export default function ScheduleMatchScreen({
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'flex-end' }}
                 >
-                    <View style={{ backgroundColor: '#111827', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%' }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                            <Text style={{ color: '#fff', fontSize: 22, fontWeight: '900' }}>Inplannen</Text>
-                            <TouchableOpacity onPress={() => setModalVisible(false)} style={{ padding: 4 }}>
-                                <Ionicons name="close-circle" size={32} color="#fff" />
-                            </TouchableOpacity>
-                        </View>
+                    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                        <View style={{ flex: 1 }} />
+                    </TouchableWithoutFeedback>
+                    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                        <View style={{ backgroundColor: '#111827', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%' }}>
+                            <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+                                <View>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                                        <Text style={{ color: '#fff', fontSize: 22, fontWeight: '900' }}>Inplannen</Text>
+                                        <TouchableOpacity onPress={() => setModalVisible(false)} style={{ padding: 4 }}>
+                                            <Ionicons name="close-circle" size={32} color="#fff" />
+                                        </TouchableOpacity>
+                                    </View>
 
-                        <View style={{ marginBottom: 24, backgroundColor: 'rgba(34, 197, 94, 0.1)', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(34, 197, 94, 0.2)' }}>
-                            <Text style={{ color: '#22C55E', fontSize: 12, fontWeight: '800', textTransform: 'uppercase', marginBottom: 4 }}>Wanneer</Text>
-                            <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>{selectedMatch?.dayName} {selectedMatch?.formattedDate}</Text>
-                        </View>
+                                    <View style={{ marginBottom: 24, backgroundColor: 'rgba(34, 197, 94, 0.1)', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(34, 197, 94, 0.2)' }}>
+                                        <Text style={{ color: '#22C55E', fontSize: 12, fontWeight: '800', textTransform: 'uppercase', marginBottom: 4 }}>Wanneer</Text>
+                                        <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>{selectedMatch?.dayName} {selectedMatch?.formattedDate}</Text>
+                                    </View>
 
-                        {matchType === 'pay' ? (
-                            <View style={{ marginBottom: 24 }}>
-                                <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '800', marginBottom: 12, textTransform: 'uppercase' }}>Jouw Prijs (€)</Text>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, paddingHorizontal: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
-                                    <Text style={{ color: '#F8FAFC', fontSize: 24, fontWeight: '700', marginRight: 8 }}>€</Text>
-                                    <TextInput
-                                        style={{ flex: 1, color: '#F8FAFC', fontSize: 24, fontWeight: '700', height: 60 }}
-                                        keyboardType="numeric"
-                                        value={proposedPrice}
-                                        onChangeText={setProposedPrice}
-                                        autoFocus
+                                    {matchType === 'pay' ? (
+                                        <View style={{ marginBottom: 24 }}>
+                                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                                                <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '800', textTransform: 'uppercase' }}>Jouw Prijs (€)</Text>
+                                                <View style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+                                                    <Text style={{ color: '#EF4444', fontSize: 10, fontWeight: '800' }}>MAX €15</Text>
+                                                </View>
+                                            </View>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, paddingHorizontal: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                                                <Text style={{ color: '#F8FAFC', fontSize: 24, fontWeight: '700', marginRight: 8 }}>€</Text>
+                                                <TextInput
+                                                    style={{ flex: 1, color: '#F8FAFC', fontSize: 24, fontWeight: '700', height: 60 }}
+                                                    keyboardType="numeric"
+                                                    value={proposedPrice}
+                                                    onChangeText={setProposedPrice}
+                                                    placeholder="0"
+                                                    placeholderTextColor="rgba(255,255,255,0.2)"
+                                                    selectTextOnFocus={true}
+                                                    autoFocus
+                                                />
+                                            </View>
+                                        </View>
+                                    ) : (
+                                        <View style={{ marginBottom: 24, backgroundColor: 'rgba(124, 58, 237, 0.1)', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(124, 58, 237, 0.2)' }}>
+                                            <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', textTransform: 'uppercase', marginBottom: 4 }}>Transactie</Text>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                                <Ionicons name="repeat" size={20} color="#7C3AED" style={{ marginRight: 8 }} />
+                                                <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>Gratis (Skill Swap)</Text>
+                                            </View>
+                                        </View>
+                                    )}
+
+                                    <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '800', marginBottom: 16, textTransform: 'uppercase' }}>Kies een starttijd</Text>
+                                    <FlatList
+                                        data={availableSlots}
+                                        keyExtractor={(item) => item}
+                                        numColumns={2}
+                                        columnWrapperStyle={{ gap: 12 }}
+                                        renderItem={({ item }) => (
+                                            <TouchableOpacity
+                                                style={{ flex: 1, padding: 16, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', alignItems: 'center' }}
+                                                onPress={() => confirmMatch(item)}
+                                            >
+                                                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '800' }}>{item.split(' - ')[0]}</Text>
+                                                <Text style={{ color: '#94A3B8', fontSize: 11, marginTop: 2 }}>tot {item.split(' - ')[1]}</Text>
+                                            </TouchableOpacity>
+                                        )}
+                                        showsVerticalScrollIndicator={false}
+                                        style={{ marginBottom: 20 }}
                                     />
                                 </View>
-                            </View>
-                        ) : (
-                            <View style={{ marginBottom: 24, backgroundColor: 'rgba(124, 58, 237, 0.1)', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(124, 58, 237, 0.2)' }}>
-                                <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', textTransform: 'uppercase', marginBottom: 4 }}>Transactie</Text>
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                    <Ionicons name="repeat" size={20} color="#7C3AED" style={{ marginRight: 8 }} />
-                                    <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>Gratis (Skill Swap)</Text>
-                                </View>
-                            </View>
-                        )}
-
-                        <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '800', marginBottom: 16, textTransform: 'uppercase' }}>Kies een starttijd</Text>
-                        <FlatList
-                            data={availableSlots}
-                            keyExtractor={(item) => item}
-                            numColumns={2}
-                            columnWrapperStyle={{ gap: 12 }}
-                            renderItem={({ item }) => (
-                                <TouchableOpacity
-                                    style={{ flex: 1, padding: 16, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', alignItems: 'center' }}
-                                    onPress={() => confirmMatch(item)}
-                                >
-                                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: '800' }}>{item.split(' - ')[0]}</Text>
-                                    <Text style={{ color: '#94A3B8', fontSize: 11, marginTop: 2 }}>tot {item.split(' - ')[1]}</Text>
-                                </TouchableOpacity>
-                            )}
-                            showsVerticalScrollIndicator={false}
-                            style={{ marginBottom: 20 }}
-                        />
-                    </View>
+                            </TouchableWithoutFeedback>
+                        </View>
+                    </TouchableWithoutFeedback>
                 </KeyboardAvoidingView>
             </Modal>
         </SafeAreaView>

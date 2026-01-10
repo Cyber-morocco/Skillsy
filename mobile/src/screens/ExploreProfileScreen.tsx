@@ -60,9 +60,16 @@ interface ExploreProfileScreenProps {
   onBack?: () => void;
   onMakeAppointment?: () => void;
   onSendMessage?: () => void;
+  matchStatus?: 'none' | 'pending_sent' | 'pending_received' | 'active';
 }
 
-const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onBack, onMakeAppointment, onSendMessage }) => {
+const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({
+  userId,
+  onBack,
+  onMakeAppointment,
+  onSendMessage,
+  matchStatus = 'none'
+}) => {
   const [activeTab, setActiveTab] = useState<'vaardigheden' | 'wilLeren' | 'videos'>('vaardigheden');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [skills, setSkills] = useState<Skill[]>([]);
@@ -142,8 +149,6 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
           <View style={styles.locationRow}>
             <Text style={styles.locationIcon}>📍</Text>
             <Text style={styles.locationText}>{profile?.location?.city || 'Locatie onbekend'}</Text>
-            <View style={styles.locationDot} />
-            <Text style={styles.locationText}>-- km</Text>
           </View>
 
           {reviews.length >= 5 && (
@@ -157,11 +162,18 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({ userId, onB
 
         <View style={styles.actionRow}>
           <TouchableOpacity
-            activeOpacity={0.9}
-            style={styles.primaryButton}
-            onPress={onSendMessage}
+            activeOpacity={matchStatus === 'pending_sent' ? 1 : 0.9}
+            style={[
+              styles.primaryButton,
+              matchStatus === 'pending_sent' && { backgroundColor: 'rgba(124, 58, 237, 0.3)' }
+            ]}
+            onPress={matchStatus === 'pending_sent' ? undefined : onSendMessage}
           >
-            <Text style={styles.primaryButtonText}>Match</Text>
+            <Text style={styles.primaryButtonText}>
+              {matchStatus === 'none' ? 'Match' :
+                matchStatus === 'pending_sent' ? 'Match Verstuurd' :
+                  'Bericht'}
+            </Text>
           </TouchableOpacity>
         </View>
 

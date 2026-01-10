@@ -23,6 +23,9 @@ import {
   deleteVideo,
 } from '../services/userService';
 import * as ImagePicker from 'expo-image-picker';
+import { resolveSkillIntelligence, SkillResolutionResult } from '../services/skillIntelligenceService';
+import { ROOT_CATEGORIES } from '../constants/categories';
+import { useRef } from 'react';
 
 interface ProfileScreenProps {
   onNavigate?: (screen: 'availability') => void;
@@ -40,6 +43,9 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [modalVisible, setModalVisible] = useState(false);
   const [newSubject, setNewSubject] = useState('');
   const [newLevel, setNewLevel] = useState<SkillLevel>('Beginner');
+  const [intelligenceResult, setIntelligenceResult] = useState<SkillResolutionResult | null>(null);
+  const [loadingIntelligence, setLoadingIntelligence] = useState(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [learnModalVisible, setLearnModalVisible] = useState(false);
   const [newLearnSubject, setNewLearnSubject] = useState('');
@@ -57,9 +63,16 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [tempName, setTempName] = useState('');
-  const [tempLocation, setTempLocation] = useState('');
   const [tempAbout, setTempAbout] = useState('');
   const [tempImage, setTempImage] = useState<string | null>(null);
+
+  // Structured address states
+  const [tempStreet, setTempStreet] = useState('');
+  const [tempZipCode, setTempZipCode] = useState('');
+  const [tempCity, setTempCity] = useState('');
+  const [tempCoords, setTempCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [addressSuggestions, setAddressSuggestions] = useState<any[]>([]);
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
 
   useEffect(() => {
     const unsubscribeProfile = subscribeToUserProfile(
@@ -110,6 +123,32 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
     };
   }, []);
 
+  useEffect(() => {
+    if (newSubject.length < 3) {
+      setIntelligenceResult(null);
+      setLoadingIntelligence(false);
+      return;
+    }
+
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+    setLoadingIntelligence(true);
+    typingTimeoutRef.current = setTimeout(async () => {
+      try {
+        const result = await resolveSkillIntelligence(newSubject);
+        setIntelligenceResult(result);
+      } catch (error) {
+        console.error("Intelligence error:", error);
+      } finally {
+        setLoadingIntelligence(false);
+      }
+    }, 600);
+
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
+  }, [newSubject]);
+
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
@@ -120,6 +159,69 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
 
     if (!result.canceled) {
       setTempImage(result.assets[0].uri);
+    }
+  };
+
+  const searchAddress = async (text: string) => {
+    setTempStreet(text);
+    if (text.length < 3) {
+      setAddressSuggestions([]);
+      setShowAddressSuggestions(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://photon.komoot.io/api/?q=${encodeURIComponent(text)}&limit=5`
+      );
+      const data = await response.json();
+      setAddressSuggestions(data.features || []);
+      setShowAddressSuggestions((data.features || []).length > 0);
+    } catch (error) {
+      console.error('Photon API error:', error);
+    }
+  };
+
+  const selectAddressSuggestion = (feature: any) => {
+    const { properties, geometry } = feature;
+
+    const streetName = properties.street || properties.name || '';
+    const houseNumber = properties.housenumber ? ` ${properties.housenumber}` : '';
+    const fullStreet = `${streetName}${houseNumber}`.trim();
+
+    setTempStreet(fullStreet);
+    setTempZipCode(properties.postcode || '');
+    setTempCity(properties.city || '');
+
+    if (geometry && geometry.coordinates) {
+      setTempCoords({
+        lat: geometry.coordinates[1],
+        lng: geometry.coordinates[0]
+      });
+    }
+
+    setAddressSuggestions([]);
+    setShowAddressSuggestions(false);
+  };
+
+  const geocodeAddress = async (street: string, city: string, zipCode: string): Promise<{ lat: number; lng: number } | null> => {
+    try {
+      const address = `${street}, ${zipCode} ${city}`;
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`,
+        { headers: { 'User-Agent': 'Skillsy-App/1.0' } }
+      );
+      const data = await response.json();
+      if (data && data.length > 0) {
+        return {
+          lat: parseFloat(data[0].lat),
+          lng: parseFloat(data[0].lon),
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      return null;
     }
   };
 
@@ -143,15 +245,43 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
 
   const handleEditProfile = () => {
     setTempName(userProfile?.displayName || '');
-    setTempLocation(userProfile?.location?.city || '');
+    setTempStreet(userProfile?.location?.street || '');
+    setTempZipCode(userProfile?.location?.zipCode || '');
+    setTempCity(userProfile?.location?.city || '');
+    setTempCoords(
+      userProfile?.location?.lat && userProfile?.location?.lng
+        ? { lat: userProfile.location.lat, lng: userProfile.location.lng }
+        : null
+    );
     setTempAbout(userProfile?.bio || '');
     setTempImage(userProfile?.photoURL || null);
     setEditModalVisible(true);
   };
 
   const saveProfile = async () => {
+    if (!tempName.trim() || !tempStreet.trim() || !tempZipCode.trim() || !tempCity.trim()) {
+      Alert.alert('Fout', 'Vul alle verplichte velden in');
+      return;
+    }
+
     setSaving(true);
     try {
+      let finalCoords = tempCoords;
+
+      // Fallback to geocoding if coords were not set by autocomplete
+      if (!finalCoords) {
+        finalCoords = await geocodeAddress(tempStreet, tempCity, tempZipCode);
+      }
+
+      if (!finalCoords) {
+        Alert.alert(
+          'Adres niet gevonden',
+          'We konden dit adres niet verifiëren. Controleer of de straatnaam, postcode en stad correct zijn.'
+        );
+        setSaving(false);
+        return;
+      }
+
       let finalImageUrl = userProfile?.photoURL || null;
 
       if (tempImage === null) {
@@ -165,24 +295,27 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
       }
 
       await updateUserProfile({
-        displayName: tempName,
+        displayName: tempName.trim(),
         location: {
-          ...userProfile?.location,
-          city: tempLocation,
+          street: tempStreet.trim(),
+          zipCode: tempZipCode.trim(),
+          city: tempCity.trim(),
+          lat: finalCoords.lat,
+          lng: finalCoords.lng,
         },
-        bio: tempAbout,
+        bio: tempAbout.trim(),
         photoURL: finalImageUrl,
       });
 
-      setProfileName(tempName);
-      setProfileLocation(tempLocation);
-      setProfileAbout(tempAbout);
+      setProfileName(tempName.trim());
+      setProfileLocation(tempCity.trim());
+      setProfileAbout(tempAbout.trim());
       setProfileImage(finalImageUrl as string);
       setEditModalVisible(false);
       Alert.alert('Succes', 'Profiel bijgewerkt');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving profile:', error);
-      Alert.alert('Fout', 'Kon profiel niet bijwerken');
+      Alert.alert('Fout', error.message || 'Kon profiel niet bijwerken');
     } finally {
       setSaving(false);
     }
@@ -311,14 +444,27 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const SaveSkill = async () => {
     if (!newSubject) return;
     setSaving(true);
+
+    let rootId = 'overig';
+    let finalSubject = newSubject.trim();
+
+    if (intelligenceResult?.type === 'auto_map' && intelligenceResult.match) {
+      rootId = intelligenceResult.match.concept.rootId;
+      finalSubject = intelligenceResult.match.concept.label;
+    } else if (intelligenceResult?.type === 'discovery' && intelligenceResult.proposed) {
+      rootId = intelligenceResult.proposed.rootId;
+    }
+
     try {
       await addSkill({
-        subject: newSubject,
+        subject: finalSubject,
         level: newLevel,
+        rootId: rootId,
       });
       setModalVisible(false);
       setNewSubject('');
       setNewLevel('Beginner');
+      setIntelligenceResult(null);
     } catch (error) {
       console.error('Error saving skill:', error);
       Alert.alert('Fout', 'Kon vaardigheid niet opslaan');
@@ -491,21 +637,25 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
               </TouchableOpacity>
             </View>
 
-            {skills.map((skill) => (
-              <TouchableOpacity key={skill.id} style={styles.skillCard} activeOpacity={0.7}>
-                <View style={styles.skillInfo}>
-                  <View style={styles.skillHeader}>
-                    <Text style={styles.skillSubject}>{skill.subject}</Text>
-                    <View style={styles.levelBadge}>
-                      <Text style={styles.levelText}>{skill.level}</Text>
+            {skills.map((skill) => {
+              const catColor = ROOT_CATEGORIES.find(c => c.id === skill.rootId)?.color || 'rgba(255,255,255,0.2)';
+              return (
+                <TouchableOpacity key={skill.id} style={styles.skillCard} activeOpacity={0.7}>
+                  <View style={styles.skillInfo}>
+                    <View style={styles.skillHeader}>
+                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: catColor, marginRight: 4 }} />
+                      <Text style={styles.skillSubject}>{skill.subject}</Text>
+                      <View style={styles.levelBadge}>
+                        <Text style={styles.levelText}>{skill.level}</Text>
+                      </View>
                     </View>
                   </View>
-                </View>
-                <TouchableOpacity onPress={() => handleDeleteSkill(skill.id)}>
-                  <Ionicons name="trash-outline" size={20} color="#ff4444" />
+                  <TouchableOpacity onPress={() => handleDeleteSkill(skill.id)}>
+                    <Ionicons name="trash-outline" size={20} color="#ff4444" />
+                  </TouchableOpacity>
                 </TouchableOpacity>
-              </TouchableOpacity>
-            ))}
+              );
+            })}
           </View>
         )}
         {activeTab === 'wilLeren' && (
@@ -766,6 +916,27 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                   value={newSubject}
                   onChangeText={setNewSubject}
                 />
+                {loadingIntelligence && (
+                  <View style={{ position: 'absolute', right: 36, top: 105 }}>
+                    <ActivityIndicator size="small" color={authColors.accent} />
+                  </View>
+                )}
+
+                {intelligenceResult?.type === 'auto_map' && intelligenceResult.match && (
+                  <View style={{ marginTop: -10, marginBottom: 15, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(124, 58, 237, 0.1)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 }}>
+                    <Ionicons name="checkmark-circle" size={16} color={authColors.accent} />
+                    <Text style={{ color: authColors.text, fontSize: 13, marginLeft: 8 }}>
+                      Gevonden: <Text style={{ fontWeight: '700' }}>{intelligenceResult.match.concept.label}</Text>
+                    </Text>
+                  </View>
+                )}
+
+                {intelligenceResult?.type === 'discovery' && intelligenceResult.proposed && (
+                  <View style={{ marginTop: -10, marginBottom: 15, backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(16, 185, 129, 0.2)' }}>
+                    <Text style={{ color: '#10b981', fontSize: 12, fontWeight: '700', marginBottom: 4 }}>✨ Nieuwe vaardigheid herkend</Text>
+                    <Text style={{ color: authColors.muted, fontSize: 13 }}>In categorie: <Text style={{ color: authColors.text, fontWeight: '600' }}>{intelligenceResult.proposed.rootLabel}</Text></Text>
+                  </View>
+                )}
 
                 <Text style={styles.inputLabel}>Niveau</Text>
                 <View style={styles.levelSelector}>
@@ -814,13 +985,65 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                   onChangeText={setTempName}
                 />
 
-                <Text style={styles.inputLabel}>Locatie</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Locatie..."
-                  value={tempLocation}
-                  onChangeText={setTempLocation}
-                />
+                <Text style={styles.inputLabel}>Adres of Straat</Text>
+                <View style={{ zIndex: 1000 }}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Typ je adres..."
+                    value={tempStreet}
+                    onChangeText={searchAddress}
+                    onFocus={() => addressSuggestions.length > 0 && setShowAddressSuggestions(true)}
+                  />
+                  {showAddressSuggestions && (
+                    <ScrollView
+                      style={[styles.autocompleteDropdown, { maxHeight: 150 }]}
+                      nestedScrollEnabled={true}
+                      keyboardShouldPersistTaps="handled"
+                    >
+                      {addressSuggestions.map((item, index) => {
+                        const { properties } = item;
+                        const mainText = properties.street
+                          ? `${properties.street}${properties.housenumber ? ' ' + properties.housenumber : ''}`
+                          : properties.name;
+                        const subText = `${properties.postcode || ''} ${properties.city || ''} ${properties.country || ''}`.trim();
+
+                        return (
+                          <TouchableOpacity
+                            key={index}
+                            style={styles.suggestionItem}
+                            onPress={() => selectAddressSuggestion(item)}
+                          >
+                            <Text style={styles.suggestionText}>{mainText}</Text>
+                            {subText ? (
+                              <Text style={styles.suggestionSubtext}>{subText}</Text>
+                            ) : null}
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  )}
+                </View>
+
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <View style={{ flex: 0.48 }}>
+                    <Text style={styles.inputLabel}>Postcode</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Bijv. 1030"
+                      value={tempZipCode}
+                      onChangeText={setTempZipCode}
+                    />
+                  </View>
+                  <View style={{ flex: 0.48 }}>
+                    <Text style={styles.inputLabel}>Stad</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Bijv. Brussel"
+                      value={tempCity}
+                      onChangeText={setTempCity}
+                    />
+                  </View>
+                </View>
 
                 <View style={styles.labelContainer}>
                   <Text style={styles.inputLabel}>Over mij</Text>
@@ -1316,5 +1539,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#ff4444',
+  },
+  autocompleteDropdown: {
+    position: 'absolute',
+    top: 55,
+    left: 0,
+    right: 0,
+    backgroundColor: '#1E293B',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    zIndex: 2000,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  suggestionItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+  },
+  suggestionText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  suggestionSubtext: {
+    color: '#94a3b8',
+    fontSize: 12,
+    marginTop: 2,
   },
 });
