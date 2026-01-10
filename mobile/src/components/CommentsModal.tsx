@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { authColors } from '../styles/authStyles';
 import { Post, PostComment } from '../types';
 import { subscribeToComments, addComment } from '../services/feedService';
+import { Avatar } from './Avatar';
 
 interface CommentsModalProps {
     visible: boolean;
@@ -90,7 +91,12 @@ export default function CommentsModal({ visible, onClose, post }: CommentsModalP
                             keyExtractor={(item) => item.id}
                             renderItem={({ item }) => (
                                 <View style={styles.commentItem}>
-                                    <Image source={{ uri: item.userAvatar }} style={styles.avatar} />
+                                    <Avatar
+                                        uri={item.userAvatar}
+                                        name={item.userName}
+                                        size={40}
+                                        style={styles.avatar}
+                                    />
                                     <View style={styles.commentTextContainer}>
                                         <View style={styles.commentHeader}>
                                             <Text style={styles.userName}>{item.userName}</Text>

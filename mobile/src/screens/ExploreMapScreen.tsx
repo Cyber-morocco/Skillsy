@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { StatusBar, View, TouchableOpacity, ScrollView, Image, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { MapViewLeaflet } from './logic/MapViewLeaflet';
 import { useExploreMap } from './logic/useExploreMap';
 import { exploreMapStyles as styles } from '../styles/exploreMapStyles';
 import { Talent } from '../types';
+import { Avatar } from '../components/Avatar';
 
 interface ExploreMapScreenProps {
   onViewProfile?: (user: any) => void;
@@ -139,7 +140,12 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
                 style={styles.talentCard}
                 onPress={() => handleTalentPress(talent.id)}
               >
-                <Image source={{ uri: talent.avatar }} style={styles.talentAvatar} />
+                <Avatar
+                  uri={talent.avatar}
+                  name={talent.name}
+                  size={60}
+                  style={styles.talentAvatar}
+                />
                 <View style={styles.talentInfo}>
                   <View style={styles.talentHeader}>
                     <Text style={styles.talentName}>{talent.name}</Text>

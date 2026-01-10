@@ -101,7 +101,6 @@ const ProfileCreationStep2: React.FC<NavProps> = ({ navigation }) => {
             const skillsToSave: Partial<Skill>[] = selectedSkills.map(s => ({
                 subject: s.subject,
                 level: (s.level === 1 ? 'Beginner' : s.level === 2 ? 'Gevorderd' : 'Expert') as any,
-                price: 'Op aanvraag',
                 rootId: s.rootId
             }));
 

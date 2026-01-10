@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     StatusBar,
     Text,
@@ -6,6 +6,7 @@ import {
     View,
     FlatList,
     TouchableOpacity,
+    Modal,
     KeyboardAvoidingView,
     Platform,
 } from 'react-native';
@@ -14,9 +15,13 @@ import { conversationStyles as styles, conversationColors } from '../styles/Conv
 import ScheduleMatchScreen from './ScheduleMatchScreen';
 import { subscribeToMessages, sendMessage as sendFirebaseMessage, updateMessage, subscribeToChat } from '../services/chatService';
 import { createAppointment } from '../services/appointmentService';
-import { auth } from '../config/firebase';
-import { Message as FirebaseMessage, Conversation } from '../types';
+import { auth, db } from '../config/firebase';
+import { Message as FirebaseMessage, Conversation, Skill } from '../types';
+import { scheduleMatchColors } from '../styles/ScheduleMatchStyles';
 import { Unsubscribe } from 'firebase/firestore';
+
+import { Avatar } from '../components/Avatar';
+
 
 type Message = {
     id: string;
@@ -27,7 +32,14 @@ type Message = {
     type?: 'text' | 'appointmentRequest';
     appointmentDate?: string;
     appointmentTime?: string;
-    appointmentStatus?: 'pending' | 'accepted' | 'rejected';
+    appointmentStatus?: 'pending' | 'accepted' | 'rejected' | 'countered';
+    duration?: number;
+    proposedPrice?: number;
+    matchType?: 'pay' | 'swap';
+    swapSkillName?: string;
+    tutorSkillName?: string;
+    tutorId?: string;
+    studentId?: string;
 };
 
 type ConversationProps = {
@@ -39,6 +51,7 @@ type ConversationProps = {
             contactInitials: string;
             contactColor: string;
             contactSubtitle?: string;
+            contactPhotoURL?: string;
         };
     };
     navigation?: {
@@ -51,13 +64,17 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
     const contactName = route?.params?.contactName || 'Contact';
     const contactInitials = route?.params?.contactInitials || 'C';
     const contactColor = route?.params?.contactColor || '#7C3AED';
+    const contactPhotoURL = route?.params?.contactPhotoURL;
     const contactSubtitle = route?.params?.contactSubtitle || '';
     const chatId = route?.params?.chatId;
+    const contactId = route?.params?.contactId || '';
 
     const [messageText, setMessageText] = useState('');
     const [showScheduleMatch, setShowScheduleMatch] = useState(false);
-    const [messages, setMessages] = useState<any[]>([]);
+    const [messages, setMessages] = useState<Message[]>([]);
     const [chatData, setChatData] = useState<Conversation | null>(null);
+    const [selectedMessageForCounter, setSelectedMessageForCounter] = useState<Message | null>(null);
+    const flatListRef = useRef<FlatList>(null);
 
     useEffect(() => {
         if (!chatId) return;
@@ -78,12 +95,18 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                     type: m.type || (m.appointmentDate ? 'appointmentRequest' : 'text'),
                     appointmentDate: m.appointmentDate,
                     appointmentTime: m.appointmentTime,
-                    appointmentStatus: m.appointmentStatus,
+                    appointmentStatus: m.appointmentStatus as any,
+                    duration: m.duration,
+                    proposedPrice: m.proposedPrice,
+                    matchType: (m as any).matchType,
+                    swapSkillName: (m as any).swapSkillName,
+                    tutorSkillName: (m as any).tutorSkillName,
+                    tutorId: (m as any).tutorId,
+                    studentId: (m as any).studentId,
                 };
             });
             setMessages(formattedMessages);
         });
-
 
         return () => {
             unsubscribeChat();
@@ -112,19 +135,36 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
         setShowScheduleMatch(true);
     };
 
-    const handleMatchRequest = async (day: string, time: string) => {
+    const handleMatchRequest = async (day: string, time: string, duration: number, price: number, type: 'pay' | 'swap' = 'pay', swapSkillName?: string, tutorSkillName?: string) => {
         if (!chatId) return;
 
         const currentUserName = auth.currentUser?.displayName || 'Ik';
-        const text = `${currentUserName} verzoekt om op ${day} om ${time} een afspraak te nemen`;
+        const text = type === 'pay'
+            ? `${currentUserName} verzoekt om op ${day} om ${time} een afspraak te nemen van ${duration} uur voor €${price}`
+            : `${currentUserName} stelt een skill swap voor: ${tutorSkillName} in ruil voor ${swapSkillName}.`;
+
+        const metadata: any = {
+            type: 'appointmentRequest',
+            appointmentDate: day,
+            appointmentTime: time,
+            appointmentStatus: 'pending',
+            duration: duration,
+            proposedPrice: price,
+            matchType: type,
+            tutorId: selectedMessageForCounter ? selectedMessageForCounter.tutorId : contactId,
+            studentId: selectedMessageForCounter ? selectedMessageForCounter.studentId : (auth.currentUser?.uid || ''),
+        };
+
+        if (swapSkillName) metadata.swapSkillName = swapSkillName;
+        if (tutorSkillName) metadata.tutorSkillName = tutorSkillName;
 
         try {
-            await sendFirebaseMessage(chatId, text, {
-                type: 'appointmentRequest',
-                appointmentDate: day,
-                appointmentTime: time,
-                appointmentStatus: 'pending'
-            });
+            if (selectedMessageForCounter) {
+                await updateMessage(chatId, selectedMessageForCounter.id, { appointmentStatus: 'countered' });
+                setSelectedMessageForCounter(null);
+            }
+
+            await sendFirebaseMessage(chatId, text, metadata);
             setShowScheduleMatch(false);
         } catch (error) {
             console.error('Error sending appointment request:', error);
@@ -139,21 +179,37 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
             if (status === 'accepted') {
                 const message = messages.find(m => m.id === messageId);
                 if (message && message.appointmentDate) {
+                    const tutorId = message.tutorId || (message.sender === 'me' ? contactId : auth.currentUser?.uid || '');
+                    const studentId = message.studentId || (message.sender === 'me' ? auth.currentUser?.uid || '' : contactId);
+
                     await createAppointment({
-                        tutorId: auth.currentUser?.uid || '',
-                        studentId: message.senderId,
-                        participantIds: [auth.currentUser?.uid || '', message.senderId],
-                        tutorName: auth.currentUser?.displayName || 'Tutor',
-                        tutorAvatar: auth.currentUser?.photoURL || '',
-                        studentName: contactName,
+                        tutorId,
+                        studentId,
+                        participantIds: [auth.currentUser?.uid || '', contactId],
+                        tutorName: tutorId === auth.currentUser?.uid ? (auth.currentUser?.displayName || 'Tutor') : contactName,
+                        tutorAvatar: '',
+                        studentName: studentId === auth.currentUser?.uid ? (auth.currentUser?.displayName || 'Student') : contactName,
                         studentAvatar: '',
-                        title: 'Afspraak',
-                        subtitle: `Met ${contactName}`,
+                        title: message.matchType === 'swap' ? 'Skill Swap' : 'Afspraak',
+                        subtitle: message.matchType === 'swap'
+                            ? `Swap: ${message.swapSkillName} voor ${message.tutorSkillName}`
+                            : `Met ${contactName}`,
                         date: message.appointmentDate,
                         time: message.appointmentTime || '10:00 - 11:00',
+                        duration: message.duration || 1,
+                        price: message.matchType === 'swap' ? 0 : (message.proposedPrice || 0),
+                        type: message.matchType === 'swap' ? 'swap' : 'pay',
+                        ...(message.matchType === 'swap' && {
+                            swapSkillName: message.swapSkillName || 'Onbekend',
+                        }),
                         location: 'fysiek',
                         initials: contactInitials,
-                        status: 'confirmed'
+                        status: 'confirmed',
+                        paymentStatus: message.matchType === 'swap' ? 'none' : 'pending',
+                        confirmations: {
+                            studentConfirmed: false,
+                            tutorConfirmed: false
+                        }
                     });
                 }
             }
@@ -161,20 +217,6 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
             console.error('Error updating appointment:', error);
         }
     };
-
-    if (showScheduleMatch) {
-        return (
-            <ScheduleMatchScreen
-                contactId={route?.params?.contactId || ''}
-                contactName={contactName}
-                contactInitials={contactInitials}
-                contactColor={contactColor}
-                contactSubtitle={contactSubtitle}
-                onBack={() => setShowScheduleMatch(false)}
-                onMatch={handleMatchRequest}
-            />
-        );
-    }
 
     const renderMessage = ({ item }: { item: Message }) => {
         if (item.type === 'appointmentRequest' || (item.appointmentDate && item.appointmentStatus)) {
@@ -187,27 +229,63 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                     <Text style={[
                         styles.messageText,
                         item.sender === 'me' ? styles.myMessageText : styles.otherMessageText,
-                        { fontWeight: '600', marginBottom: 8 }
+                        { fontWeight: '600', marginBottom: 4 }
                     ]}>
-                        {item.text}
+                        Afspraakverzoek
                     </Text>
+                    <View style={{ marginBottom: 8 }}>
+                        <Text style={{ color: item.sender === 'me' ? '#fff' : '#94A3B8', fontSize: 13 }}>Tijd: {item.appointmentDate} om {item.appointmentTime}</Text>
+                        <Text style={{ color: item.sender === 'me' ? '#fff' : '#94A3B8', fontSize: 13 }}>Duur: {item.duration || 1} uur</Text>
+                        {item.matchType === 'swap' ? (
+                            <View style={{ marginTop: 4 }}>
+                                <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '700', textTransform: 'uppercase' }}>Skill Swap</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>{item.tutorSkillName}</Text>
+                                        <Text style={{ color: '#94A3B8', fontSize: 10 }}>GEVRAAGD</Text>
+                                    </View>
+                                    <View style={{ paddingHorizontal: 10 }}>
+                                        <Ionicons name="repeat" size={16} color={scheduleMatchColors.primary} />
+                                    </View>
+                                    <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                                        <Text style={{ color: scheduleMatchColors.primary, fontSize: 14, fontWeight: '700', textAlign: 'right' }}>{item.swapSkillName}</Text>
+                                        <Text style={{ color: '#94A3B8', fontSize: 10 }}>AANGEBODEN</Text>
+                                    </View>
+                                </View>
+                            </View>
+                        ) : (
+                            <Text style={{ color: '#22C55E', fontSize: 16, fontWeight: '700', marginTop: 4 }}>Prijs: €{item.proposedPrice || 0}</Text>
+                        )}
+                    </View>
 
                     {item.appointmentStatus === 'pending' ? (
                         item.sender === 'other' ? (
-                            <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
+                            <View style={{ gap: 8, marginTop: 8 }}>
+                                <View style={{ flexDirection: 'row', gap: 10 }}>
+                                    <TouchableOpacity
+                                        style={{ flex: 1, backgroundColor: '#10B981', padding: 10, borderRadius: 8, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
+                                        onPress={() => handleRespondAppointment(item.id, 'accepted')}
+                                    >
+                                        <Ionicons name="checkmark-circle" size={16} color="white" style={{ marginRight: 4 }} />
+                                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>Accepteren</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={{ flex: 1, backgroundColor: '#EF4444', padding: 10, borderRadius: 8, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
+                                        onPress={() => handleRespondAppointment(item.id, 'rejected')}
+                                    >
+                                        <Ionicons name="close-circle" size={16} color="white" style={{ marginRight: 4 }} />
+                                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>Weigeren</Text>
+                                    </TouchableOpacity>
+                                </View>
                                 <TouchableOpacity
-                                    style={{ flex: 1, backgroundColor: '#10B981', padding: 10, borderRadius: 8, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
-                                    onPress={() => handleRespondAppointment(item.id, 'accepted')}
+                                    style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)', padding: 10, borderRadius: 8, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', borderWidth: 1, borderColor: '#6366f1' }}
+                                    onPress={() => {
+                                        setSelectedMessageForCounter(item);
+                                        setShowScheduleMatch(true);
+                                    }}
                                 >
-                                    <Ionicons name="checkmark-circle" size={16} color="white" style={{ marginRight: 4 }} />
-                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>Accepteren</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={{ flex: 1, backgroundColor: '#EF4444', padding: 10, borderRadius: 8, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
-                                    onPress={() => handleRespondAppointment(item.id, 'rejected')}
-                                >
-                                    <Ionicons name="close-circle" size={16} color="white" style={{ marginRight: 4 }} />
-                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>Weigeren</Text>
+                                    <Ionicons name="create-outline" size={16} color="#6366f1" style={{ marginRight: 4 }} />
+                                    <Text style={{ color: '#6366f1', fontWeight: 'bold', fontSize: 13 }}>Tegenbod / Wijzigen</Text>
                                 </TouchableOpacity>
                             </View>
                         ) : (
@@ -237,7 +315,7 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                                 fontWeight: '600',
                                 fontSize: 13
                             }}>
-                                {item.appointmentStatus === 'accepted' ? '✓ Afspraak geaccepteerd!' : '✕ Afspraak geweigerd'}
+                                {item.appointmentStatus === 'accepted' ? '✓ Afspraak geaccepteerd!' : item.appointmentStatus === 'countered' ? '↺ Tegenbod verstuurd' : '✕ Afspraak geweigerd'}
                             </Text>
                         </View>
                     )}
@@ -263,6 +341,30 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
         );
     };
 
+    if (showScheduleMatch) {
+        return (
+            <ScheduleMatchScreen
+                contactId={route?.params?.contactId || ''}
+                contactName={contactName}
+                contactInitials={contactInitials}
+                contactColor={contactColor}
+                contactSubtitle={contactSubtitle}
+                onBack={() => {
+                    setShowScheduleMatch(false);
+                    setSelectedMessageForCounter(null);
+                }}
+                onMatch={handleMatchRequest}
+                initialData={selectedMessageForCounter ? {
+                    duration: selectedMessageForCounter.duration,
+                    price: selectedMessageForCounter.proposedPrice,
+                    type: selectedMessageForCounter.matchType as 'pay' | 'swap',
+                    swapSkillName: selectedMessageForCounter.swapSkillName,
+                    tutorSkillName: selectedMessageForCounter.tutorSkillName
+                } : undefined}
+            />
+        );
+    }
+
     return (
         <KeyboardAvoidingView
             style={styles.container}
@@ -283,9 +385,13 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                         }
                     }}
                 >
-                    <View style={[styles.contactAvatar, { backgroundColor: contactColor }]}>
-                        <Text style={styles.contactInitials}>{contactInitials}</Text>
-                    </View>
+                    <Avatar
+                        uri={contactPhotoURL}
+                        name={contactName}
+                        initials={contactInitials}
+                        backgroundColor={contactColor}
+                        size={40}
+                    />
                     <View style={styles.headerInfo}>
                         <Text style={styles.contactName}>{contactName}</Text>
                         <Text style={styles.contactStatus}>{contactSubtitle || 'Online'}</Text>
@@ -308,10 +414,13 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
             )}
 
             <FlatList
+                ref={flatListRef}
                 data={messages}
                 renderItem={renderMessage}
-                keyExtractor={item => item.id}
-                contentContainerStyle={styles.messagesList}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+                onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+                onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
                 showsVerticalScrollIndicator={false}
             />
             <View style={[styles.inputContainer, !canSendMessage && { opacity: 0.5 }]}>

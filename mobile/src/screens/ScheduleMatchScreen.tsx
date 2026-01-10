@@ -9,22 +9,27 @@ import {
     ActivityIndicator,
     Modal,
     FlatList,
+    TextInput,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { scheduleMatchStyles as styles, scheduleMatchColors } from '../styles/ScheduleMatchStyles';
-import { fetchUserAvailability } from '../services/userService';
+import { fetchUserAvailability, fetchOtherUserSpecificDates, subscribeToOtherUserProfile, fetchOtherUserSkills } from '../services/userService';
 import { createAppointment } from '../services/appointmentService';
 import { auth } from '../config/firebase';
-import { AvailabilityDay } from '../types';
+import { AvailabilityDay, UserProfile, Skill } from '../types';
 
 interface PersonAvailability {
     name: string;
-    times: string[];
+    times: { start: string, end: string }[];
 }
 
-interface DayAvailability {
-    day: string;
+interface MatchEntry {
+    date: Date;
+    formattedDate: string;
+    dayName: string;
     people: PersonAvailability[];
 }
 
@@ -35,7 +40,14 @@ interface ScheduleMatchScreenProps {
     contactColor: string;
     contactSubtitle?: string;
     onBack: () => void;
-    onMatch?: (day: string, time: string) => void;
+    onMatch?: (day: string, time: string, duration: number, price: number, type: 'pay' | 'swap', swapSkillName?: string, tutorSkillName?: string) => void;
+    initialData?: {
+        duration?: number;
+        price?: number;
+        type?: 'pay' | 'swap';
+        swapSkillName?: string;
+        tutorSkillName?: string;
+    };
 }
 
 export default function ScheduleMatchScreen({
@@ -46,207 +58,230 @@ export default function ScheduleMatchScreen({
     contactSubtitle,
     onBack,
     onMatch,
+    initialData,
 }: ScheduleMatchScreenProps) {
     const [loading, setLoading] = useState(true);
-    const [availabilityData, setAvailabilityData] = useState<DayAvailability[]>([]);
+    const [rawAvailability, setRawAvailability] = useState<{
+        me: { mode: string, weekly: AvailabilityDay[], specific: any[] },
+        other: { mode: string, weekly: AvailabilityDay[], specific: any[] }
+    } | null>(null);
+    const [matchedDates, setMatchedDates] = useState<MatchEntry[]>([]);
     const [modalVisible, setModalVisible] = useState(false);
-    const [selectedDayData, setSelectedDayData] = useState<DayAvailability | null>(null);
+    const [selectedMatch, setSelectedMatch] = useState<MatchEntry | null>(null);
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+    const [selectedDuration, setSelectedDuration] = useState(initialData?.duration || 1);
+    const [proposedPrice, setProposedPrice] = useState(initialData?.price?.toString() || '25');
+    const [tutorSkills, setTutorSkills] = useState<Skill[]>([]);
+    const [mySkills, setMySkills] = useState<Skill[]>([]);
+    const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
+    const [selectedMySkill, setSelectedMySkill] = useState<Skill | null>(null);
+    const [matchType, setMatchType] = useState<'pay' | 'swap'>(initialData?.type || 'pay');
 
     useEffect(() => {
-        const loadAvailability = async () => {
+        const loadAllAvailability = async () => {
             try {
-                const currentUserId = auth.currentUser?.uid;
-                if (!currentUserId) return;
+                const myId = auth.currentUser?.uid;
+                if (!myId) return;
 
-                const [myAvail, contactAvail] = await Promise.all([
-                    fetchUserAvailability(currentUserId),
-                    fetchUserAvailability(contactId)
+                // Fetch skills and availability
+                const [myWeekly, otherWeekly, mySpecific, otherSpecific, skills, studentSkills] = await Promise.all([
+                    fetchUserAvailability(myId),
+                    fetchUserAvailability(contactId),
+                    fetchOtherUserSpecificDates(myId),
+                    fetchOtherUserSpecificDates(contactId),
+                    fetchOtherUserSkills(contactId),
+                    fetchOtherUserSkills(myId)
                 ]);
 
-                const combined: DayAvailability[] = myAvail.map((myDay, index) => {
-                    const contactDay = contactAvail[index];
-                    const people: PersonAvailability[] = [];
+                setTutorSkills(skills);
+                setMySkills(studentSkills);
+                if (skills.length > 0) {
+                    const initialTutorSkill = initialData?.tutorSkillName
+                        ? skills.find(s => s.subject === initialData.tutorSkillName) || skills[0]
+                        : skills[0];
+                    setSelectedSkill(initialTutorSkill);
+                    setProposedPrice(initialTutorSkill.price || '25');
+                }
+                if (studentSkills.length > 0) {
+                    const initialSkill = initialData?.swapSkillName
+                        ? studentSkills.find(s => s.subject === initialData.swapSkillName) || studentSkills[0]
+                        : studentSkills[0];
+                    setSelectedMySkill(initialSkill);
+                }
 
-                    if (myDay.enabled) {
-                        people.push({
-                            name: 'Jij',
-                            times: [`${myDay.start} - ${myDay.end}`]
-                        });
-                    }
+                // We need to get the availabilityMode from profile snapshots or fetch them
+                // For simplicity here, let's assume availabilityMode is fetched with profile
+                const getMode = (profile: any) => profile?.availabilityMode || 'weekly';
 
-                    if (contactDay.enabled) {
-                        people.push({
-                            name: contactName,
-                            times: [`${contactDay.start} - ${contactDay.end}`]
-                        });
-                    }
+                // We'll use a temporary hack or extend userService to get mode directly
+                // Actually, let's just use the presence of specific dates as a hint or default to weekly
+                // But better to use the profile.
 
-                    return {
-                        day: myDay.name,
-                        people
-                    };
-                }).filter(day => day.people.length > 0); // Only show days where at least one is available
+                setRawAvailability({
+                    me: { mode: 'weekly', weekly: myWeekly, specific: mySpecific },
+                    other: { mode: 'weekly', weekly: otherWeekly, specific: otherSpecific }
+                });
 
-                setAvailabilityData(combined);
+                // Real implementation: subscribe to both profiles to get their modes
+                const unsubMe = subscribeToOtherUserProfile(myId, (p) => {
+                    setRawAvailability(prev => prev ? { ...prev, me: { ...prev.me, mode: p.availabilityMode || 'weekly' } } : null);
+                });
+                const unsubOther = subscribeToOtherUserProfile(contactId, (p) => {
+                    setRawAvailability(prev => prev ? { ...prev, other: { ...prev.other, mode: p.availabilityMode || 'weekly' } } : null);
+                });
+
+                setLoading(false);
+                return () => { unsubMe(); unsubOther(); };
             } catch (error) {
                 console.error('Error loading availability:', error);
-                Alert.alert('Fout', 'Kon beschikbaarheid niet laden.');
-            } finally {
                 setLoading(false);
             }
         };
 
-        loadAvailability();
-    }, [contactId, contactName]);
+        loadAllAvailability();
+    }, [contactId]);
 
-    const calculateTimeSlots = (dayData: DayAvailability): string[] => {
-        const mySlot = dayData.people.find(p => p.name === 'Jij');
-        const contactSlot = dayData.people.find(p => p.name === contactName);
+    // Live filtering when duration or rawAvailability changes
+    useEffect(() => {
+        if (!rawAvailability) return;
 
-        if (!mySlot || !contactSlot) return [];
+        const generateMatches = () => {
+            const matches: MatchEntry[] = [];
+            const today = new Date();
+            const dayNames = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'];
 
-        const parseRange = (range: string) => {
-            const [start, end] = range.split(' - ');
-            const [sH, sM] = start.split(':').map(Number);
-            const [eH, eM] = end.split(':').map(Number);
-            return { s: sH * 60 + sM, e: eH * 60 + eM };
+            for (let i = 0; i < 14; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() + i);
+                const dayName = dayNames[date.getDay()];
+                const dateKey = date.toISOString().split('T')[0];
+
+                const getSlotsForUser = (user: any) => {
+                    if (user.mode === 'specific') {
+                        const specific = user.specific.find((s: any) => s.date.toISOString().split('T')[0] === dateKey);
+                        return specific ? [{ start: specific.start, end: specific.end }] : [];
+                    } else {
+                        const weekly = user.weekly.find((w: any) => w.name === dayName);
+                        return weekly && weekly.enabled ? [{ start: weekly.start, end: weekly.end }] : [];
+                    }
+                };
+
+                const mySlots = getSlotsForUser(rawAvailability.me);
+                const otherSlots = getSlotsForUser(rawAvailability.other);
+
+                if (mySlots.length > 0 || otherSlots.length > 0) {
+                    matches.push({
+                        date,
+                        dayName,
+                        formattedDate: date.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long' }),
+                        people: [
+                            { name: 'Jij', times: mySlots },
+                            { name: contactName, times: otherSlots }
+                        ]
+                    });
+                }
+            }
+
+            // Filter live only those that HAVE a valid overlap for the duration
+            const validMatches = matches.filter(m => calculateOverlaps(m).length > 0);
+            setMatchedDates(validMatches);
         };
 
-        const myRange = parseRange(mySlot.times[0]);
-        const contactRange = parseRange(contactSlot.times[0]);
+        generateMatches();
+    }, [rawAvailability, selectedDuration]);
 
-        const start = Math.max(myRange.s, contactRange.s);
-        const end = Math.min(myRange.e, contactRange.e);
+    const calculateOverlaps = (entry: MatchEntry): string[] => {
+        const mySlot = entry.people[0].times[0];
+        const otherSlot = entry.people[1].times[0];
 
-        if (start >= end) return [];
+        if (!mySlot || !otherSlot) return [];
+
+        const parseTime = (t: string) => {
+            const [h, m] = t.split(':').map(Number);
+            return h * 60 + m;
+        };
+
+        const myStart = parseTime(mySlot.start);
+        const myEnd = parseTime(mySlot.end);
+        const otherStart = parseTime(otherSlot.start);
+        const otherEnd = parseTime(otherSlot.end);
+
+        const start = Math.max(myStart, otherStart);
+        const end = Math.min(myEnd, otherEnd);
+        const durationMins = selectedDuration * 60;
+
+        if (start + durationMins > end) return [];
 
         const slots: string[] = [];
         let current = start;
-        while (current + 60 <= end) {
-            const h = Math.floor(current / 60);
-            const m = current % 60;
-            const endH = Math.floor((current + 60) / 60);
-            const endM = (current + 60) % 60;
-
-            const format = (h: number, m: number) =>
-                `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-
-            slots.push(`${format(h, m)} - ${format(endH, endM)}`);
-            current += 60;
+        while (current + durationMins <= end) {
+            const format = (mins: number) => {
+                const h = Math.floor(mins / 60);
+                const m = mins % 60;
+                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+            };
+            slots.push(`${format(current)} - ${format(current + durationMins)}`);
+            current += 30; // 30 min steps to allow choosing any 2h in a larger window
         }
         return slots;
     };
 
-    const handleMatchPress = (dayData: DayAvailability) => {
-        const slots = calculateTimeSlots(dayData);
-        if (slots.length > 0) {
-            setAvailableSlots(slots);
-            setSelectedDayData(dayData);
-            setModalVisible(true);
-        } else {
-            Alert.alert('Geen overlap', 'Er zijn geen overlappende tijden gevonden op deze dag.');
-        }
+    const handleMatchPress = (entry: MatchEntry) => {
+        const slots = calculateOverlaps(entry);
+        setAvailableSlots(slots);
+        setSelectedMatch(entry);
+        setModalVisible(true);
     };
 
     const confirmMatch = async (timeSlot: string) => {
+        if (!selectedMatch) return;
         setModalVisible(false);
-        if (!selectedDayData) return;
-
-        const dayData = selectedDayData;
-        const timeToMatch = timeSlot;
 
         try {
-            const currentUserId = auth.currentUser?.uid;
-            if (!currentUserId) return;
+            const myId = auth.currentUser?.uid;
+            if (!myId) return;
 
-            // Calculate the next occurrence of this day
-            const dayNames = ['Zondag', 'Maandag', 'Dinsdag', 'Woensdag', 'Donderdag', 'Vrijdag', 'Zaterdag'];
-            const targetDayIndex = dayNames.indexOf(dayData.day);
-            const today = new Date();
-            const todayIndex = today.getDay();
-            let daysUntil = targetDayIndex - todayIndex;
-            if (daysUntil <= 0) daysUntil += 7; // Next week if today or past
-
-            const targetDate = new Date(today);
-            targetDate.setDate(today.getDate() + daysUntil);
-            const formattedDate = targetDate.toLocaleDateString('nl-BE', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
+            const fullFormattedDate = selectedMatch.date.toLocaleDateString('nl-BE', {
+                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
             });
 
             await createAppointment({
                 tutorId: contactId,
-                studentId: currentUserId,
-                participantIds: [currentUserId, contactId],
+                studentId: myId,
+                participantIds: [myId, contactId],
                 tutorName: contactName,
                 studentName: auth.currentUser?.displayName || 'Gebruiker',
-                title: contactSubtitle || 'Skill Swap',
-                subtitle: `Afspraak met ${contactName}`,
-                date: formattedDate,
-                time: timeToMatch,
+                title: selectedSkill?.subject || contactSubtitle || 'Skill Swap',
+                subtitle: `Les ${selectedSkill?.subject || ''} met ${contactName}`,
+                date: fullFormattedDate,
+                time: timeSlot,
+                duration: selectedDuration,
+                price: matchType === 'pay' ? (parseFloat(proposedPrice) || 0) : 0,
+                type: matchType,
+                swapSkillId: matchType === 'swap' ? selectedMySkill?.id : undefined,
+                swapSkillName: matchType === 'swap' ? selectedMySkill?.subject : undefined,
                 location: 'fysiek',
                 status: 'pending',
+                paymentStatus: 'none',
+                confirmations: {
+                    studentConfirmed: false,
+                    tutorConfirmed: false
+                },
                 initials: contactInitials,
             });
 
             if (onMatch) {
-                onMatch(dayData.day, timeToMatch);
+                onMatch(fullFormattedDate, timeSlot, selectedDuration, matchType === 'pay' ? (parseFloat(proposedPrice) || 0) : 0, matchType, selectedMySkill?.subject, selectedSkill?.subject);
             } else {
-                Alert.alert(
-                    'Match verzonden!',
-                    `Je hebt ${formattedDate} om ${timeToMatch} geselecteerd. We sturen een verzoek naar ${contactName}.`,
-                    [{ text: 'OK', onPress: onBack }]
-                );
+                const message = matchType === 'pay'
+                    ? `Verzoek verzonden naar ${contactName} voor ${fullFormattedDate}.`
+                    : `Ruilverzoek voor ${selectedMySkill?.subject} verzonden naar ${contactName} voor ${fullFormattedDate}.`;
+                Alert.alert('Match verzonden!', message, [{ text: 'OK', onPress: onBack }]);
             }
         } catch (error) {
-            console.error('Error creating appointment:', error);
+            console.error('Error creating match:', error);
             Alert.alert('Fout', 'Kon afspraak niet inplannen.');
         }
-    };
-
-    const renderDayCard = (dayData: DayAvailability) => {
-        const isMutual = dayData.people.length > 1;
-
-        return (
-            <View key={dayData.day} style={[styles.dayCard, isMutual && { borderColor: scheduleMatchColors.primary, borderWidth: 1 }]}>
-                <View style={styles.dayCardHeader}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <Text style={styles.dayName}>{dayData.day}</Text>
-                        {isMutual && (
-                            <View style={{ backgroundColor: scheduleMatchColors.primary, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, marginLeft: 8 }}>
-                                <Text style={{ color: '#000', fontSize: 10, fontWeight: '700' }}>MUTUAL</Text>
-                            </View>
-                        )}
-                    </View>
-                    <TouchableOpacity
-                        style={[styles.matchButton, !isMutual && { backgroundColor: 'rgba(148, 163, 184, 0.1)' }]}
-                        onPress={() => isMutual ? handleMatchPress(dayData) : Alert.alert('Geen Match', 'Je kunt alleen matchen op dagen dat jullie beiden beschikbaar zijn.')}
-                    >
-                        <Text style={[styles.matchButtonText, !isMutual && { color: scheduleMatchColors.textSecondary }]}>
-                            Match
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-                {dayData.people.map((person, index) => (
-                    <View key={index} style={styles.personSlot}>
-                        <Ionicons
-                            name="time-outline"
-                            size={16}
-                            color={scheduleMatchColors.textSecondary}
-                            style={styles.clockIcon}
-                        />
-                        <View style={styles.slotInfo}>
-                            <Text style={styles.personName}>{person.name}</Text>
-                            <Text style={styles.timeSlot}>{person.times.join(', ')}</Text>
-                        </View>
-                    </View>
-                ))}
-            </View>
-        );
     };
 
     return (
@@ -262,64 +297,236 @@ export default function ScheduleMatchScreen({
                 </View>
                 <View style={styles.headerInfo}>
                     <Text style={styles.contactName}>{contactName}</Text>
-                    {contactSubtitle && (
-                        <Text style={styles.contactSubtitle}>{contactSubtitle}</Text>
-                    )}
+                    {contactSubtitle && <Text style={styles.contactSubtitle}>{contactSubtitle}</Text>}
                 </View>
             </View>
 
-            <View style={styles.titleSection}>
-                <Text style={styles.title}>Beschikbaarheid vergelijken</Text>
-                <Text style={styles.subtitle}>Vind een moment dat voor jullie beiden werkt</Text>
-            </View>
-
-            {loading ? (
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <ActivityIndicator size="large" color={scheduleMatchColors.primary} />
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                <View style={styles.titleSection}>
+                    <Text style={styles.title}>Hoe wil je matchen?</Text>
                 </View>
-            ) : (
-                <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                    {availabilityData.length > 0 ? (
-                        availabilityData.map(renderDayCard)
-                    ) : (
-                        <View style={{ padding: 40, alignItems: 'center' }}>
-                            <Text style={{ color: scheduleMatchColors.textSecondary, textAlign: 'center' }}>
-                                Geen overlappende beschikbaarheid gevonden. Pas je weekplanning aan in je profiel.
-                            </Text>
+
+                <View style={{ flexDirection: 'row', paddingHorizontal: 0, gap: 10, marginBottom: 20 }}>
+                    <TouchableOpacity
+                        onPress={() => setMatchType('pay')}
+                        style={{
+                            flex: 1, paddingVertical: 12, borderRadius: 12,
+                            backgroundColor: matchType === 'pay' ? scheduleMatchColors.primary : 'rgba(255,255,255,0.05)',
+                            alignItems: 'center', borderWidth: 1,
+                            borderColor: matchType === 'pay' ? scheduleMatchColors.primary : 'rgba(255,255,255,0.1)'
+                        }}
+                    >
+                        <Ionicons name="card-outline" size={20} color={matchType === 'pay' ? '#000' : '#F8FAFC'} />
+                        <Text style={{ color: matchType === 'pay' ? '#000' : '#F8FAFC', fontWeight: '700', marginTop: 4 }}>Betalen</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => setMatchType('swap')}
+                        style={{
+                            flex: 1, paddingVertical: 12, borderRadius: 12,
+                            backgroundColor: matchType === 'swap' ? scheduleMatchColors.primary : 'rgba(255,255,255,0.05)',
+                            alignItems: 'center', borderWidth: 1,
+                            borderColor: matchType === 'swap' ? scheduleMatchColors.primary : 'rgba(255,255,255,0.1)'
+                        }}
+                    >
+                        <Ionicons name="repeat-outline" size={20} color={matchType === 'swap' ? '#000' : '#F8FAFC'} />
+                        <Text style={{ color: matchType === 'swap' ? '#000' : '#F8FAFC', fontWeight: '700', marginTop: 4 }}>Ruilen (Swap)</Text>
+                    </TouchableOpacity>
+                </View>
+
+                <View style={[styles.titleSection, { paddingHorizontal: 0 }]}>
+                    <Text style={styles.title}>Wat wil je leren?</Text>
+                    <Text style={styles.subtitle}>Kies een vaardigheid van {contactName}</Text>
+                </View>
+
+                <View style={{ marginBottom: 24 }}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 0, gap: 10 }}>
+                        {tutorSkills.map((skill) => (
+                            <TouchableOpacity
+                                key={skill.id}
+                                onPress={() => {
+                                    setSelectedSkill(skill);
+                                }}
+                                style={{
+                                    paddingHorizontal: 16,
+                                    paddingVertical: 12,
+                                    borderRadius: 12,
+                                    backgroundColor: selectedSkill?.id === skill.id ? scheduleMatchColors.primary : 'rgba(255,255,255,0.05)',
+                                    borderWidth: 1,
+                                    borderColor: selectedSkill?.id === skill.id ? scheduleMatchColors.primary : 'rgba(255,255,255,0.1)',
+                                    minWidth: 100,
+                                    alignItems: 'center'
+                                }}
+                            >
+                                <Text style={{ color: selectedSkill?.id === skill.id ? '#000' : '#F8FAFC', fontWeight: '700', fontSize: 14 }}>
+                                    {skill.subject}
+                                </Text>
+                                <Text style={{ color: selectedSkill?.id === skill.id ? 'rgba(0,0,0,0.6)' : '#94A3B8', fontSize: 11, marginTop: 2 }}>
+                                    {skill.level}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                </View>
+
+                {matchType === 'swap' && (
+                    <>
+                        <View style={[styles.titleSection, { paddingHorizontal: 0 }]}>
+                            <Text style={styles.title}>Wat bied je aan?</Text>
+                            <Text style={styles.subtitle}>Kies een vaardigheid om terug te leren</Text>
                         </View>
-                    )}
-                    <View style={{ height: 20 }} />
-                </ScrollView>
-            )}
 
-            <Modal
-                visible={modalVisible}
-                transparent={true}
-                animationType="slide"
-                onRequestClose={() => setModalVisible(false)}
-            >
-                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' }}>
-                    <View style={{ backgroundColor: scheduleMatchColors.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '60%' }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                            <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>Kies een tijdstip</Text>
-                            <TouchableOpacity onPress={() => setModalVisible(false)}>
-                                <Ionicons name="close" size={24} color="#fff" />
+                        <View style={{ marginBottom: 24 }}>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 0, gap: 10 }}>
+                                {mySkills.map((skill) => (
+                                    <TouchableOpacity
+                                        key={skill.id}
+                                        onPress={() => setSelectedMySkill(skill)}
+                                        style={{
+                                            paddingHorizontal: 16,
+                                            paddingVertical: 12,
+                                            borderRadius: 12,
+                                            backgroundColor: selectedMySkill?.id === skill.id ? scheduleMatchColors.primary : 'rgba(255,255,255,0.05)',
+                                            borderWidth: 1,
+                                            borderColor: selectedMySkill?.id === skill.id ? scheduleMatchColors.primary : 'rgba(255,255,255,0.1)',
+                                            minWidth: 100,
+                                            alignItems: 'center'
+                                        }}
+                                    >
+                                        <Text style={{ color: selectedMySkill?.id === skill.id ? '#000' : '#F8FAFC', fontWeight: '700', fontSize: 14 }}>
+                                            {skill.subject}
+                                        </Text>
+                                        <Text style={{ color: selectedMySkill?.id === skill.id ? 'rgba(0,0,0,0.6)' : '#94A3B8', fontSize: 11, marginTop: 2 }}>
+                                            {skill.level}
+                                        </Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        </View>
+                    </>
+                )}
+
+                <View style={{ paddingHorizontal: 0, marginBottom: 24 }}>
+                    <Text style={{ color: '#F8FAFC', fontSize: 16, fontWeight: '700', marginBottom: 8 }}>Hoe lang?</Text>
+                    <View style={{ flexDirection: 'row', gap: 8 }}>
+                        {[0.5, 1, 1.5, 2].map((dur) => (
+                            <TouchableOpacity
+                                key={dur}
+                                onPress={() => setSelectedDuration(dur)}
+                                style={{
+                                    flex: 1, paddingVertical: 10, borderRadius: 12,
+                                    backgroundColor: selectedDuration === dur ? scheduleMatchColors.primary : 'rgba(255,255,255,0.05)',
+                                    alignItems: 'center', borderWidth: 1,
+                                    borderColor: selectedDuration === dur ? scheduleMatchColors.primary : 'rgba(255,255,255,0.1)'
+                                }}
+                            >
+                                <Text style={{ color: selectedDuration === dur ? '#000' : '#F8FAFC', fontWeight: '800' }}>{dur}u</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+
+                {loading ? (
+                    <View style={{ height: 200, justifyContent: 'center', alignItems: 'center' }}>
+                        <ActivityIndicator size="large" color={scheduleMatchColors.primary} />
+                    </View>
+                ) : (
+                    <>
+                        {matchedDates.map((item, idx) => (
+                            <View key={idx} style={[styles.dayCard, { borderColor: scheduleMatchColors.primary, borderWidth: 1 }]}>
+                                <View style={styles.dayCardHeader}>
+                                    <View>
+                                        <Text style={styles.dayName}>{item.dayName}</Text>
+                                        <Text style={{ color: scheduleMatchColors.textSecondary, fontSize: 13 }}>{item.formattedDate}</Text>
+                                    </View>
+                                    <TouchableOpacity style={styles.matchButton} onPress={() => handleMatchPress(item)}>
+                                        <Text style={styles.matchButtonText}>Kies Tijd</Text>
+                                    </TouchableOpacity>
+                                </View>
+                                {item.people.map((p, pi) => (
+                                    <View key={pi} style={p.times.length === 0 ? { opacity: 0.3 } : styles.personSlot}>
+                                        <Ionicons name="time-outline" size={14} color={scheduleMatchColors.textSecondary} />
+                                        <Text style={{ marginLeft: 6, color: scheduleMatchColors.textSecondary, fontSize: 13 }}>
+                                            {p.name}: {p.times.length > 0 ? `${p.times[0].start} - ${p.times[0].end}` : 'Niet beschikbaar'}
+                                        </Text>
+                                    </View>
+                                ))}
+                            </View>
+                        ))}
+                        {matchedDates.length === 0 && (
+                            <View style={{ padding: 40, alignItems: 'center' }}>
+                                <Text style={{ color: scheduleMatchColors.textSecondary, textAlign: 'center' }}>
+                                    Geen overlappende tijden gevonden voor {selectedDuration} uur.
+                                </Text>
+                            </View>
+                        )}
+                        <View style={{ height: 40 }} />
+                    </>
+                )}
+            </ScrollView>
+
+            <Modal visible={modalVisible} transparent={true} animationType="fade">
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'flex-end' }}
+                >
+                    <View style={{ backgroundColor: '#111827', borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, maxHeight: '90%' }}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                            <Text style={{ color: '#fff', fontSize: 22, fontWeight: '900' }}>Inplannen</Text>
+                            <TouchableOpacity onPress={() => setModalVisible(false)} style={{ padding: 4 }}>
+                                <Ionicons name="close-circle" size={32} color="#fff" />
                             </TouchableOpacity>
                         </View>
+
+                        <View style={{ marginBottom: 24, backgroundColor: 'rgba(34, 197, 94, 0.1)', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(34, 197, 94, 0.2)' }}>
+                            <Text style={{ color: '#22C55E', fontSize: 12, fontWeight: '800', textTransform: 'uppercase', marginBottom: 4 }}>Wanneer</Text>
+                            <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>{selectedMatch?.dayName} {selectedMatch?.formattedDate}</Text>
+                        </View>
+
+                        {matchType === 'pay' ? (
+                            <View style={{ marginBottom: 24 }}>
+                                <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '800', marginBottom: 12, textTransform: 'uppercase' }}>Jouw Prijs (€)</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 16, paddingHorizontal: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                                    <Text style={{ color: '#F8FAFC', fontSize: 24, fontWeight: '700', marginRight: 8 }}>€</Text>
+                                    <TextInput
+                                        style={{ flex: 1, color: '#F8FAFC', fontSize: 24, fontWeight: '700', height: 60 }}
+                                        keyboardType="numeric"
+                                        value={proposedPrice}
+                                        onChangeText={setProposedPrice}
+                                        autoFocus
+                                    />
+                                </View>
+                            </View>
+                        ) : (
+                            <View style={{ marginBottom: 24, backgroundColor: 'rgba(124, 58, 237, 0.1)', padding: 16, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(124, 58, 237, 0.2)' }}>
+                                <Text style={{ color: '#7C3AED', fontSize: 12, fontWeight: '800', textTransform: 'uppercase', marginBottom: 4 }}>Transactie</Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <Ionicons name="repeat" size={20} color="#7C3AED" style={{ marginRight: 8 }} />
+                                    <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>Gratis (Skill Swap)</Text>
+                                </View>
+                            </View>
+                        )}
+
+                        <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '800', marginBottom: 16, textTransform: 'uppercase' }}>Kies een starttijd</Text>
                         <FlatList
                             data={availableSlots}
                             keyExtractor={(item) => item}
+                            numColumns={2}
+                            columnWrapperStyle={{ gap: 12 }}
                             renderItem={({ item }) => (
                                 <TouchableOpacity
-                                    style={{ padding: 15, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' }}
+                                    style={{ flex: 1, padding: 16, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 16, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)', alignItems: 'center' }}
                                     onPress={() => confirmMatch(item)}
                                 >
-                                    <Text style={{ color: '#fff', fontSize: 16, textAlign: 'center' }}>{item}</Text>
+                                    <Text style={{ color: '#fff', fontSize: 15, fontWeight: '800' }}>{item.split(' - ')[0]}</Text>
+                                    <Text style={{ color: '#94A3B8', fontSize: 11, marginTop: 2 }}>tot {item.split(' - ')[1]}</Text>
                                 </TouchableOpacity>
                             )}
+                            showsVerticalScrollIndicator={false}
+                            style={{ marginBottom: 20 }}
                         />
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
         </SafeAreaView>
     );

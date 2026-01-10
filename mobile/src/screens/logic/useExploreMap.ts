@@ -135,7 +135,7 @@ export const useExploreMap = () => {
           setAllTalents((prev) => 
             prev.map((t) => 
               t.id === talent.id 
-                ? { ...t, skillsWithPrices: skills.map(s => ({ subject: s.subject, price: s.price })) }
+                ? { ...t, skillsWithPrices: skills.map(s => ({ subject: s.subject, price: s.price || '' })) }
                 : t
             )
           );

@@ -13,6 +13,7 @@ export type ChatStackParamList = {
         contactName: string;
         contactInitials: string;
         contactColor: string;
+        contactPhotoURL?: string;
     };
     ExploreProfile: {
         userId: string;
