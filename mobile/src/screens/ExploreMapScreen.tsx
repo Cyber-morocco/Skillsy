@@ -1,7 +1,7 @@
-import React from 'react';
-import { StatusBar, View, TouchableOpacity, ScrollView, Text } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StatusBar, View, TouchableOpacity, ScrollView, Text, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { ExploreSearchBar } from '../features/explore/ExploreSearchBar';
 import { FiltersBar } from '../features/explore/FiltersBar';
 import { MapViewLeaflet } from './logic/MapViewLeaflet';
@@ -34,6 +34,7 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
     selectedDistance,
     setSearchQuery,
     setViewMode,
+    setSearchType,
     skillSearch,
     toggleSearchType,
     userLocation,
@@ -42,7 +43,87 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
     profileReady,
   } = useExploreMap();
 
+  const [filtersVisible, setFiltersVisible] = useState<boolean>(false);
+  const [searchBarFocused, setSearchBarFocused] = useState<boolean>(false);
+  const [shouldRenderSections, setShouldRenderSections] = useState<boolean>(false);
+  const [shouldRenderFilters, setShouldRenderFilters] = useState<boolean>(false);
+  const [prevShowSections, setPrevShowSections] = useState<boolean>(false);
+  const sectionTabsAnim = useRef(new Animated.Value(0)).current;
+  const filtersAnim = useRef(new Animated.Value(0)).current;
+
   const filtersActive = (selectedDistance !== null) || (selectedCategories.length > 0) || (Boolean(skillSearch && skillSearch.trim().length > 0));
+
+  useEffect(() => {
+    if (viewMode !== 'list') {
+      setFiltersVisible(false);
+    }
+  }, [viewMode]);
+
+  useEffect(() => {
+    // Switch to map view when location search is selected, to list when skill is selected
+    if (searchType === 'address' && viewMode === 'list') {
+      setViewMode('map');
+    } else if (searchType === 'skill' && viewMode === 'map') {
+      setViewMode('list');
+    }
+  }, [searchType]);
+
+  useEffect(() => {
+    // Animate section tabs appearance/disappearance
+    const showSections = isSearching || viewMode === 'list' || searchBarFocused;
+    
+    // Only animate if visibility actually changed, not just searchType
+    if (showSections !== prevShowSections) {
+      if (showSections) {
+        setShouldRenderSections(true);
+        // Reset to 0, then animate to 1 for smooth entry
+        sectionTabsAnim.setValue(0);
+        Animated.timing(sectionTabsAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: false,
+        }).start();
+      } else {
+        // Animate out
+        Animated.timing(sectionTabsAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: false,
+        }).start(() => {
+          setShouldRenderSections(false);
+        });
+      }
+      setPrevShowSections(showSections);
+    }
+  }, [isSearching, viewMode, searchBarFocused, prevShowSections, sectionTabsAnim]);
+
+  useEffect(() => {
+    // Animate filters appearance/disappearance
+    if (filtersVisible) {
+      setShouldRenderFilters(true);
+      // Reset to 0, then animate to 1 for smooth entry
+      filtersAnim.setValue(0);
+      Animated.timing(filtersAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
+    } else {
+      // Animate out
+      Animated.timing(filtersAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: false,
+      }).start(() => {
+        setShouldRenderFilters(false);
+      });
+    }
+  }, [filtersVisible, filtersAnim]);
+
+  const toggleFiltersVisible = () => {
+    const next = !filtersVisible;
+    setFiltersVisible(next);
+  };
 
   const handleTalentPress = (talentId: string) => {
     const talent = filteredTalents.find(t => t.id === talentId);
@@ -65,21 +146,106 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
         isSearching={isSearching}
         onChangeQuery={setSearchQuery}
         onSubmit={handleSearch}
-        onToggleSearchType={toggleSearchType}
+        onSelectSearchType={setSearchType}
         onClear={resetSearch}
+        onToggleFilters={toggleFiltersVisible}
+        filtersActive={filtersActive}
+        onSearchBarFocus={() => setSearchBarFocused(true)}
+        onSearchBarBlur={() => setSearchBarFocused(false)}
       />
 
-      <FiltersBar
-        selectedDistance={selectedDistance}
-        onSelectDistance={handleDistanceSelect}
-        selectedCategories={selectedCategories}
-        onToggleCategory={handleCategorySelect}
-        onClearCategories={clearCategories}
-        viewMode={viewMode}
-        onToggleViewMode={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
-        distanceOptions={DISTANCE_OPTIONS}
-        categoryOptions={CATEGORY_OPTIONS}
-      />
+      {shouldRenderFilters && (
+        <Animated.View
+          style={{
+            opacity: filtersAnim,
+            transform: [
+              {
+                translateY: filtersAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [-20, 0],
+                }),
+              },
+            ],
+            overflow: 'visible',
+            zIndex: 100,
+          }}
+        >
+          <FiltersBar
+            selectedDistance={selectedDistance}
+            onSelectDistance={handleDistanceSelect}
+            selectedCategories={selectedCategories}
+            onToggleCategory={handleCategorySelect}
+            onClearCategories={clearCategories}
+            viewMode={viewMode}
+            onToggleViewMode={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
+            distanceOptions={DISTANCE_OPTIONS}
+            categoryOptions={CATEGORY_OPTIONS}
+          />
+        </Animated.View>
+      )}
+
+      {shouldRenderSections && (
+        <Animated.View
+          style={[
+            styles.sectionTabsContainer,
+            {
+              opacity: sectionTabsAnim,
+              transform: [
+                {
+                  translateY: sectionTabsAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-20, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <TouchableOpacity
+            style={[
+              styles.sectionTab,
+              searchType === 'address' && styles.sectionTabActive,
+            ]}
+            onPress={() => setSearchType('address')}
+          >
+            <MaterialCommunityIcons
+              name="map-marker"
+              size={20}
+              color={searchType === 'address' ? '#10b981' : '#94A3B8'}
+            />
+            <Text
+              style={[
+                styles.sectionTabText,
+                searchType === 'address' && styles.sectionTabTextActive,
+              ]}
+            >
+              Locatie
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.sectionTab,
+              searchType === 'skill' && styles.sectionTabActive,
+            ]}
+            onPress={() => setSearchType('skill')}
+          >
+            <MaterialCommunityIcons
+              name="star-outline"
+              size={20}
+              color={searchType === 'skill' ? '#10b981' : '#94A3B8'}
+            />
+            <Text
+              style={[
+                styles.sectionTabText,
+                searchType === 'skill' && styles.sectionTabTextActive,
+              ]}
+            >
+              Skill
+            </Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
 
       <View style={styles.mapContainer}>
         {viewMode === 'map' ? (

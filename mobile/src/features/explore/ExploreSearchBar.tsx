@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { exploreMapStyles as styles } from '../../styles/exploreMapStyles';
@@ -11,9 +11,17 @@ interface ExploreSearchBarProps {
   isSearching: boolean;
   onChangeQuery: (text: string) => void;
   onSubmit: () => void;
-  onToggleSearchType: () => void;
+  onSelectSearchType: (type: SearchType) => void;
   onClear: () => void;
+  onToggleFilters: () => void;
+  filtersActive: boolean;
+  onSearchBarFocus?: () => void;
+  onSearchBarBlur?: () => void;
 }
+
+const getPlaceholder = (searchType: SearchType): string => {
+  return searchType === 'address' ? 'Zoek locatie...' : 'Zoek skill...';
+};
 
 export const ExploreSearchBar: React.FC<ExploreSearchBarProps> = ({
   searchQuery,
@@ -21,39 +29,42 @@ export const ExploreSearchBar: React.FC<ExploreSearchBarProps> = ({
   isSearching,
   onChangeQuery,
   onSubmit,
-  onToggleSearchType,
+  onSelectSearchType,
   onClear,
-}) => (
-  <View style={styles.header}>
-    <TouchableOpacity style={styles.searchTypeToggleButton} onPress={onToggleSearchType}>
-      <MaterialCommunityIcons name={searchType === 'skill' ? 'star-outline' : 'map-marker'} size={20} color="#fff" />
-    </TouchableOpacity>
-    <View style={styles.searchContainer}>
-      <Ionicons name="search" size={18} color="#94A3B8" />
-      <TextInput
-        style={styles.searchInput}
-        placeholder={searchType === 'skill' ? 'Zoek skill (bv. Java)' : 'Zoek plaats (bv. Amsterdam)'}
-        placeholderTextColor="#94A3B8"
-        value={searchQuery}
-        onChangeText={onChangeQuery}
-        onSubmitEditing={onSubmit}
-        returnKeyType="search"
-      />
-      {searchQuery.length > 0 && (
-        <TouchableOpacity onPress={onClear} style={styles.searchButton}>
-          <Ionicons name="close" size={18} color="#7c3aed" />
+  onToggleFilters,
+  filtersActive,
+  onSearchBarFocus,
+  onSearchBarBlur,
+}) => {
+  return (
+    <View style={styles.header}>
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={18} color="#94A3B8" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder={getPlaceholder(searchType)}
+          placeholderTextColor="#94A3B8"
+          value={searchQuery}
+          onChangeText={onChangeQuery}
+          onSubmitEditing={onSubmit}
+          onFocus={onSearchBarFocus}
+          onBlur={onSearchBarBlur}
+          returnKeyType="search"
+        />
+        {/* Removed clear (close) and submit (arrow) buttons as requested */}
+        {isSearching && (
+          <View style={styles.searchButton}>
+            <Text style={{ color: '#7c3aed' }}>...</Text>
+          </View>
+        )}
+        <TouchableOpacity onPress={onToggleFilters} style={styles.searchButton}>
+          <MaterialCommunityIcons
+            name="filter-variant"
+            size={20}
+            color={filtersActive ? '#10b981' : '#7c3aed'}
+          />
         </TouchableOpacity>
-      )}
-      {!isSearching && (
-        <TouchableOpacity onPress={onSubmit} style={styles.searchButton}>
-          <Ionicons name="arrow-forward" size={18} color="#7c3aed" />
-        </TouchableOpacity>
-      )}
-      {isSearching && (
-        <View style={styles.searchButton}>
-          <Text style={{ color: '#7c3aed' }}>...</Text>
-        </View>
-      )}
+      </View>
     </View>
-  </View>
-);
+  );
+};

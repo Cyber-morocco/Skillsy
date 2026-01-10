@@ -382,6 +382,7 @@ export const useExploreMap = () => {
     selectedDistance,
     setSearchQuery,
     setViewMode,
+    setSearchType,
     skillSearch,
     toggleSearchType,
     userLocation,
