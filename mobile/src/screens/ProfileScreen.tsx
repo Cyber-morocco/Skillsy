@@ -788,7 +788,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 <View key={review.id} style={styles.reviewItem}>
                   <View style={styles.reviewHeader}>
                     <Text style={styles.reviewName}>{review.fromName || 'Anoniem'}</Text>
-                    <Text style={styles.reviewRating}>⭐ {review.rating}</Text>
+                    <Text style={styles.reviewRating}>⭐ {review.rating.toFixed(1)}</Text>
                   </View>
                 </View>
               ))
