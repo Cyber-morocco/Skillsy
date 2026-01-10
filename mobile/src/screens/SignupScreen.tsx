@@ -26,14 +26,15 @@ type AuthScreenProps = {
 };
 
 const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSignup = async () => {
-    if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password || !confirmPassword) {
       Alert.alert('Fout', 'Vul alle velden in');
       return;
     }
@@ -53,12 +54,15 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       const userCredential = await createUserWithEmailAndPassword(auth, email.toLowerCase().trim(), password);
       const user = userCredential.user;
 
-      await updateProfile(user, { displayName: fullName.trim() });
+      const displayName = `${firstName.trim()} ${lastName.trim()}`;
+      await updateProfile(user, { displayName: displayName });
 
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
         email: user.email,
-        displayName: fullName.trim(),
+        displayName: displayName,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
         profileComplete: false,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -137,12 +141,22 @@ const SignupScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               <View style={styles.dividerLine} />
             </View>
 
-            <AppInput
-              label="Naam"
-              placeholder="Volledige naam"
-              value={fullName}
-              onChangeText={setFullName}
-            />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <AppInput
+                label="Voornaam"
+                placeholder="Voornaam"
+                value={firstName}
+                onChangeText={setFirstName}
+                containerStyle={{ flex: 0.48 }}
+              />
+              <AppInput
+                label="Naam"
+                placeholder="Naam"
+                value={lastName}
+                onChangeText={setLastName}
+                containerStyle={{ flex: 0.48 }}
+              />
+            </View>
 
             <AppInput
               label="E-mailadres"

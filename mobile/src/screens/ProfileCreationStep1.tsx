@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     ActivityIndicator,
     Alert,
@@ -40,6 +40,14 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (auth.currentUser?.displayName) {
+            setName(auth.currentUser.displayName);
+        }
+        setLoading(false);
+    }, []);
 
     const handleLogout = async () => {
         try {
@@ -158,224 +166,230 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                     contentContainerStyle={styles.scrollContent}
                     keyboardShouldPersistTaps="handled"
                 >
-                    <View style={{ alignItems: 'center', marginBottom: 32 }}>
-                        <View style={{ flexDirection: 'row', width: '100%', justifyContent: 'space-between', marginBottom: 16, paddingHorizontal: 16 }}>
-                            <View style={{ height: 4, flex: 1, backgroundColor: authColors.accent, borderRadius: 2, marginRight: 8 }} />
-                            <View style={{ height: 4, flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2, marginRight: 8 }} />
-                            <View style={{ height: 4, flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }} />
+                    {loading ? (
+                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 }}>
+                            <ActivityIndicator size="large" color={authColors.accent} />
                         </View>
-                        <Text style={{ color: authColors.muted, fontSize: 14 }}>Stap 1 van 3</Text>
-                    </View>
-
-                    <View style={styles.card}>
-                        <View style={{ marginBottom: 24 }}>
-                            <Text style={{ fontSize: 22, fontWeight: '700', color: authColors.text, marginBottom: 8 }}>
-                                Welkom bij Skillsy! 👋
-                            </Text>
-                            <Text style={{ fontSize: 15, color: authColors.muted, lineHeight: 22 }}>
-                                Laten we beginnen met je profiel (foto is optioneel)
-                            </Text>
-                        </View>
-
-                        <View style={{ alignItems: 'center', marginBottom: 24 }}>
-                            <TouchableOpacity
-                                onPress={pickImage}
-                                style={{
-                                    width: 100,
-                                    height: 100,
-                                    borderRadius: 50,
-                                    backgroundColor: 'rgba(255,255,255,0.05)',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                    borderWidth: 1,
-                                    borderColor: 'rgba(255,255,255,0.1)',
-                                    overflow: 'hidden'
-                                }}
-                            >
-                                {image ? (
-                                    <Image source={{ uri: image }} style={{ width: '100%', height: '100%' }} />
-                                ) : (
-                                    <Ionicons name="camera" size={32} color={authColors.muted} />
-                                )}
-                            </TouchableOpacity>
-                            <View style={{ flexDirection: 'row', gap: 16, marginTop: 12 }}>
-                                <TouchableOpacity onPress={pickImage}>
-                                    <Text style={{ color: authColors.accent, fontSize: 13, fontWeight: '600' }}>Kies foto</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity onPress={takePhoto}>
-                                    <Text style={{ color: authColors.accent, fontSize: 13, fontWeight: '600' }}>Maak foto</Text>
-                                </TouchableOpacity>
-                                {image && (
-                                    <TouchableOpacity onPress={() => setImage(null)}>
-                                        <Text style={{ color: '#ff4444', fontSize: 13, fontWeight: '600' }}>Verwijder</Text>
-                                    </TouchableOpacity>
-                                )}
-                            </View>
-                        </View>
-
-                        <AppInput
-                            label="Wat is je naam?"
-                            placeholder="Je naam..."
-                            value={name}
-                            onChangeText={setName}
-                            autoComplete="name"
-                            importantForAutofill="yes"
-                            textContentType="name"
-                            editable={true}
-                        />
-
-                        <AppInput
-                            label="Vertel iets over jezelf"
-                            placeholder="Ik ben een gepassioneerde leraar en wil graag mijn kennis delen..."
-                            multiline
-                            numberOfLines={4}
-                            value={bio}
-                            onChangeText={setBio}
-                            style={{ height: 100, textAlignVertical: 'top', paddingTop: 12 }}
-                        />
-
-                        <View style={{ marginBottom: 20, marginTop: 16 }}>
-                            <Text style={[styles.label, { fontSize: 18, marginBottom: 6 }]}>Locatie</Text>
-                            <Text style={{ color: authColors.muted, fontSize: 13, lineHeight: 20, marginBottom: 12 }}>
-                                We delen je exacte adres niet. Alleen je wijk of buurt wordt getoond.
-                            </Text>
-
-                            <View style={{ zIndex: 1000 }}>
-                                <AppInput
-                                    label="Adres of Straat"
-                                    placeholder="Typ je adres..."
-                                    value={street}
-                                    onChangeText={searchAddress}
-                                    onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                                />
-                                {showSuggestions && (
-                                    <ScrollView
-                                        style={[styles.autocompleteDropdown, { maxHeight: 200 }]}
-                                        nestedScrollEnabled={true}
-                                        keyboardShouldPersistTaps="handled"
-                                    >
-                                        {suggestions.map((item, index) => {
-                                            const { properties } = item;
-                                            const mainText = properties.street
-                                                ? `${properties.street}${properties.housenumber ? ' ' + properties.housenumber : ''}`
-                                                : properties.name;
-                                            const subText = `${properties.postcode || ''} ${properties.city || ''} ${properties.country || ''}`.trim();
-
-                                            return (
-                                                <TouchableOpacity
-                                                    key={index}
-                                                    style={styles.suggestionItem}
-                                                    onPress={() => selectSuggestion(item)}
-                                                >
-                                                    <Text style={styles.suggestionText}>{mainText}</Text>
-                                                    {subText ? (
-                                                        <Text style={styles.suggestionSubtext}>{subText}</Text>
-                                                    ) : null}
-                                                </TouchableOpacity>
-                                            );
-                                        })}
-                                    </ScrollView>
-                                )}
+                    ) : (
+                        <>
+                            <View style={{ alignItems: 'center', marginBottom: 32 }}>
+                                <View style={{ flexDirection: 'row', width: '100%', justifyContent: 'space-between', marginBottom: 16, paddingHorizontal: 16 }}>
+                                    <View style={{ height: 4, flex: 1, backgroundColor: authColors.accent, borderRadius: 2, marginRight: 8 }} />
+                                    <View style={{ height: 4, flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2, marginRight: 8 }} />
+                                    <View style={{ height: 4, flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 2 }} />
+                                </View>
+                                <Text style={{ color: authColors.muted, fontSize: 14 }}>Stap 1 van 3</Text>
                             </View>
 
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                <AppInput
-                                    label="Postcode"
-                                    placeholder="Bijv. 1030"
-                                    value={zipCode}
-                                    onChangeText={setZipCode}
-                                    containerStyle={{ flex: 0.48 }}
-                                />
-                                <AppInput
-                                    label="Stad"
-                                    placeholder="Bijv. Schaarbeek"
-                                    value={city}
-                                    onChangeText={setCity}
-                                    containerStyle={{ flex: 0.48 }}
-                                />
-                            </View>
-
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, alignItems: 'center' }}>
-                                <TouchableOpacity
-                                    onPress={handleLogout}
-                                    style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(148,163,184,0.2)' }}
-                                    disabled={saving}
-                                >
-                                    <Text style={{ color: authColors.text, fontWeight: '600' }}>
-                                        ‹ Terug
+                            <View style={styles.card}>
+                                <View style={{ marginBottom: 24 }}>
+                                    <Text style={{ fontSize: 22, fontWeight: '700', color: authColors.text, marginBottom: 8 }}>
+                                        Welkom bij Skillsy! 👋
                                     </Text>
-                                </TouchableOpacity>
+                                    <Text style={{ fontSize: 15, color: authColors.muted, lineHeight: 22 }}>
+                                        Laten we beginnen met je profiel (foto is optioneel)
+                                    </Text>
+                                </View>
 
-                                <TouchableOpacity
-                                    style={[styles.primaryButton, { marginTop: 0, paddingVertical: 12, paddingHorizontal: 32 }, saving && { opacity: 0.7 }]}
-                                    onPress={async () => {
-                                        if (!auth.currentUser) {
-                                            Alert.alert('Fout', 'Niet ingelogd');
-                                            return;
-                                        }
+                                <View style={{ alignItems: 'center', marginBottom: 24 }}>
+                                    <TouchableOpacity
+                                        onPress={pickImage}
+                                        style={{
+                                            width: 100,
+                                            height: 100,
+                                            borderRadius: 50,
+                                            backgroundColor: 'rgba(255,255,255,0.05)',
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            borderWidth: 1,
+                                            borderColor: 'rgba(255,255,255,0.1)',
+                                            overflow: 'hidden'
+                                        }}
+                                    >
+                                        {image ? (
+                                            <Image source={{ uri: image }} style={{ width: '100%', height: '100%' }} />
+                                        ) : (
+                                            <Ionicons name="camera" size={32} color={authColors.muted} />
+                                        )}
+                                    </TouchableOpacity>
+                                    <View style={{ flexDirection: 'row', gap: 16, marginTop: 12 }}>
+                                        <TouchableOpacity onPress={pickImage}>
+                                            <Text style={{ color: authColors.accent, fontSize: 13, fontWeight: '600' }}>Kies foto</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={takePhoto}>
+                                            <Text style={{ color: authColors.accent, fontSize: 13, fontWeight: '600' }}>Maak foto</Text>
+                                        </TouchableOpacity>
+                                        {image && (
+                                            <TouchableOpacity onPress={() => setImage(null)}>
+                                                <Text style={{ color: '#ff4444', fontSize: 13, fontWeight: '600' }}>Verwijder</Text>
+                                            </TouchableOpacity>
+                                        )}
+                                    </View>
+                                </View>
 
-                                        if (!name.trim() || !street.trim() || !zipCode.trim() || !city.trim()) {
-                                            Alert.alert('Fout', 'Vul alle verplichte velden in');
-                                            return;
-                                        }
+                                <AppInput
+                                    label="Kies een username"
+                                    placeholder="Gebruikersnaam..."
+                                    value={name}
+                                    onChangeText={setName}
+                                    autoComplete="username"
+                                    importantForAutofill="yes"
+                                    textContentType="username"
+                                    editable={true}
+                                />
 
-                                        setSaving(true);
-                                        try {
-                                            let finalCoords = coords;
+                                <AppInput
+                                    label="Vertel iets over jezelf"
+                                    placeholder="Ik ben een gepassioneerde leraar en wil graag mijn kennis delen..."
+                                    multiline
+                                    numberOfLines={4}
+                                    value={bio}
+                                    onChangeText={setBio}
+                                    style={{ height: 100, textAlignVertical: 'top', paddingTop: 12 }}
+                                />
 
-                                            // Fallback to geocoding if coords were not set by autocomplete
-                                            if (!finalCoords) {
-                                                finalCoords = await geocodeAddress(street, city, zipCode);
-                                            }
+                                <View style={{ marginBottom: 20, marginTop: 16 }}>
+                                    <Text style={[styles.label, { fontSize: 18, marginBottom: 6 }]}>Locatie</Text>
+                                    <Text style={{ color: authColors.muted, fontSize: 13, lineHeight: 20, marginBottom: 12 }}>
+                                        We delen je exacte adres niet. Alleen je wijk of buurt wordt getoond.
+                                    </Text>
 
-                                            if (!finalCoords) {
-                                                Alert.alert(
-                                                    'Adres niet gevonden',
-                                                    'We konden dit adres niet verifiëren. Controleer of de straatnaam, postcode en stad correct zijn.'
-                                                );
-                                                setSaving(false);
-                                                return;
-                                            }
+                                    <View style={{ zIndex: 1000 }}>
+                                        <AppInput
+                                            label="Adres of Straat"
+                                            placeholder="Typ je adres..."
+                                            value={street}
+                                            onChangeText={searchAddress}
+                                            onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                                        />
+                                        {showSuggestions && (
+                                            <ScrollView
+                                                style={[styles.autocompleteDropdown, { maxHeight: 200 }]}
+                                                nestedScrollEnabled={true}
+                                                keyboardShouldPersistTaps="handled"
+                                            >
+                                                {suggestions.map((item, index) => {
+                                                    const { properties } = item;
+                                                    const mainText = properties.street
+                                                        ? `${properties.street}${properties.housenumber ? ' ' + properties.housenumber : ''}`
+                                                        : properties.name;
+                                                    const subText = `${properties.postcode || ''} ${properties.city || ''} ${properties.country || ''}`.trim();
 
-                                            let photoURL = null;
-                                            if (image) {
-                                                photoURL = await uploadProfileImage(image);
-                                            }
+                                                    return (
+                                                        <TouchableOpacity
+                                                            key={index}
+                                                            style={styles.suggestionItem}
+                                                            onPress={() => selectSuggestion(item)}
+                                                        >
+                                                            <Text style={styles.suggestionText}>{mainText}</Text>
+                                                            {subText ? (
+                                                                <Text style={styles.suggestionSubtext}>{subText}</Text>
+                                                            ) : null}
+                                                        </TouchableOpacity>
+                                                    );
+                                                })}
+                                            </ScrollView>
+                                        )}
+                                    </View>
 
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                        <AppInput
+                                            label="Postcode"
+                                            placeholder="Bijv. 1030"
+                                            value={zipCode}
+                                            onChangeText={setZipCode}
+                                            containerStyle={{ flex: 0.48 }}
+                                        />
+                                        <AppInput
+                                            label="Stad"
+                                            placeholder="Bijv. Schaarbeek"
+                                            value={city}
+                                            onChangeText={setCity}
+                                            containerStyle={{ flex: 0.48 }}
+                                        />
+                                    </View>
 
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, alignItems: 'center' }}>
+                                        <TouchableOpacity
+                                            onPress={handleLogout}
+                                            style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(148,163,184,0.2)' }}
+                                            disabled={saving}
+                                        >
+                                            <Text style={{ color: authColors.text, fontWeight: '600' }}>
+                                                ‹ Terug
+                                            </Text>
+                                        </TouchableOpacity>
 
-                                            await updateDoc(doc(db, 'users', auth.currentUser.uid), {
-                                                displayName: name.trim() || auth.currentUser.displayName || '',
-                                                bio: bio.trim(),
-                                                photoURL: photoURL,
-                                                location: {
-                                                    street: street.trim(),
-                                                    zipCode: zipCode.trim(),
-                                                    city: city.trim(),
-                                                    lat: finalCoords.lat,
-                                                    lng: finalCoords.lng,
-                                                },
-                                                updatedAt: serverTimestamp(),
-                                            });
+                                        <TouchableOpacity
+                                            style={[styles.primaryButton, { marginTop: 0, paddingVertical: 12, paddingHorizontal: 32 }, saving && { opacity: 0.7 }]}
+                                            onPress={async () => {
+                                                if (!auth.currentUser) {
+                                                    Alert.alert('Fout', 'Niet ingelogd');
+                                                    return;
+                                                }
 
-                                            navigation.navigate('ProfileCreationStep2');
-                                        } catch (error: any) {
-                                            Alert.alert('Erreur', error.message || 'Impossible de sauvegarder le profil');
-                                        } finally {
-                                            setSaving(false);
-                                        }
-                                    }}
-                                    disabled={saving}
-                                >
-                                    {saving ? (
-                                        <ActivityIndicator color="#fff" />
-                                    ) : (
-                                        <Text style={styles.primaryButtonText}>Volgende ›</Text>
-                                    )}
-                                </TouchableOpacity>
+                                                if (!name.trim() || !street.trim() || !zipCode.trim() || !city.trim()) {
+                                                    Alert.alert('Fout', 'Vul alle verplichte velden in');
+                                                    return;
+                                                }
+
+                                                setSaving(true);
+                                                try {
+                                                    let finalCoords = coords;
+
+                                                    // Fallback to geocoding if coords were not set by autocomplete
+                                                    if (!finalCoords) {
+                                                        finalCoords = await geocodeAddress(street, city, zipCode);
+                                                    }
+
+                                                    if (!finalCoords) {
+                                                        Alert.alert(
+                                                            'Adres niet gevonden',
+                                                            'We konden dit adres niet verifiëren. Controleer of de straatnaam, postcode en stad correct zijn.'
+                                                        );
+                                                        setSaving(false);
+                                                        return;
+                                                    }
+
+                                                    let photoURL = null;
+                                                    if (image) {
+                                                        photoURL = await uploadProfileImage(image);
+                                                    }
+
+                                                    await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+                                                        displayName: name.trim(),
+                                                        bio: bio.trim(),
+                                                        photoURL: photoURL,
+                                                        location: {
+                                                            street: street.trim(),
+                                                            zipCode: zipCode.trim(),
+                                                            city: city.trim(),
+                                                            lat: finalCoords.lat,
+                                                            lng: finalCoords.lng,
+                                                        },
+                                                        updatedAt: serverTimestamp(),
+                                                    });
+
+                                                    navigation.navigate('ProfileCreationStep2');
+                                                } catch (error: any) {
+                                                    Alert.alert('Erreur', error.message || 'Impossible de sauvegarder le profil');
+                                                } finally {
+                                                    setSaving(false);
+                                                }
+                                            }}
+                                            disabled={saving}
+                                        >
+                                            {saving ? (
+                                                <ActivityIndicator color="#fff" />
+                                            ) : (
+                                                <Text style={styles.primaryButtonText}>Volgende ›</Text>
+                                            )}
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
                             </View>
-                        </View>
-                    </View>
+                        </>
+                    )}
                 </ScrollView>
             </KeyboardAvoidingView>
         </SafeAreaView >

@@ -111,7 +111,6 @@ const ProfileCreationStep3: React.FC<NavProps> = ({ navigation }) => {
                 updatedAt: serverTimestamp(),
             });
 
-            navigation.navigate('MainTabs');
 
         } catch (error: any) {
             console.error(error);

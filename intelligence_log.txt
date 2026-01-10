@@ -2076,3 +2076,421 @@ Discovery Category Similarities:
   - fotografie: 0.5342
   - overig: 0.1967
 Final Decision: DISCOVERY in Category 'fotografie'
+
+--- NEW REQUEST: 'voetbal' ---
+Input Text: voetbal
+Web Augmented: True
+Enriched Text: Voetbal is een wereldwijd populaire balsport waarbij twee ploegen van elf spelers moeten proberen de bal in het doel van de tegenstander te krijgen. De bal mag met ieder deel van het lichaam gespeeld ...
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.1816 (Sem: 0.0520, Fuz: 0.2900, Pop: 0.4400)
+  - [Regada (Marokkaanse dans)] Total: 0.1479 (Sem: 0.0453, Fuz: 0.2900, Pop: 0.2400)
+  - [Akoestische gitaar] Total: 0.2078 (Sem: 0.0451, Fuz: 0.4300, Pop: 0.3600)
+Discovery Category Similarities:
+  - muziek: 0.2892
+  - sport: 0.4032
+  - talen: 0.1258
+  - tech: 0.0708
+  - creatief: 0.1711
+  - academisch: 0.1483
+  - design: 0.0841
+  - koken: 0.1558
+  - business: 0.1516
+  - zorg: 0.1019
+  - ambacht: 0.1697
+  - fotografie: 0.1348
+  - overig: 0.2008
+Final Decision: DISCOVERY in Category 'sport'
+
+--- NEW REQUEST: 'rappen' ---
+Input Text: rappen
+Web Augmented: True
+Enriched Text: Rappen kan verwijzen naar:Rap (muziekstijl)
+Honderdste deel van een Zwitserse frank...
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.1494 (Sem: 0.0589, Fuz: 0.1700, Pop: 0.4400)
+  - [Akoestische gitaar] Total: 0.1815 (Sem: 0.0518, Fuz: 0.3300, Pop: 0.3600)
+  - [Schilderen] Total: 0.2068 (Sem: 0.0487, Fuz: 0.5000, Pop: 0.2000)
+Discovery Category Similarities:
+  - muziek: 0.3012
+  - sport: 0.0068
+  - talen: 0.1978
+  - tech: 0.0099
+  - creatief: 0.2129
+  - academisch: 0.0667
+  - design: 0.1158
+  - koken: 0.0844
+  - business: -0.0359
+  - zorg: 0.0332
+  - ambacht: 0.1452
+  - fotografie: 0.1101
+  - overig: 0.2178
+Final Decision: DISCOVERY in Category 'muziek'
+
+--- NEW REQUEST: 'rap' ---
+Input Text: rap
+Web Augmented: True
+Enriched Text: Rap kan verwijzen naar:Rap (muziekstijl)
+Uitgeverij Thomas Rap, een Nederlandse uitgeverij
+Studio RAP, een Nederlands architecten- en ontwerpstudio
+RAP (voetbalclub), een Amsterdamse voetbalclub
+RAP (...
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.0874 (Sem: 0.0388, Fuz: 0.0000, Pop: 0.4400)
+  - [Akoestische gitaar] Total: 0.1741 (Sem: 0.0384, Fuz: 0.3300, Pop: 0.3600)
+  - [Schilderen] Total: 0.1478 (Sem: 0.0342, Fuz: 0.3300, Pop: 0.2000)
+Discovery Category Similarities:
+  - muziek: 0.2663
+  - sport: 0.0948
+  - talen: 0.1503
+  - tech: 0.2088
+  - creatief: 0.2194
+  - academisch: 0.0989
+  - design: 0.1814
+  - koken: 0.1079
+  - business: 0.0835
+  - zorg: 0.0190
+  - ambacht: 0.1981
+  - fotografie: 0.1982
+  - overig: 0.1706
+Final Decision: DISCOVERY in Category 'muziek'
+
+--- NEW REQUEST: 'rekenvaardigheid' ---
+Input Text: rekenvaardigheid
+Web Augmented: False
+Enriched Text: rekenvaardigheid...
+Calculation Details (Top 3 Candidates):
+  - [Schilderen] Total: 0.1620 (Sem: 0.0763, Fuz: 0.3000, Pop: 0.2000)
+  - [Engels bijles] Total: 0.2219 (Sem: 0.0762, Fuz: 0.3800, Pop: 0.4400)
+  - [Akoestische gitaar] Total: 0.1981 (Sem: 0.0548, Fuz: 0.3800, Pop: 0.3600)
+Discovery Category Similarities:
+  - muziek: 0.0176
+  - sport: 0.1163
+  - talen: 0.1870
+  - tech: 0.0764
+  - creatief: 0.2078
+  - academisch: 0.1969
+  - design: 0.1398
+  - koken: 0.2012
+  - business: 0.1033
+  - zorg: 0.2255
+  - ambacht: 0.3797
+  - fotografie: 0.2058
+  - overig: 0.2188
+Final Decision: DISCOVERY in Category 'ambacht'
+
+--- NEW REQUEST: 'rekenen' ---
+Input Text: rekenen
+Web Augmented: True
+Enriched Text: Met rekenen, aritmetica, cijferkunst, rekenkunde wordt een aantal bewerkingen, ook wel operaties genoemd, aangeduid die op getallen worden uitgevoerd. Deze bewerkingen zijn: optellen, aftrekken, verme...
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.1326 (Sem: 0.0448, Fuz: 0.1400, Pop: 0.4400)
+  - [Schilderen] Total: 0.1804 (Sem: 0.0389, Fuz: 0.4300, Pop: 0.2000)
+  - [Akoestische gitaar] Total: 0.1154 (Sem: 0.0352, Fuz: 0.1400, Pop: 0.3600)
+Discovery Category Similarities:
+  - muziek: 0.2195
+  - sport: 0.2204
+  - talen: 0.4035
+  - tech: 0.3236
+  - creatief: 0.1564
+  - academisch: 0.4906
+  - design: 0.1067
+  - koken: 0.3325
+  - business: 0.1588
+  - zorg: 0.1797
+  - ambacht: 0.2820
+  - fotografie: 0.1172
+  - overig: 0.2395
+Final Decision: DISCOVERY in Category 'academisch'
+
+--- NEW REQUEST: 'biologie' ---
+Input Text: biologie
+Web Augmented: True
+Enriched Text: Biologie is de natuurwetenschap die zich richt op organismen, levensprocessen en levensverschijnselen. De biologie omvat een breed scala aan vakgebieden waarin men onderzoek doet naar fysieke structuu...
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.2443 (Sem: 0.0515, Fuz: 0.5000, Pop: 0.4400)
+  - [Akoestische gitaar] Total: 0.1544 (Sem: 0.0462, Fuz: 0.2500, Pop: 0.3600)
+  - [Schilderen] Total: 0.1681 (Sem: 0.0439, Fuz: 0.3800, Pop: 0.2000)
+Discovery Category Similarities:
+  - muziek: 0.1634
+  - sport: 0.2651
+  - talen: 0.2159
+  - tech: 0.3775
+  - creatief: 0.1517
+  - academisch: 0.4178
+  - design: 0.1838
+  - koken: 0.1649
+  - business: 0.2019
+  - zorg: 0.2041
+  - ambacht: 0.2371
+  - fotografie: 0.1259
+  - overig: 0.3033
+Final Decision: DISCOVERY in Category 'academisch'
+
+--- NEW REQUEST: 'anatomie' ---
+Input Text: anatomie
+Web Augmented: True
+Enriched Text: Anatomie is het onderdeel van de biologische morfologie dat de structuur en de organisatie van organismen behandelt. Daarbinnen worden zoötomie en plantenanatomie onderscheiden....
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.1608 (Sem: 0.0359, Fuz: 0.2500, Pop: 0.4400)
+  - [Akoestische gitaar] Total: 0.1863 (Sem: 0.0332, Fuz: 0.3800, Pop: 0.3600)
+  - [Schilderen] Total: 0.1229 (Sem: 0.0325, Fuz: 0.2500, Pop: 0.2000)
+Discovery Category Similarities:
+  - muziek: 0.1666
+  - sport: 0.1235
+  - talen: 0.1409
+  - tech: 0.2440
+  - creatief: 0.2149
+  - academisch: 0.2229
+  - design: 0.2744
+  - koken: 0.1016
+  - business: 0.1510
+  - zorg: 0.1111
+  - ambacht: 0.2384
+  - fotografie: 0.1292
+  - overig: 0.1775
+Final Decision: DISCOVERY in Category 'design'
+
+--- NEW REQUEST: 'Anatomie ' ---
+Input Text: anatomie
+Web Augmented: True
+Enriched Text: Anatomie is het onderdeel van de biologische morfologie dat de structuur en de organisatie van organismen behandelt. Daarbinnen worden zoötomie en plantenanatomie onderscheiden....
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.1608 (Sem: 0.0359, Fuz: 0.2500, Pop: 0.4400)
+  - [Akoestische gitaar] Total: 0.1863 (Sem: 0.0332, Fuz: 0.3800, Pop: 0.3600)
+  - [Schilderen] Total: 0.1229 (Sem: 0.0325, Fuz: 0.2500, Pop: 0.2000)
+Discovery Category Similarities:
+  - muziek: 0.1666
+  - sport: 0.1235
+  - talen: 0.1409
+  - tech: 0.2440
+  - creatief: 0.2149
+  - academisch: 0.2229
+  - design: 0.2744
+  - koken: 0.1016
+  - business: 0.1510
+  - zorg: 0.1111
+  - ambacht: 0.2384
+  - fotografie: 0.1292
+  - overig: 0.1775
+Final Decision: DISCOVERY in Category 'design'
+
+--- NEW REQUEST: 'Anatomie' ---
+Input Text: anatomie
+Web Augmented: True
+Enriched Text: Anatomie is het onderdeel van de biologische morfologie dat de structuur en de organisatie van organismen behandelt. Daarbinnen worden zoötomie en plantenanatomie onderscheiden....
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.1608 (Sem: 0.0359, Fuz: 0.2500, Pop: 0.4400)
+  - [Akoestische gitaar] Total: 0.1863 (Sem: 0.0332, Fuz: 0.3800, Pop: 0.3600)
+  - [Schilderen] Total: 0.1229 (Sem: 0.0325, Fuz: 0.2500, Pop: 0.2000)
+Discovery Category Similarities:
+  - muziek: 0.1666
+  - sport: 0.1235
+  - talen: 0.1409
+  - tech: 0.2440
+  - creatief: 0.2149
+  - academisch: 0.2229
+  - design: 0.2744
+  - koken: 0.1016
+  - business: 0.1510
+  - zorg: 0.1111
+  - ambacht: 0.2384
+  - fotografie: 0.1292
+  - overig: 0.1775
+Final Decision: DISCOVERY in Category 'design'
+
+--- NEW REQUEST: 'nederlands' ---
+Input Text: nederlands
+Web Augmented: True
+Enriched Text: Het Nederlands is een West-Germaanse taal, de meest gebruikte taal in Nederland en België, de officiële taal van Suriname en een van de drie officiële talen van België. Binnen het Koninkrijk der Neder...
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.2087 (Sem: 0.0413, Fuz: 0.4000, Pop: 0.4400)
+  - [Regada (Marokkaanse dans)] Total: 0.2331 (Sem: 0.0311, Fuz: 0.6000, Pop: 0.2400)
+  - [Schilderen] Total: 0.1880 (Sem: 0.0309, Fuz: 0.4700, Pop: 0.2000)
+Discovery Category Similarities:
+  - muziek: 0.0278
+  - sport: -0.0191
+  - talen: 0.3551
+  - tech: 0.0108
+  - creatief: 0.0085
+  - academisch: 0.0794
+  - design: 0.0112
+  - koken: 0.0229
+  - business: 0.0000
+  - zorg: -0.0505
+  - ambacht: 0.0260
+  - fotografie: -0.0545
+  - overig: 0.0680
+Final Decision: DISCOVERY in Category 'talen'
+
+--- NEW REQUEST: 'tajine' ---
+Input Text: tajine
+Web Augmented: True
+Enriched Text: Een tajine is oorspronkelijk een stoofpot van aardewerk. De gerechten die ermee gemaakt worden ontlenen er tevens hun naam aan. Tajine is een van de bekendste gerechten in de Marokkaanse keuken en ken...
+Calculation Details (Top 3 Candidates):
+  - [Regada (Marokkaanse dans)] Total: 0.2091 (Sem: 0.0420, Fuz: 0.5000, Pop: 0.2400)
+  - [Akoestische gitaar] Total: 0.2247 (Sem: 0.0377, Fuz: 0.5000, Pop: 0.3600)
+  - [Engels bijles] Total: 0.1843 (Sem: 0.0352, Fuz: 0.3300, Pop: 0.4400)
+Discovery Category Similarities:
+  - muziek: 0.1887
+  - sport: -0.0204
+  - talen: 0.1492
+  - tech: 0.1152
+  - creatief: 0.2146
+  - academisch: 0.0243
+  - design: 0.0994
+  - koken: 0.3409
+  - business: 0.0814
+  - zorg: -0.0049
+  - ambacht: 0.1674
+  - fotografie: 0.0765
+  - overig: 0.0105
+Final Decision: DISCOVERY in Category 'koken'
+
+--- NEW REQUEST: 'bier' ---
+Input Text: bier
+Web Augmented: True
+Enriched Text: Bier is een licht alcoholische en koolzuurhoudende drank gemaakt met water, gefermenteerde mout en plantaardige bestanddelen, zoals kruiden en hop, die dienen voor de smaak of de houdbaarheid van het ...
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.2392 (Sem: 0.0423, Fuz: 0.5000, Pop: 0.4400)
+  - [Akoestische gitaar] Total: 0.1498 (Sem: 0.0378, Fuz: 0.2500, Pop: 0.3600)
+  - [Schilderen] Total: 0.1987 (Sem: 0.0339, Fuz: 0.5000, Pop: 0.2000)
+Discovery Category Similarities:
+  - muziek: 0.1223
+  - sport: 0.0418
+  - talen: 0.0619
+  - tech: 0.1031
+  - creatief: 0.1228
+  - academisch: 0.0599
+  - design: 0.0680
+  - koken: 0.0867
+  - business: 0.1185
+  - zorg: 0.0788
+  - ambacht: 0.2159
+  - fotografie: 0.0587
+  - overig: 0.0943
+Final Decision: DISCOVERY in Category 'ambacht'
+
+--- NEW REQUEST: 'carleur' ---
+Input Text: carleur
+Web Augmented: False
+Enriched Text: carleur...
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.2035 (Sem: 0.0808, Fuz: 0.3100, Pop: 0.4400)
+  - [Schilderen] Total: 0.2411 (Sem: 0.0730, Fuz: 0.5700, Pop: 0.2000)
+  - [Akoestische gitaar] Total: 0.1764 (Sem: 0.0643, Fuz: 0.2900, Pop: 0.3600)
+Discovery Category Similarities:
+  - muziek: 0.0164
+  - sport: -0.0416
+  - talen: 0.1005
+  - tech: -0.1031
+  - creatief: 0.1334
+  - academisch: 0.0790
+  - design: 0.0307
+  - koken: 0.1198
+  - business: 0.0419
+  - zorg: 0.0832
+  - ambacht: 0.1405
+  - fotografie: 0.1037
+  - overig: 0.1145
+Final Decision: DISCOVERY in Category 'ambacht'
+
+--- NEW REQUEST: 'git' ---
+Input Text: git
+Web Augmented: True
+Enriched Text: Git kan verwijzen naar:Git (mineraloïde), een mineraloïde
+Git (software), een versiebeheersysteem...
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.1834 (Sem: 0.0334, Fuz: 0.3300, Pop: 0.4400)
+  - [Schilderen] Total: 0.1467 (Sem: 0.0321, Fuz: 0.3300, Pop: 0.2000)
+  - [Akoestische gitaar] Total: 0.3710 (Sem: 0.0309, Fuz: 1.0000, Pop: 0.3600)
+Discovery Category Similarities:
+  - muziek: 0.1019
+  - sport: 0.1171
+  - talen: 0.1386
+  - tech: 0.3578
+  - creatief: 0.1171
+  - academisch: 0.1348
+  - design: 0.1758
+  - koken: 0.0176
+  - business: 0.0785
+  - zorg: 0.1488
+  - ambacht: 0.1665
+  - fotografie: 0.1835
+  - overig: 0.1518
+Final Decision: DISCOVERY in Category 'tech'
+
+--- NEW REQUEST: 'gitazr' ---
+Input Text: gitazr
+Web Augmented: False
+Enriched Text: gitazr...
+Calculation Details (Top 3 Candidates):
+  - [Akoestische gitaar] Total: 0.3403 (Sem: 0.0677, Fuz: 0.8300, Pop: 0.3600)
+  - [Schilderen] Total: 0.1644 (Sem: 0.0643, Fuz: 0.3300, Pop: 0.2000)
+  - [Engels bijles] Total: 0.1495 (Sem: 0.0592, Fuz: 0.1700, Pop: 0.4400)
+Discovery Category Similarities:
+  - muziek: 0.2021
+  - sport: 0.0367
+  - talen: 0.1233
+  - tech: 0.1463
+  - creatief: 0.1198
+  - academisch: 0.0934
+  - design: 0.1900
+  - koken: 0.1107
+  - business: 0.0166
+  - zorg: 0.1226
+  - ambacht: 0.1104
+  - fotografie: 0.2021
+  - overig: 0.0988
+Final Decision: DISCOVERY in Category 'muziek'
+
+--- NEW REQUEST: 'lezen' ---
+Input Text: lezen
+Web Augmented: True
+Enriched Text: Lezen of lexicale verwerking is het opnemen en verwerken van geschreven of gedrukte woorden (schrift). Bij lezen moeten zowel individuele woorden als het zinsverband worden begrepen....
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.2145 (Sem: 0.0519, Fuz: 0.4000, Pop: 0.4400)
+  - [Schilderen] Total: 0.2306 (Sem: 0.0375, Fuz: 0.6000, Pop: 0.2000)
+  - [Akoestische gitaar] Total: 0.1309 (Sem: 0.0307, Fuz: 0.2000, Pop: 0.3600)
+Discovery Category Similarities:
+  - muziek: 0.1799
+  - sport: 0.0495
+  - talen: 0.6031
+  - tech: 0.1465
+  - creatief: 0.1466
+  - academisch: 0.1677
+  - design: 0.0757
+  - koken: 0.1570
+  - business: -0.0059
+  - zorg: 0.0487
+  - ambacht: 0.1594
+  - fotografie: 0.0606
+  - overig: 0.1393
+Final Decision: DISCOVERY in Category 'talen'
+
+--- NEW REQUEST: 'dans' ---
+Input Text: dans
+Web Augmented: True
+Enriched Text: Dansen is een sport, kunstvorm en een sociaal gebeuren dat meestal op beweging duidt van het lichaam, vaak in combinatie met muziek. Het wordt gebruikt als een vorm van emotionele expressie, sociale i...
+Calculation Details (Top 3 Candidates):
+  - [Regada (Marokkaanse dans)] Total: 0.2827 (Sem: 0.0395, Fuz: 0.7500, Pop: 0.2400)
+  - [HTML & CSS] Total: 0.1884 (Sem: 0.0316, Fuz: 0.2500, Pop: 0.6400)
+  - [Akoestische gitaar] Total: 0.1461 (Sem: 0.0310, Fuz: 0.2500, Pop: 0.3600)
+Discovery Category Similarities:
+  - muziek: 0.5248
+  - sport: 0.4680
+  - talen: 0.1266
+  - tech: 0.0787
+  - creatief: 0.2944
+  - academisch: 0.1481
+  - design: 0.2253
+  - koken: 0.1257
+  - business: 0.2307
+  - zorg: 0.0854
+  - ambacht: 0.1812
+  - fotografie: 0.1861
+  - overig: 0.1866
+Final Decision: DISCOVERY in Category 'muziek'
+
+--- NEW REQUEST: 'piano' ---
+Input Text: piano
+Result: EXACT MATCH FOUND

@@ -71,7 +71,7 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
   useEffect(() => {
     // Animate section tabs appearance/disappearance
     const showSections = isSearching || viewMode === 'list' || searchBarFocused;
-    
+
     // Only animate if visibility actually changed, not just searchType
     if (showSections !== prevShowSections) {
       if (showSections) {
@@ -313,8 +313,6 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
                         <View key={index} style={[styles.skillBadge, isMatch && styles.skillBadgeMatch]}>
                           {isMatch && <Text style={styles.matchIndicator}>✓</Text>}
                           <Text style={styles.skillText}>{skill.subject}</Text>
-                          <Text style={styles.skillDivider}>·</Text>
-                          <Text style={styles.priceText}>{skill.price || 'Ruilen'}</Text>
                         </View>
                       );
                     })}
