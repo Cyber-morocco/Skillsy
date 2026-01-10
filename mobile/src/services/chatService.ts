@@ -13,7 +13,8 @@ import {
     getDocs,
     deleteDoc,
     Timestamp,
-    setDoc
+    setDoc,
+    increment
 } from 'firebase/firestore';
 import { db, auth } from '../config/firebase';
 import { MatchRequest, Conversation, Message } from '../types';
@@ -221,19 +222,28 @@ export const sendMessage = async (chatId: string, text: string, metadata: Partia
     // Update last message in chat doc
     const chatRef = doc(db, 'chats', chatId);
 
-    // Check if we need to auto-accept the match
+    // Prepare unread counts update
     const chatSnap = await getDoc(chatRef);
+    let unreadUpdate = {};
+
     if (chatSnap.exists()) {
         const chatData = chatSnap.data() as Conversation;
+        const otherParticipantId = chatData.participants.find(p => p !== userId);
 
-        // If chat is pending AND the sender is NOT the initiator (meaning it's the receiver responding)
-        // Then we auto-accept the match
+        if (otherParticipantId) {
+            unreadUpdate = {
+                [`unreadCount.${otherParticipantId}`]: increment(1)
+            };
+        }
+
+        // Check if we need to auto-accept the match
         if (chatData.status === 'pending' && chatData.matchInitiatorId && chatData.matchInitiatorId !== userId) {
             await updateDoc(chatRef, {
                 lastMessage: text,
                 lastMessageTime: serverTimestamp(),
                 updatedAt: serverTimestamp(),
-                status: 'active'
+                status: 'active',
+                ...unreadUpdate
             });
 
             // Also update the match request status
@@ -254,15 +264,48 @@ export const sendMessage = async (chatId: string, text: string, metadata: Partia
             await updateDoc(chatRef, {
                 lastMessage: text,
                 lastMessageTime: serverTimestamp(),
-                updatedAt: serverTimestamp()
+                updatedAt: serverTimestamp(),
+                ...unreadUpdate
             });
         }
+    }
+};
+
+export const markChatAsRead = async (chatId: string): Promise<void> => {
+    try {
+        const userId = getCurrentUserId();
+        const chatRef = doc(db, 'chats', chatId);
+
+        // Check if document exists before updating to avoid FirebaseError: No document to update
+        const chatSnap = await getDoc(chatRef);
+        if (!chatSnap.exists()) return;
+
+        await updateDoc(chatRef, {
+            [`unreadCount.${userId}`]: 0
+        });
+    } catch (error) {
+        console.error('Error marking chat as read:', error);
     }
 };
 
 export const updateMessage = async (chatId: string, messageId: string, data: Partial<Message>): Promise<void> => {
     const messageRef = doc(db, 'chats', chatId, 'messages', messageId);
     await updateDoc(messageRef, data);
+
+    // If it's an appointment status update, bubble it up to the chat
+    if (data.appointmentStatus) {
+        const chatRef = doc(db, 'chats', chatId);
+        let statusText = 'Afspraak update';
+        if (data.appointmentStatus === 'accepted') statusText = 'Afspraak geaccepteerd! 📅';
+        if (data.appointmentStatus === 'rejected') statusText = 'Afspraak geweigerd';
+        if (data.appointmentStatus === 'countered') statusText = 'Tegenbod ontvangen';
+
+        await updateDoc(chatRef, {
+            lastMessage: statusText,
+            lastMessageTime: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        });
+    }
 };
 export const deleteMatchRequest = async (matchId: string): Promise<void> => {
     const matchRef = doc(db, 'matches', matchId);

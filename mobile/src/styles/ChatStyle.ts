@@ -127,4 +127,15 @@ export const chatStyles = StyleSheet.create({
         color: NOTEXT,
         fontSize: 13,
     },
+    unreadIndicator: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        backgroundColor: '#EF4444',
+        borderWidth: 2,
+        borderColor: BACKGROUND,
+    },
 });

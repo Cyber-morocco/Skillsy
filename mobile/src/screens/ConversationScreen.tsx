@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { conversationStyles as styles, conversationColors } from '../styles/ConversationStyle';
 import ScheduleMatchScreen from './ScheduleMatchScreen';
-import { subscribeToMessages, sendMessage as sendFirebaseMessage, updateMessage, subscribeToChat } from '../services/chatService';
+import { subscribeToMessages, sendMessage as sendFirebaseMessage, updateMessage, subscribeToChat, markChatAsRead } from '../services/chatService';
 import { createAppointment } from '../services/appointmentService';
 import { auth, db } from '../config/firebase';
 import { Message as FirebaseMessage, Conversation, Skill } from '../types';
@@ -79,11 +79,16 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
     useEffect(() => {
         if (!chatId) return;
 
+        // Mark as read immediately when joining
+        markChatAsRead(chatId);
+
         const unsubscribeChat = subscribeToChat(chatId, (updatedChat) => {
             setChatData(updatedChat);
         });
 
         const unsubscribeMessages = subscribeToMessages(chatId, (newMessages) => {
+            // Mark as read whenever new messages arrive and we are in the chat
+            markChatAsRead(chatId);
 
             const formattedMessages = newMessages.map(m => {
                 return {

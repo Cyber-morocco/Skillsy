@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, ActivityIndicator, Alert, Text, Animated, TouchableOpacity } from 'react-native';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './mobile/src/config/firebase';
@@ -16,8 +16,8 @@ import ChatStackNavigator from './mobile/src/navigation/ChatStack';
 import AppointmentStackNavigator from './mobile/src/navigation/AppointmentStack';
 import AuthStackNavigator from './mobile/src/navigation/AuthStack';
 import { subscribeToMatchRequests, sendMatchRequest, respondToMatchRequest, subscribeToChats, clearAllMatchRequests } from './mobile/src/services/chatService';
-import { Unsubscribe } from 'firebase/firestore';
-import { MatchRequest, Review, Conversation } from './mobile/src/types';
+import { Ionicons } from '@expo/vector-icons';
+import { UserProfile, Talent, Review, MatchRequest, Conversation } from './mobile/src/types';
 
 type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability' | 'exploreProfile' | 'availabilitySpecificDates';
 
@@ -30,6 +30,14 @@ export default function App() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [reviews, setReviews] = useState<{ [userId: string]: Review[] }>({});
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [prevScreen, setPrevScreen] = useState<NavName | null>(null);
+  const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'info' | 'success' }>({
+    visible: false,
+    message: '',
+    type: 'info'
+  });
+  const toastAnim = useRef(new Animated.Value(-100)).current;
+  const prevConversationsRef = useRef<Conversation[]>([]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -70,10 +78,40 @@ export default function App() {
     if (!user || !profileComplete) return;
 
     const unsubscribeMatches = subscribeToMatchRequests((requests) => {
+      // If new match request, show toast
+      if (requests.length > matchRequests.length) {
+        const last = requests[0];
+        if (last) {
+          showToast(`${last.fromUserName} wil met je matchen!`, 'info');
+        }
+      }
       setMatchRequests(requests);
     });
 
     const unsubscribeChats = subscribeToChats((chats) => {
+      // Detect new messages for toast
+      chats.forEach(chat => {
+        const prevChat = prevConversationsRef.current.find((pc: Conversation) => pc.id === chat.id);
+
+        // If chat is new OR lastMessageTime changed
+        const isNewMessage = !prevChat || (
+          chat.lastMessageTime?.seconds !== prevChat.lastMessageTime?.seconds &&
+          chat.lastMessageTime !== null
+        );
+
+        if (isNewMessage) {
+          // Check if it's NOT from us (based on unread count increment)
+          const myId = user?.uid;
+          const currentCount = chat.unreadCount?.[myId || ''] || 0;
+          const prevCount = prevChat?.unreadCount?.[myId || ''] || 0;
+
+          if (currentCount > prevCount || (chat.status === 'active' && prevChat?.status === 'pending')) {
+            showToast(chat.lastMessage || 'Nieuw bericht', 'info');
+          }
+        }
+      });
+
+      prevConversationsRef.current = chats;
       setConversations(chats);
     });
 
@@ -82,6 +120,24 @@ export default function App() {
       unsubscribeChats();
     };
   }, [user, profileComplete]);
+
+  const showToast = (message: string, type: 'info' | 'success' = 'info') => {
+    setToast({ visible: true, message, type });
+    Animated.spring(toastAnim, {
+      toValue: 20,
+      useNativeDriver: true,
+      tension: 20,
+      friction: 7
+    }).start();
+
+    setTimeout(() => {
+      Animated.timing(toastAnim, {
+        toValue: -100,
+        duration: 300,
+        useNativeDriver: true
+      }).start(() => setToast(prev => ({ ...prev, visible: false })));
+    }, 4000);
+  };
 
   const handleAddReview = (review: Review, userId: string) => {
     setReviews((prev: { [key: string]: Review[] }) => ({
@@ -132,8 +188,16 @@ export default function App() {
     }
   };
 
-  const handleViewProfile = (user: any) => {
-    setSelectedUser(user);
+  const handleViewProfile = (userToView: any) => {
+    const userIdToView = userToView?.uid || userToView?.userId;
+
+    if (userIdToView === auth.currentUser?.uid) {
+      setActiveScreen('profile');
+      return;
+    }
+
+    setPrevScreen(activeScreen);
+    setSelectedUser(userToView);
     setActiveScreen('exploreProfile');
   };
 
@@ -154,14 +218,30 @@ export default function App() {
       case 'profile':
         return <ProfileScreen onNavigate={handleNavigate} />;
       case 'exploreProfile':
+        const targetUserId = selectedUser?.uid || selectedUser?.userId;
+        const existingChat = conversations.find(c => c.participants.includes(targetUserId));
+
+        let matchStatus: 'none' | 'pending_sent' | 'pending_received' | 'active' = 'none';
+        if (existingChat) {
+          if (existingChat.status === 'active') {
+            matchStatus = 'active';
+          } else if (existingChat.status === 'pending') {
+            matchStatus = existingChat.matchInitiatorId === user?.uid ? 'pending_sent' : 'pending_received';
+          }
+        }
+
         return (
           <ExploreProfileScreen
-            userId={selectedUser?.uid || selectedUser?.userId}
-            onBack={() => setActiveScreen('home')}
+            userId={targetUserId}
+            matchStatus={matchStatus}
+            onBack={() => setActiveScreen(prevScreen || 'home')}
             onMakeAppointment={() => setActiveScreen('appointments')}
             onSendMessage={() => {
-              if (selectedUser?.uid || selectedUser?.userId) {
-                handleSendMatch(selectedUser.uid || selectedUser.userId, selectedUser.name || selectedUser.displayName);
+              if (matchStatus === 'active' || matchStatus === 'pending_received') {
+                // If already active or we received it, go to messages
+                setActiveScreen('messages');
+              } else if (targetUserId) {
+                handleSendMatch(targetUserId, selectedUser.name || selectedUser.displayName);
               }
             }}
           />
@@ -172,6 +252,7 @@ export default function App() {
   };
 
   const handleNavigate = (screen: NavName) => {
+    setPrevScreen(null);
     setActiveScreen(screen);
   };
 
@@ -192,16 +273,39 @@ export default function App() {
     );
   }
 
+  const unreadMessagesCount = conversations.reduce((acc, conv) => {
+    return acc + (conv.unreadCount?.[user?.uid || ''] || 0);
+  }, 0);
+
+  const pendingMatchesCount = matchRequests.length;
+
   return (
     <View style={styles.container}>
+      {toast.visible && (
+        <Animated.View style={[
+          styles.toastContainer,
+          { transform: [{ translateY: toastAnim }] }
+        ]}>
+          <TouchableOpacity
+            style={styles.toast}
+            onPress={() => setActiveScreen('messages')}
+          >
+            <Ionicons name="notifications" size={20} color="#fff" />
+            <Text style={styles.toastText} numberOfLines={2}>{toast.message}</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
       <View style={styles.screenContainer}>{renderScreen()}</View>
       <BottomNavBar
         activeScreen={
           activeScreen === 'exploreProfile'
-            ? 'home'
-            : (activeScreen === 'availabilitySpecificDates' ? 'availability' : activeScreen)
+            ? (prevScreen === 'explore' ? 'explore' : 'home')
+            : (activeScreen === 'availabilitySpecificDates' ? 'availability' : (activeScreen as any))
         }
         onNavigate={handleNavigate}
+        badges={{
+          messages: unreadMessagesCount + pendingMatchesCount
+        }}
       />
     </View>
   );
@@ -220,5 +324,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff',
+  },
+  toastContainer: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    right: 20,
+    zIndex: 9999,
+    alignItems: 'center',
+  },
+  toast: {
+    backgroundColor: '#6366f1',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 10,
+    maxWidth: '100%',
+  },
+  toastText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

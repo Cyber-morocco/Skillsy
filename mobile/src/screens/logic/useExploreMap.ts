@@ -108,7 +108,7 @@ export const useExploreMap = () => {
       // Filter out current user
       const currentUserId = auth.currentUser?.uid;
       const filteredFetchedTalents = fetchedTalents.filter((u: any) => u.id !== currentUserId);
-      
+
       const mappedTalents: Talent[] = filteredFetchedTalents.map((u: any) => ({
         id: u.id,
         userId: u.id,
@@ -123,40 +123,41 @@ export const useExploreMap = () => {
           city: u.location?.city,
           street: u.location?.street
         },
+        rootCategoryIds: u.rootCategoryIds || [],
         averageRating: undefined,
         reviewCount: 0,
         isActive: true
       }));
-      
+
       // For each talent, subscribe to their skills and reviews
       mappedTalents.forEach((talent) => {
         // Subscribe to skills
         subscribeToOtherUserSkills(talent.userId, (skills) => {
-          setAllTalents((prev) => 
-            prev.map((t) => 
-              t.id === talent.id 
+          setAllTalents((prev) =>
+            prev.map((t) =>
+              t.id === talent.id
                 ? { ...t, skillsWithPrices: skills.map(s => ({ subject: s.subject, price: s.price || '' })) }
                 : t
             )
           );
         });
-        
+
         // Subscribe to reviews
         subscribeToOtherUserReviews(talent.userId, (reviews) => {
           const avgRating = reviews.length > 0
             ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
             : undefined;
-          
-          setAllTalents((prev) => 
-            prev.map((t) => 
-              t.id === talent.id 
+
+          setAllTalents((prev) =>
+            prev.map((t) =>
+              t.id === talent.id
                 ? { ...t, averageRating: avgRating, reviewCount: reviews.length }
                 : t
             )
           );
         });
       });
-      
+
       setAllTalents(mappedTalents);
     });
     return () => unsubscribe();
