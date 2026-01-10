@@ -19,6 +19,8 @@ interface FiltersBarProps {
   onToggleViewMode: () => void;
   distanceOptions: number[];
   categoryOptions: CategoryOption[];
+  fypMode?: 'normal' | 'fyp';
+  onToggleFyp?: () => void;
 }
 
 export const FiltersBar: React.FC<FiltersBarProps> = ({
@@ -31,6 +33,8 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
   onToggleViewMode,
   distanceOptions,
   categoryOptions,
+  fypMode = 'normal',
+  onToggleFyp,
 }) => {
   const [showDistanceDropdown, setShowDistanceDropdown] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
@@ -134,6 +138,22 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
             color={selectedCategories.length > 0 ? '#fff' : '#7c3aed'}
           />
         </TouchableOpacity>
+
+        {onToggleFyp && (
+          <TouchableOpacity
+            style={[styles.filterButton, fypMode === 'fyp' && styles.filterButtonActive]}
+            onPress={onToggleFyp}
+          >
+            <MaterialCommunityIcons
+              name={fypMode === 'fyp' ? 'map' : 'view-grid'}
+              size={16}
+              color={fypMode === 'fyp' ? '#fff' : '#7c3aed'}
+            />
+            <Text style={[styles.filterButtonText, fypMode === 'fyp' && styles.filterButtonTextActive]}>
+              {fypMode === 'fyp' ? 'Kaart' : 'FYP'}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       {shouldRenderDistanceDropdown && (

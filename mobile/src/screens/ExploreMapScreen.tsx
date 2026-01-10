@@ -152,6 +152,26 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
         filtersActive={filtersActive}
         onSearchBarFocus={() => setSearchBarFocused(true)}
         onSearchBarBlur={() => setSearchBarFocused(false)}
+        headerRight={
+          <TouchableOpacity
+            style={{
+              width: 44,
+              height: 44,
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: '#101936',
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: 'rgba(148, 163, 184, 0.25)',
+            }}
+            onPress={() => {
+              // Action for the new button
+              console.log('New button pressed');
+            }}
+          >
+            <Ionicons name="settings-outline" size={22} color="#94A3B8" />
+          </TouchableOpacity>
+        }
       />
 
       {shouldRenderFilters && (

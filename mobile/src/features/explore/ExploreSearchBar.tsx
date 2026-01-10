@@ -17,6 +17,7 @@ interface ExploreSearchBarProps {
   filtersActive: boolean;
   onSearchBarFocus?: () => void;
   onSearchBarBlur?: () => void;
+  headerRight?: React.ReactNode;
 }
 
 const getPlaceholder = (searchType: SearchType): string => {
@@ -35,6 +36,7 @@ export const ExploreSearchBar: React.FC<ExploreSearchBarProps> = ({
   filtersActive,
   onSearchBarFocus,
   onSearchBarBlur,
+  headerRight,
 }) => {
   return (
     <View style={styles.header}>
@@ -65,6 +67,7 @@ export const ExploreSearchBar: React.FC<ExploreSearchBarProps> = ({
           />
         </TouchableOpacity>
       </View>
+      {headerRight}
     </View>
   );
 };
