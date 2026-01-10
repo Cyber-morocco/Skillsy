@@ -9,7 +9,8 @@ import {
     updateDoc,
     Unsubscribe,
     orderBy,
-    Timestamp
+    Timestamp,
+    getDocs
 } from 'firebase/firestore';
 import { db, auth } from '../config/firebase';
 import { Appointment } from '../types';
@@ -91,4 +92,40 @@ export const updateAppointmentConfirmations = async (appointmentId: string, role
         [field]: true,
         updatedAt: serverTimestamp()
     });
+};
+
+/**
+ * Fetch all confirmed/pending appointments for a user on a specific date
+ */
+export const fetchAppointmentsByDate = async (userId: string, dateKey: string): Promise<Appointment[]> => {
+    const appointmentsRef = collection(db, 'appointments');
+    const q = query(
+        appointmentsRef,
+        where('participantIds', 'array-contains', userId),
+        where('dateKey', '==', dateKey)
+    );
+
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
+};
+
+/**
+ * Utility to check if a time slot overlaps with existing appointments
+ */
+export const isOverlapping = (
+    newStart: number,
+    newEnd: number,
+    existingAppointments: Appointment[]
+): boolean => {
+    // Only care about confirmed or pending appointments
+    const activeAppointments = existingAppointments.filter(
+        app => app.status === 'confirmed' || app.status === 'pending'
+    );
+
+    for (const app of activeAppointments) {
+        if (newStart < app.endTimeMinutes && newEnd > app.startTimeMinutes) {
+            return true;
+        }
+    }
+    return false;
 };

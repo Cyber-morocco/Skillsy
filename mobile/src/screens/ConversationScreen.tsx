@@ -140,7 +140,7 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
         setShowScheduleMatch(true);
     };
 
-    const handleMatchRequest = async (day: string, time: string, duration: number, price: number, type: 'pay' | 'swap' = 'pay', swapSkillName?: string, tutorSkillName?: string) => {
+    const handleMatchRequest = async (day: string, time: string, duration: number, price: number, type: 'pay' | 'swap' = 'pay', swapSkillName?: string, tutorSkillName?: string, dateKey?: string) => {
         if (!chatId) return;
 
         const currentUserName = auth.currentUser?.displayName || 'Ik';
@@ -148,10 +148,19 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
             ? `${currentUserName} verzoekt om op ${day} om ${time} een afspraak te nemen van ${duration} uur voor €${price}`
             : `${currentUserName} stelt een skill swap voor: ${tutorSkillName} in ruil voor ${swapSkillName}.`;
 
+        const [startStr, endStr] = time.split(' - ');
+        const parseTime = (t: string) => {
+            const [h, m] = t.split(':').map(Number);
+            return h * 60 + m;
+        };
+
         const metadata: any = {
             type: 'appointmentRequest',
             appointmentDate: day,
+            dateKey: dateKey,
             appointmentTime: time,
+            startTimeMinutes: parseTime(startStr),
+            endTimeMinutes: endStr ? parseTime(endStr) : parseTime(startStr) + (duration * 60),
             appointmentStatus: 'pending',
             duration: duration,
             proposedPrice: price,
@@ -200,21 +209,23 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                             ? `Swap: ${message.swapSkillName} voor ${message.tutorSkillName}`
                             : `Met ${contactName}`,
                         date: message.appointmentDate,
+                        dateKey: message.dateKey || new Date().toISOString().split('T')[0], // Fallback
                         time: message.appointmentTime || '10:00 - 11:00',
+                        startTimeMinutes: message.startTimeMinutes || 600,
+                        endTimeMinutes: message.endTimeMinutes || 660,
                         duration: message.duration || 1,
                         price: message.matchType === 'swap' ? 0 : (message.proposedPrice || 0),
                         type: message.matchType === 'swap' ? 'swap' : 'pay',
-                        ...(message.matchType === 'swap' && {
-                            swapSkillName: message.swapSkillName || 'Onbekend',
-                        }),
+                        swapSkillName: message.swapSkillName,
+                        tutorSkillName: message.tutorSkillName,
                         location: 'fysiek',
-                        initials: contactInitials,
                         status: 'confirmed',
-                        paymentStatus: message.matchType === 'swap' ? 'none' : 'pending',
+                        paymentStatus: 'none',
                         confirmations: {
                             studentConfirmed: false,
                             tutorConfirmed: false
-                        }
+                        },
+                        initials: contactInitials
                     });
                 }
             }
