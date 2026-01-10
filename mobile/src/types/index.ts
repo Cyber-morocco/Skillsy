@@ -84,6 +84,9 @@ export interface Talent {
     skills?: { name: string }[];
     skillNames?: string[];
     skillsWithPrices?: { subject: string; price: string }[];
+    learnSkills?: LearnSkill[];
+    offerMatches?: string[];
+    requestMatches?: string[];
     location?: {
         city?: string;
         street?: string;

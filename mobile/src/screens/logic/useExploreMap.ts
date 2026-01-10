@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { Alert, Linking, Platform } from 'react-native';
-import { Location, GeocodingResult, Talent, LearnSkill } from '../../types';
-import { subscribeToTalents, subscribeToOtherUserSkills, subscribeToOtherUserReviews, subscribeToLearnSkills, subscribeToUserProfile } from '../../services/userService';
+import { Location, GeocodingResult, Talent, LearnSkill, Skill } from '../../types';
+import { subscribeToTalents, subscribeToOtherUserSkills, subscribeToOtherUserReviews, subscribeToLearnSkills, subscribeToUserProfile, subscribeToOtherUserLearnSkills } from '../../services/userService';
 import { CATEGORY_OPTIONS, DISTANCE_OPTIONS } from '../../constants/exploreMap';
 import { auth } from '../../config/firebase';
 import { calculateDistance } from './distance';
@@ -78,6 +78,7 @@ export const useExploreMap = () => {
   const [focusTalent, setFocusTalent] = useState<{ id: string; lat: number; lng: number } | null>(null);
   const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
   const [userLearnSkills, setUserLearnSkills] = useState<LearnSkill[]>([]);
+  const [userSkills, setUserSkills] = useState<Skill[]>([]);
   const [profileReady, setProfileReady] = useState(false);
 
   // Default center on signup address; keep latest profile location in ref
@@ -119,6 +120,7 @@ export const useExploreMap = () => {
         avatar: u.photoURL || `https://ui-avatars.com/api/?name=${u.displayName || 'U'}`,
         skillNames: u.skillNames || [],
         skillsWithPrices: [],
+        learnSkills: [],
         location: {
           city: u.location?.city,
           street: u.location?.street
@@ -136,6 +138,16 @@ export const useExploreMap = () => {
             prev.map((t) => 
               t.id === talent.id 
                 ? { ...t, skillsWithPrices: skills.map(s => ({ subject: s.subject, price: s.price || '' })) }
+                : t
+            )
+          );
+        });
+
+        subscribeToOtherUserLearnSkills(talent.userId, (learnSkills) => {
+          setAllTalents((prev) =>
+            prev.map((t) =>
+              t.id === talent.id
+                ? { ...t, learnSkills }
                 : t
             )
           );
@@ -162,6 +174,18 @@ export const useExploreMap = () => {
     return () => unsubscribe();
   }, []);
 
+  // Subscribe to current user's teach skills
+  useEffect(() => {
+    const currentUserId = auth.currentUser?.uid;
+    if (!currentUserId) return;
+
+    const unsubscribe = subscribeToOtherUserSkills(currentUserId, (skills) => {
+      setUserSkills(skills);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   // Subscribe to current user's learn skills
   useEffect(() => {
     const unsubscribe = subscribeToLearnSkills((learnSkills) => {
@@ -180,26 +204,90 @@ export const useExploreMap = () => {
     });
 
     // Sort talents: those with matching skills first
+    const normalize = (s: string) => s.toLowerCase();
+    const userLearnSet = new Set(userLearnSkills.map(ls => normalize(ls.subject)));
+    const userTeachSet = new Set(userSkills.map(s => normalize(s.subject)));
+
+    const getMatchInfo = (talent: Talent) => {
+      const offeredSet = new Set((talent.skillsWithPrices || []).map(s => normalize(s.subject)));
+      const talentLearnSet = new Set((talent.learnSkills || []).map(ls => normalize(ls.subject)));
+
+      const offersMatches = Array.from(offeredSet).filter(subj => userLearnSet.has(subj));
+      const requestMatches = Array.from(talentLearnSet).filter(subj => userTeachSet.has(subj));
+
+      const offersWhatIWant = offersMatches.length > 0;
+      const iOfferWhatTheyWant = requestMatches.length > 0;
+
+      let rank = 3;
+      if (offersWhatIWant && iOfferWhatTheyWant) rank = 0; // 1e graad: wederzijds
+      else if (offersWhatIWant) rank = 1; // 2e graad: zij bieden wat ik wil
+      else if (iOfferWhatTheyWant) rank = 2; // 3e graad: ik bied wat zij willen
+
+      return { rank, offersMatches, requestMatches };
+    };
+
+    const coarseCoord = (value: number, precision: number = 1) => {
+      const factor = Math.pow(10, precision);
+      return Math.round(value * factor) / factor;
+    };
+
+    const sameCity = (a?: string, b?: string) => {
+      const cityA = a?.toLowerCase().trim();
+      const cityB = b?.toLowerCase().trim();
+      return cityA && cityB && cityA === cityB;
+    };
+
+    const getDistance = (talent: Talent) => {
+      // Privacy: use municipality/region match first; otherwise coarse-rounded coords
+      const userCity = (profileLocation as any)?.city;
+      const talentCity = talent.location?.city;
+      if (sameCity(userCity, talentCity)) {
+        return 0;
+      }
+
+      if (!userLocation) return Number.POSITIVE_INFINITY;
+
+      const userLat = coarseCoord(userLocation.lat, 1); // ~11 km precision
+      const userLng = coarseCoord(userLocation.lng, 1);
+      const talentLat = coarseCoord(talent.lat, 1);
+      const talentLng = coarseCoord(talent.lng, 1);
+
+      return calculateDistance(userLat, userLng, talentLat, talentLng);
+    };
+
     const sorted = filtered.sort((a, b) => {
-      const aHasMatch = (a.skillsWithPrices || []).some(skill =>
-        userLearnSkills.some(ls => ls.subject.toLowerCase() === skill.subject.toLowerCase())
-      );
-      const bHasMatch = (b.skillsWithPrices || []).some(skill =>
-        userLearnSkills.some(ls => ls.subject.toLowerCase() === skill.subject.toLowerCase())
-      );
-      return aHasMatch === bHasMatch ? 0 : aHasMatch ? -1 : 1;
+      const infoA = getMatchInfo(a);
+      const infoB = getMatchInfo(b);
+      const rankA = infoA.rank;
+      const rankB = infoB.rank;
+      if (rankA !== rankB) return rankA - rankB;
+
+      const distA = getDistance(a);
+      const distB = getDistance(b);
+      if (distA !== distB) return distA - distB;
+
+      const ratingA = a.averageRating ?? 0;
+      const ratingB = b.averageRating ?? 0;
+      if (ratingA !== ratingB) return ratingB - ratingA;
+
+      const reviewsA = a.reviewCount ?? 0;
+      const reviewsB = b.reviewCount ?? 0;
+      return reviewsB - reviewsA;
     });
 
     // Apply fuzzy locations for map display (GDPR)
     return sorted.map(talent => {
       const fuzzy = fuzzyLocation(talent.lat, talent.lng, talent.id);
+      const matchInfo = getMatchInfo(talent);
       return {
         ...talent,
         lat: fuzzy.lat,
-        lng: fuzzy.lng
+        lng: fuzzy.lng,
+        offerMatches: matchInfo.offersMatches,
+        requestMatches: matchInfo.requestMatches,
       };
     });
-  }, [allTalents, selectedDistance, selectedCategories, skillSearch, userLocation, userLearnSkills]);
+  }, [allTalents, selectedDistance, selectedCategories, skillSearch, userLocation, profileLocation, userLearnSkills, userSkills]);
 
   // Center map on user's actual GPS location
   const centerToUserLocation = async () => {

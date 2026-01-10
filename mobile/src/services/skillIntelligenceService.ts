@@ -2,7 +2,7 @@ import { ROOT_CATEGORIES } from '../constants/categories';
 
 // IMPORTANT: Replace this with your computer's local IP address
 // You can find it by running 'ipconfig' on Windows
-const LOCAL_PC_IP = "172.20.10.2"; // Placeholder, user will change this
+const LOCAL_PC_IP = "192.168.0.251"; // Placeholder, user will change this
 const API_URL = `http://${LOCAL_PC_IP}:8000`;
 
 export interface SkillResolutionResult {

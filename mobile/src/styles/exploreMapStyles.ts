@@ -257,6 +257,51 @@ export const exploreMapStyles = StyleSheet.create({
     color: '#94A3B8',
     marginTop: 4,
   },
+  matchSection: {
+    marginTop: 8,
+  },
+  matchSectionHeader: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#CBD5E1',
+    marginBottom: 6,
+  },
+  matchesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+    gap: 6,
+  },
+  matchBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    gap: 6,
+  },
+  matchBadgeIcon: {
+    marginRight: 4,
+  },
+  matchBadgeOffer: {
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    borderColor: 'rgba(16, 185, 129, 0.5)',
+  },
+  matchBadgeRequest: {
+    backgroundColor: 'rgba(124, 58, 237, 0.12)',
+    borderColor: 'rgba(124, 58, 237, 0.5)',
+  },
+  matchBadgeLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#CBD5E1',
+  },
+  matchBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#F8FAFC',
+  },
   skillsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',

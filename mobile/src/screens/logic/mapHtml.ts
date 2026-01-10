@@ -88,9 +88,12 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents, filtersActive }:
               }
               
               const size = 44;
+              const canClick = showCount && count > 0;
               const innerContent = showCount 
                 ? '<span style="color: white; font-size: 18px; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, sans-serif;">' + count + '</span>'
                 : '<div style="width: 12px; height: 12px; background: white; border-radius: 50%; box-shadow: 0 0 0 2px rgba(255,255,255,0.3);"></div>';
+              
+              const cursorStyle = canClick ? 'pointer' : 'default';
               
               const html = '<div style="' +
                 'width: ' + size + 'px; ' +
@@ -102,7 +105,7 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents, filtersActive }:
                 'align-items: center; ' +
                 'justify-content: center; ' +
                 'box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4), 0 4px 16px rgba(0, 0, 0, 0.2); ' +
-                'cursor: pointer; ' +
+                'cursor: ' + cursorStyle + '; ' +
                 'transition: transform 0.2s;' +
                 '">' + innerContent + '</div>';
               
@@ -113,9 +116,13 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents, filtersActive }:
               });
               
               userMarker = L.marker([centerLat, centerLng], { icon: icon }).addTo(map);
-              userMarker.on('click', () => {
-                window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'switchToList' }));
-              });
+              
+              // Only make marker clickable when filters are active and at least one item is present
+              if (canClick) {
+                userMarker.on('click', () => {
+                  window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'switchToList' }));
+                });
+              }
             };
             
             createUserMarker(talentCount, filtersActive);
