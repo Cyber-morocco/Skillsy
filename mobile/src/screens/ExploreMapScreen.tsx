@@ -45,6 +45,9 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
 
   const [filtersVisible, setFiltersVisible] = useState<boolean>(false);
   const [searchBarFocused, setSearchBarFocused] = useState<boolean>(false);
+  const [shouldRenderSections, setShouldRenderSections] = useState<boolean>(false);
+  const [shouldRenderFilters, setShouldRenderFilters] = useState<boolean>(false);
+  const [prevShowSections, setPrevShowSections] = useState<boolean>(false);
   const sectionTabsAnim = useRef(new Animated.Value(0)).current;
   const filtersAnim = useRef(new Animated.Value(0)).current;
 
@@ -69,27 +72,35 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
     // Animate section tabs appearance/disappearance
     const showSections = isSearching || viewMode === 'list' || searchBarFocused;
     
-    if (showSections) {
-      // Reset to 0, then animate to 1 for smooth entry
-      sectionTabsAnim.setValue(0);
-      Animated.timing(sectionTabsAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
-    } else {
-      // Animate out
-      Animated.timing(sectionTabsAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: false,
-      }).start();
+    // Only animate if visibility actually changed, not just searchType
+    if (showSections !== prevShowSections) {
+      if (showSections) {
+        setShouldRenderSections(true);
+        // Reset to 0, then animate to 1 for smooth entry
+        sectionTabsAnim.setValue(0);
+        Animated.timing(sectionTabsAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: false,
+        }).start();
+      } else {
+        // Animate out
+        Animated.timing(sectionTabsAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: false,
+        }).start(() => {
+          setShouldRenderSections(false);
+        });
+      }
+      setPrevShowSections(showSections);
     }
-  }, [isSearching, viewMode, searchBarFocused, sectionTabsAnim]);
+  }, [isSearching, viewMode, searchBarFocused, prevShowSections, sectionTabsAnim]);
 
   useEffect(() => {
     // Animate filters appearance/disappearance
     if (filtersVisible) {
+      setShouldRenderFilters(true);
       // Reset to 0, then animate to 1 for smooth entry
       filtersAnim.setValue(0);
       Animated.timing(filtersAnim, {
@@ -103,7 +114,9 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
         toValue: 0,
         duration: 300,
         useNativeDriver: false,
-      }).start();
+      }).start(() => {
+        setShouldRenderFilters(false);
+      });
     }
   }, [filtersVisible, filtersAnim]);
 
@@ -141,7 +154,7 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
         onSearchBarBlur={() => setSearchBarFocused(false)}
       />
 
-      {filtersVisible && (
+      {shouldRenderFilters && (
         <Animated.View
           style={{
             opacity: filtersAnim,
@@ -153,6 +166,8 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
                 }),
               },
             ],
+            overflow: 'visible',
+            zIndex: 100,
           }}
         >
           <FiltersBar
@@ -169,7 +184,7 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
         </Animated.View>
       )}
 
-      {(isSearching || viewMode === 'list' || searchBarFocused) && (
+      {shouldRenderSections && (
         <Animated.View
           style={[
             styles.sectionTabsContainer,

@@ -71,6 +71,8 @@ export const exploreMapStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 6,
     marginBottom: 0,
+    overflow: 'visible',
+    zIndex: 100,
   },
   filterButtonsContainer: {
     flexDirection: 'row',
@@ -120,12 +122,12 @@ export const exploreMapStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.25)',
     paddingVertical: 6,
-    zIndex: 1000,
+    zIndex: 999999,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
-    elevation: 8,
+    elevation: 999,
   },
   dropdownOption: {
     flexDirection: 'row',
@@ -155,7 +157,7 @@ export const exploreMapStyles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 999,
+    zIndex: 999998,
   },
   mapContainer: {
     flex: 1,

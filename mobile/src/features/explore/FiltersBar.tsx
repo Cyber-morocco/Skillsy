@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { ScrollView, Text, TouchableOpacity, View, Animated } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { exploreMapStyles as styles } from '../../styles/exploreMapStyles';
 
@@ -34,8 +34,52 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
 }) => {
   const [showDistanceDropdown, setShowDistanceDropdown] = useState(false);
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [shouldRenderDistanceDropdown, setShouldRenderDistanceDropdown] = useState(false);
+  const [shouldRenderCategoryDropdown, setShouldRenderCategoryDropdown] = useState(false);
   const [distanceLayout, setDistanceLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const [categoryLayout, setCategoryLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  const distanceDropdownAnim = useRef(new Animated.Value(0)).current;
+  const categoryDropdownAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (showDistanceDropdown) {
+      setShouldRenderDistanceDropdown(true);
+      distanceDropdownAnim.setValue(0);
+      Animated.timing(distanceDropdownAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: false,
+      }).start();
+    } else {
+      Animated.timing(distanceDropdownAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: false,
+      }).start(() => {
+        setShouldRenderDistanceDropdown(false);
+      });
+    }
+  }, [showDistanceDropdown, distanceDropdownAnim]);
+
+  useEffect(() => {
+    if (showCategoryDropdown) {
+      setShouldRenderCategoryDropdown(true);
+      categoryDropdownAnim.setValue(0);
+      Animated.timing(categoryDropdownAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: false,
+      }).start();
+    } else {
+      Animated.timing(categoryDropdownAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: false,
+      }).start(() => {
+        setShouldRenderCategoryDropdown(false);
+      });
+    }
+  }, [showCategoryDropdown, categoryDropdownAnim]);
 
   const closeDropdowns = () => {
     setShowDistanceDropdown(false);
@@ -100,8 +144,8 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
         </TouchableOpacity>
       </View>
 
-      {showDistanceDropdown && (
-        <View
+      {shouldRenderDistanceDropdown && (
+        <Animated.View
           style={[
             styles.dropdownContainer,
             {
@@ -109,6 +153,21 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
               left: distanceLayout.x + 16,
               minWidth: Math.max(distanceLayout.width, 120),
               maxWidth: Math.max(distanceLayout.width, 180),
+              opacity: distanceDropdownAnim,
+              transform: [
+                {
+                  translateY: distanceDropdownAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-10, 0],
+                  }),
+                },
+                {
+                  scale: distanceDropdownAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.95, 1],
+                  }),
+                },
+              ],
             },
           ]}
         >
@@ -129,11 +188,11 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
               {selectedDistance === distance && <Ionicons name="checkmark" size={18} color="#7c3aed" />}
             </TouchableOpacity>
           ))}
-        </View>
+        </Animated.View>
       )}
 
-      {showCategoryDropdown && (
-        <View
+      {shouldRenderCategoryDropdown && (
+        <Animated.View
           style={[
             styles.dropdownContainer,
             {
@@ -142,6 +201,21 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
               minWidth: Math.max(categoryLayout.width, 160),
               maxWidth: Math.max(categoryLayout.width, 200),
               maxHeight: 300,
+              opacity: categoryDropdownAnim,
+              transform: [
+                {
+                  translateY: categoryDropdownAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-10, 0],
+                  }),
+                },
+                {
+                  scale: categoryDropdownAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.95, 1],
+                  }),
+                },
+              ],
             },
           ]}
         >
@@ -168,7 +242,7 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
               </TouchableOpacity>
             )}
           </ScrollView>
-        </View>
+        </Animated.View>
       )}
 
       {(showDistanceDropdown || showCategoryDropdown) && (
