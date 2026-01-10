@@ -14,6 +14,7 @@ import {
     Timestamp,
     writeBatch,
     Unsubscribe,
+    where,
 } from 'firebase/firestore';
 import { db, auth, storage } from '../config/firebase';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
@@ -425,6 +426,31 @@ export const updateUserProfile = async (updates: Partial<UserProfile>): Promise<
         ...updates,
         updatedAt: serverTimestamp(),
     });
+
+    if (updates.displayName || updates.photoURL !== undefined) {
+        try {
+            const postsRef = collection(db, 'posts');
+            const q = query(postsRef, where('userId', '==', userId));
+            const snapshot = await getDocs(q);
+
+            const batch = writeBatch(db);
+
+            snapshot.docs.forEach((postDoc) => {
+                const postUpdate: any = {};
+                if (updates.displayName) postUpdate.userName = updates.displayName;
+                if (updates.photoURL !== undefined) postUpdate.userAvatar = updates.photoURL || `https://ui-avatars.com/api/?name=${updates.displayName || 'U'}`;
+
+                batch.update(postDoc.ref, postUpdate);
+            });
+
+            if (snapshot.size > 0) {
+                await batch.commit();
+                console.log(`Updated ${snapshot.size} posts with new profile info`);
+            }
+        } catch (error) {
+            console.error('Error synchronizing posts:', error);
+        }
+    }
 };
 
 export const uploadProfileImage = async (uri: string): Promise<string> => {
