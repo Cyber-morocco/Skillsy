@@ -1,5 +1,5 @@
-import React from 'react';
-import { StatusBar, View, TouchableOpacity, ScrollView, Image, Text } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StatusBar, View, TouchableOpacity, ScrollView, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ExploreSearchBar } from '../features/explore/ExploreSearchBar';
@@ -48,7 +48,6 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
   const filtersActive = (selectedDistance !== null) || (selectedCategories.length > 0) || (Boolean(skillSearch && skillSearch.trim().length > 0));
 
   useEffect(() => {
-    // Hide filters whenever switching into map mode (covers entering from other pages when remounted)
     if (viewMode !== 'list') {
       setFiltersVisible(false);
     }
