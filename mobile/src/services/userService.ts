@@ -1,5 +1,6 @@
 import {
     collection,
+    collectionGroup,
     doc,
     getDocs,
     getDoc,
@@ -390,11 +391,13 @@ export const subscribeToOtherUserReviews = (
     );
 };
 
-export const saveReview = async (review: Omit<Review, 'id' | 'createdAt'>): Promise<void> => {
+export const saveReview = async (review: Omit<Review, 'id' | 'createdAt' | 'fromUserId'>): Promise<void> => {
     const userId = review.userId; // The user being reviewed
+    const fromUserId = getCurrentUserId();
     const reviewsRef = collection(db, 'users', userId, 'reviews');
     await addDoc(reviewsRef, {
         ...review,
+        fromUserId,
         createdAt: serverTimestamp()
     });
 };
@@ -429,26 +432,106 @@ export const updateUserProfile = async (updates: Partial<UserProfile>): Promise<
 
     if (updates.displayName || updates.photoURL !== undefined) {
         try {
+            // 1. Update Posts
             const postsRef = collection(db, 'posts');
-            const q = query(postsRef, where('userId', '==', userId));
-            const snapshot = await getDocs(q);
+            const postsQ = query(postsRef, where('userId', '==', userId));
+            const postsSnap = await getDocs(postsQ);
+
+            // 2. Update Chats
+            const chatsRef = collection(db, 'chats');
+            const chatsQ = query(chatsRef, where('participants', 'array-contains', userId));
+            const chatsSnap = await getDocs(chatsQ);
+
+            // 3. Update Matches
+            const matchesRef = collection(db, 'matches');
+            const matchesQ = query(matchesRef, where('fromUserId', '==', userId));
+            const matchesSnap = await getDocs(matchesQ);
+
+            // 4. Update Appointments (Tutor)
+            const appointmentsRef = collection(db, 'appointments');
+            const tutorAppQ = query(appointmentsRef, where('tutorId', '==', userId));
+            const tutorAppSnap = await getDocs(tutorAppQ);
+
+            // 5. Update Appointments (Student)
+            const studentAppQ = query(appointmentsRef, where('studentId', '==', userId));
+            const studentAppSnap = await getDocs(studentAppQ);
+
+            // 6. Update Comments (Collection Group)
+            const commentsQ = query(collectionGroup(db, 'comments'), where('userId', '==', userId));
+            const commentsSnap = await getDocs(commentsQ);
+
+            // 7. Update Reviews (Collection Group - where user is reviewer)
+            const reviewsQ = query(collectionGroup(db, 'reviews'), where('fromUserId', '==', userId));
+            const reviewsSnap = await getDocs(reviewsQ);
 
             const batch = writeBatch(db);
 
-            snapshot.docs.forEach((postDoc) => {
+            // Sync Posts
+            postsSnap.docs.forEach((postDoc) => {
                 const postUpdate: any = {};
                 if (updates.displayName) postUpdate.userName = updates.displayName;
                 if (updates.photoURL !== undefined) postUpdate.userAvatar = updates.photoURL || `https://ui-avatars.com/api/?name=${updates.displayName || 'U'}`;
-
                 batch.update(postDoc.ref, postUpdate);
             });
 
-            if (snapshot.size > 0) {
+            // Sync Chats
+            chatsSnap.docs.forEach((chatDoc) => {
+                const chatUpdate: any = {};
+                if (updates.displayName) {
+                    chatUpdate[`participantInfo.${userId}.name`] = updates.displayName;
+                    chatUpdate[`participantInfo.${userId}.initials`] = updates.displayName.charAt(0).toUpperCase();
+                }
+                if (updates.photoURL !== undefined) {
+                    chatUpdate[`participantInfo.${userId}.photoURL`] = updates.photoURL;
+                }
+                batch.update(chatDoc.ref, chatUpdate);
+            });
+
+            // Sync Matches
+            matchesSnap.docs.forEach((matchDoc) => {
+                const matchUpdate: any = {};
+                if (updates.displayName) matchUpdate.fromUserName = updates.displayName;
+                if (updates.photoURL !== undefined) matchUpdate.fromUserAvatar = updates.photoURL;
+                batch.update(matchDoc.ref, matchUpdate);
+            });
+
+            // Sync Appointments (Tutor)
+            tutorAppSnap.docs.forEach((appDoc) => {
+                const appUpdate: any = {};
+                if (updates.displayName) appUpdate.tutorName = updates.displayName;
+                if (updates.photoURL !== undefined) appUpdate.tutorAvatar = updates.photoURL;
+                batch.update(appDoc.ref, appUpdate);
+            });
+
+            // Sync Appointments (Student)
+            studentAppSnap.docs.forEach((appDoc) => {
+                const appUpdate: any = {};
+                if (updates.displayName) appUpdate.studentName = updates.displayName;
+                if (updates.photoURL !== undefined) appUpdate.studentAvatar = updates.photoURL;
+                batch.update(appDoc.ref, appUpdate);
+            });
+
+            // Sync Comments
+            commentsSnap.docs.forEach((commentDoc) => {
+                const commentUpdate: any = {};
+                if (updates.displayName) commentUpdate.userName = updates.displayName;
+                if (updates.photoURL !== undefined) commentUpdate.userAvatar = updates.photoURL || `https://ui-avatars.com/api/?name=${updates.displayName || 'U'}`;
+                batch.update(commentDoc.ref, commentUpdate);
+            });
+
+            // Sync Reviews
+            reviewsSnap.docs.forEach((reviewDoc) => {
+                if (updates.displayName) {
+                    batch.update(reviewDoc.ref, { fromName: updates.displayName });
+                }
+            });
+
+            if (postsSnap.size > 0 || chatsSnap.size > 0 || matchesSnap.size > 0 || tutorAppSnap.size > 0 || studentAppSnap.size > 0 || commentsSnap.size > 0 || reviewsSnap.size > 0) {
                 await batch.commit();
-                console.log(`Updated ${snapshot.size} posts with new profile info`);
+                console.log(`Synchronized profile updates across all collections (including comments and reviews)`);
             }
         } catch (error) {
-            console.error('Error synchronizing posts:', error);
+            console.error('Error synchronizing profile updates:', error);
         }
     }
 };

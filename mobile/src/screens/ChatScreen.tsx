@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     StatusBar,
     Text,
@@ -31,6 +31,52 @@ interface ChatScreenProps {
     onRespondMatch: (matchId: string, status: 'accepted' | 'rejected') => Promise<void>;
     onClearAllMatches: (subject?: string) => Promise<void>;
 }
+
+const ConversationItem = React.memo(({
+    item,
+    onPress,
+    currentUserId
+}: {
+    item: Conversation;
+    onPress: (item: Conversation) => void;
+    currentUserId: string | undefined;
+}) => {
+    const otherId = item.participants.find(id => id !== currentUserId);
+    const otherInfo = otherId ? item.participantInfo[otherId] : null;
+    if (!otherId || !otherInfo) return null;
+
+    return (
+        <TouchableOpacity
+            style={styles.contactItem}
+            activeOpacity={0.7}
+            onPress={() => onPress(item)}
+        >
+            <View style={styles.avatarContainer}>
+                <Avatar
+                    uri={otherInfo.photoURL}
+                    name={otherInfo.name}
+                    initials={otherInfo.initials}
+                    backgroundColor={otherInfo.avatarColor}
+                    size={54}
+                />
+                {(item.unreadCount?.[currentUserId || ''] || 0) > 0 && (
+                    <View style={styles.unreadIndicator} />
+                )}
+            </View>
+            <View style={styles.contactInfo}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={styles.contactName}>{otherInfo.name}</Text>
+                    <Text style={[styles.contactStatus, { fontSize: 11 }]}>
+                        {item.lastMessageTime?.toDate ? item.lastMessageTime.toDate().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : ''}
+                    </Text>
+                </View>
+                <Text style={[styles.contactStatus, { marginTop: 2 }]} numberOfLines={1}>
+                    {item.lastMessage || 'Geen berichten'}
+                </Text>
+            </View>
+        </TouchableOpacity>
+    );
+});
 
 function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: ChatScreenProps) {
     const navigation = useNavigation<NativeStackNavigationProp<ChatStackParamList>>();
@@ -73,7 +119,7 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
         ? pendingMatches
         : pendingMatches.filter(m => m.subject === selectedFilter);
 
-    const openConversation = (conv: Conversation) => {
+    const openConversation = useCallback((conv: Conversation) => {
         const otherId = conv.participants.find(id => id !== auth.currentUser?.uid);
         const otherInfo = otherId ? conv.participantInfo[otherId] : null;
         if (!otherId || !otherInfo) return;
@@ -86,45 +132,17 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
             contactColor: otherInfo.avatarColor,
             contactPhotoURL: otherInfo.photoURL,
         });
-    };
+    }, [navigation]);
 
-    const renderContact = ({ item }: { item: Conversation }) => {
-        const otherId = item.participants.find(id => id !== auth.currentUser?.uid);
-        const otherInfo = otherId ? item.participantInfo[otherId] : null;
-        if (!otherId || !otherInfo) return null;
-
+    const renderContact = useCallback(({ item }: { item: Conversation }) => {
         return (
-            <TouchableOpacity
-                style={styles.contactItem}
-                activeOpacity={0.7}
-                onPress={() => openConversation(item)}
-            >
-                <View style={styles.avatarContainer}>
-                    <Avatar
-                        uri={otherInfo.photoURL}
-                        name={otherInfo.name}
-                        initials={otherInfo.initials}
-                        backgroundColor={otherInfo.avatarColor}
-                        size={54}
-                    />
-                    {(item.unreadCount?.[auth.currentUser?.uid || ''] || 0) > 0 && (
-                        <View style={styles.unreadIndicator} />
-                    )}
-                </View>
-                <View style={styles.contactInfo}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Text style={styles.contactName}>{otherInfo.name}</Text>
-                        <Text style={[styles.contactStatus, { fontSize: 11 }]}>
-                            {item.lastMessageTime?.toDate ? item.lastMessageTime.toDate().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : ''}
-                        </Text>
-                    </View>
-                    <Text style={[styles.contactStatus, { marginTop: 2 }]} numberOfLines={1}>
-                        {item.lastMessage || 'Geen berichten'}
-                    </Text>
-                </View>
-            </TouchableOpacity>
+            <ConversationItem
+                item={item}
+                onPress={openConversation}
+                currentUserId={auth.currentUser?.uid}
+            />
         );
-    };
+    }, [openConversation]);
 
     const handleOpenMatchChat = async (match: MatchRequest) => {
         const otherId = match.fromUserId;
@@ -212,6 +230,10 @@ function ChatScreen({ matchRequests = [], onRespondMatch, onClearAllMatches }: C
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.contactsList}
                     showsVerticalScrollIndicator={false}
+                    removeClippedSubviews={true}
+                    initialNumToRender={10}
+                    maxToRenderPerBatch={5}
+                    windowSize={5}
                 />
             ) : (
                 <View style={styles.placeholder}>

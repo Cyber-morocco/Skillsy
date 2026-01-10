@@ -977,10 +977,11 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
               <View style={styles.modalContent}>
                 <Text style={styles.modalTitle}>Profiel Bewerken</Text>
 
-                <Text style={styles.inputLabel}>Naam</Text>
+
+                <Text style={styles.inputLabel}>Gebruikersnaam</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Naam..."
+                  placeholder="Gebruikersnaam..."
                   value={tempName}
                   onChangeText={setTempName}
                 />

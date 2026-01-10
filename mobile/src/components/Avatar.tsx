@@ -33,7 +33,7 @@ const getInitials = (name: string = 'U') => {
     return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 };
 
-export const Avatar: React.FC<AvatarProps> = ({
+export const Avatar: React.FC<AvatarProps> = React.memo(({
     uri,
     name = 'Gebruiker',
     initials,
@@ -92,7 +92,7 @@ export const Avatar: React.FC<AvatarProps> = ({
             </Text>
         </View>
     );
-};
+});
 
 const styles = StyleSheet.create({
     container: {

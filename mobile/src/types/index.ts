@@ -49,6 +49,8 @@ export interface PostComment {
 export interface UserProfile {
     uid: string;
     displayName: string;
+    firstName?: string;
+    lastName?: string;
     email: string;
     profileComplete: boolean;
     photoURL?: string | null;
@@ -121,7 +123,7 @@ export interface Message {
     text: string;
     senderId: string;
     createdAt: any;
-    type?: 'text' | 'appointmentRequest';
+    type?: 'text' | 'appointmentRequest' | 'info';
     duration?: number;
     proposedPrice?: number;
     matchType?: 'pay' | 'swap';
@@ -192,6 +194,7 @@ export interface Appointment {
 export interface Review {
     id: string;
     userId: string;
+    fromUserId: string;
     fromName: string;
     rating: number;
     createdAt: any;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     StatusBar,
     Text,
@@ -29,7 +29,7 @@ type Message = {
     sender: 'me' | 'other';
     time: string;
     senderId: string;
-    type?: 'text' | 'appointmentRequest';
+    type?: 'text' | 'appointmentRequest' | 'info';
     appointmentDate?: string;
     appointmentTime?: string;
     appointmentStatus?: 'pending' | 'accepted' | 'rejected' | 'countered';
@@ -40,10 +40,14 @@ type Message = {
     tutorSkillName?: string;
     tutorId?: string;
     studentId?: string;
+    dateKey?: string;
+    startTimeMinutes?: number;
+    endTimeMinutes?: number;
 };
 
 type ConversationProps = {
     route?: {
+        // ... existing slide ...
         params?: {
             chatId: string;
             contactId: string;
@@ -59,6 +63,146 @@ type ConversationProps = {
         navigate: (screen: string, params?: any) => void;
     };
 };
+
+const MessageItem = React.memo(({
+    item,
+    onRespond,
+    onCounter
+}: {
+    item: Message;
+    onRespond: (id: string, status: 'accepted' | 'rejected') => void;
+    onCounter: (item: Message) => void;
+}) => {
+    if (item.type === 'info') {
+        return (
+            <View style={{ marginVertical: 12, paddingHorizontal: 40, alignItems: 'center' }}>
+                <View style={{ backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
+                    <Text style={{ color: '#94A3B8', fontSize: 13, textAlign: 'center', lineHeight: 18 }}>
+                        {item.text}
+                    </Text>
+                </View>
+            </View>
+        );
+    }
+
+    if (item.type === 'appointmentRequest' || (item.appointmentDate && item.appointmentStatus)) {
+        return (
+            <View style={[
+                styles.messageBubble,
+                item.sender === 'me' ? styles.myMessage : styles.otherMessage,
+                { minWidth: 250 }
+            ]}>
+                <Text style={[
+                    styles.messageText,
+                    item.sender === 'me' ? styles.myMessageText : styles.otherMessageText,
+                    { fontWeight: '600', marginBottom: 4 }
+                ]}>
+                    Afspraakverzoek
+                </Text>
+                <View style={{ marginBottom: 8 }}>
+                    <Text style={{ color: item.sender === 'me' ? '#fff' : '#94A3B8', fontSize: 13 }}>Tijd: {item.appointmentDate} om {item.appointmentTime}</Text>
+                    <Text style={{ color: item.sender === 'me' ? '#fff' : '#94A3B8', fontSize: 13 }}>Duur: {item.duration || 1} uur</Text>
+                    {item.matchType === 'swap' ? (
+                        <View style={{ marginTop: 4 }}>
+                            <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '700', textTransform: 'uppercase' }}>Skill Swap</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>{item.tutorSkillName}</Text>
+                                    <Text style={{ color: '#94A3B8', fontSize: 10 }}>GEVRAAGD</Text>
+                                </View>
+                                <View style={{ paddingHorizontal: 10 }}>
+                                    <Ionicons name="repeat" size={16} color={scheduleMatchColors.primary} />
+                                </View>
+                                <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                                    <Text style={{ color: scheduleMatchColors.primary, fontSize: 14, fontWeight: '700', textAlign: 'right' }}>{item.swapSkillName}</Text>
+                                    <Text style={{ color: '#94A3B8', fontSize: 10 }}>AANGEBODEN</Text>
+                                </View>
+                            </View>
+                        </View>
+                    ) : (
+                        <Text style={{ color: '#22C55E', fontSize: 16, fontWeight: '700', marginTop: 4 }}>Prijs: €{item.proposedPrice || 0}</Text>
+                    )}
+                </View>
+
+                {item.appointmentStatus === 'pending' ? (
+                    item.sender === 'other' ? (
+                        <View style={{ gap: 8, marginTop: 8 }}>
+                            <View style={{ flexDirection: 'row', gap: 10 }}>
+                                <TouchableOpacity
+                                    style={{ flex: 1, backgroundColor: '#10B981', padding: 10, borderRadius: 8, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
+                                    onPress={() => onRespond(item.id, 'accepted')}
+                                >
+                                    <Ionicons name="checkmark-circle" size={16} color="white" style={{ marginRight: 4 }} />
+                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>Accepteren</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={{ flex: 1, backgroundColor: '#EF4444', padding: 10, borderRadius: 8, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
+                                    onPress={() => onRespond(item.id, 'rejected')}
+                                >
+                                    <Ionicons name="close-circle" size={16} color="white" style={{ marginRight: 4 }} />
+                                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>Weigeren</Text>
+                                </TouchableOpacity>
+                            </View>
+                            <TouchableOpacity
+                                style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)', padding: 10, borderRadius: 8, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', borderWidth: 1, borderColor: '#6366f1' }}
+                                onPress={() => onCounter(item)}
+                            >
+                                <Ionicons name="create-outline" size={16} color="#6366f1" style={{ marginRight: 4 }} />
+                                <Text style={{ color: '#6366f1', fontWeight: 'bold', fontSize: 13 }}>Tegenbod / Wijzigen</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <View style={{ marginTop: 8, padding: 10, backgroundColor: 'rgba(251, 191, 36, 0.2)', borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                            <Ionicons name="time-outline" size={16} color="#FBBF24" style={{ marginRight: 6 }} />
+                            <Text style={{ fontSize: 13, color: '#FBBF24', fontWeight: '600' }}>Wachten op reactie...</Text>
+                        </View>
+                    )
+                ) : (
+                    <View style={{
+                        marginTop: 8,
+                        padding: 10,
+                        backgroundColor: item.appointmentStatus === 'accepted' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                        borderRadius: 8,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                    }}>
+                        <Ionicons
+                            name={item.appointmentStatus === 'accepted' ? 'checkmark-circle' : 'close-circle'}
+                            size={18}
+                            color={item.appointmentStatus === 'accepted' ? '#10B981' : '#EF4444'}
+                            style={{ marginRight: 6 }}
+                        />
+                        <Text style={{
+                            color: item.appointmentStatus === 'accepted' ? '#10B981' : '#EF4444',
+                            fontWeight: '600',
+                            fontSize: 13
+                        }}>
+                            {item.appointmentStatus === 'accepted' ? '✓ Afspraak geaccepteerd!' : item.appointmentStatus === 'countered' ? '↺ Tegenbod verstuurd' : '✕ Afspraak geweigerd'}
+                        </Text>
+                    </View>
+                )}
+
+                <Text style={styles.messageTime}>{item.time}</Text>
+            </View>
+        );
+    }
+
+    return (
+        <View style={[
+            styles.messageBubble,
+            item.sender === 'me' ? styles.myMessage : styles.otherMessage
+        ]}>
+            <Text style={[
+                styles.messageText,
+                item.sender === 'me' ? styles.myMessageText : styles.otherMessageText
+            ]}>
+                {item.text}
+            </Text>
+            <Text style={styles.messageTime}>{item.time}</Text>
+        </View>
+    );
+});
 
 function ConversationScreen({ route, navigation }: ConversationProps) {
     const contactName = route?.params?.contactName || 'Contact';
@@ -108,6 +252,9 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                     tutorSkillName: (m as any).tutorSkillName,
                     tutorId: (m as any).tutorId,
                     studentId: (m as any).studentId,
+                    dateKey: (m as any).dateKey,
+                    startTimeMinutes: (m as any).startTimeMinutes,
+                    endTimeMinutes: (m as any).endTimeMinutes,
                 };
             });
             setMessages(formattedMessages);
@@ -227,6 +374,9 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                         },
                         initials: contactInitials
                     });
+
+                    // Send automated message to agree on location
+                    await sendFirebaseMessage(chatId, "De afspraak is bevestigd! Bespreek nu in de chat over de locatie van de les.", { type: 'info' });
                 }
             }
         } catch (error) {
@@ -234,128 +384,22 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
         }
     };
 
-    const renderMessage = ({ item }: { item: Message }) => {
-        if (item.type === 'appointmentRequest' || (item.appointmentDate && item.appointmentStatus)) {
-            return (
-                <View style={[
-                    styles.messageBubble,
-                    item.sender === 'me' ? styles.myMessage : styles.otherMessage,
-                    { minWidth: 250 }
-                ]}>
-                    <Text style={[
-                        styles.messageText,
-                        item.sender === 'me' ? styles.myMessageText : styles.otherMessageText,
-                        { fontWeight: '600', marginBottom: 4 }
-                    ]}>
-                        Afspraakverzoek
-                    </Text>
-                    <View style={{ marginBottom: 8 }}>
-                        <Text style={{ color: item.sender === 'me' ? '#fff' : '#94A3B8', fontSize: 13 }}>Tijd: {item.appointmentDate} om {item.appointmentTime}</Text>
-                        <Text style={{ color: item.sender === 'me' ? '#fff' : '#94A3B8', fontSize: 13 }}>Duur: {item.duration || 1} uur</Text>
-                        {item.matchType === 'swap' ? (
-                            <View style={{ marginTop: 4 }}>
-                                <Text style={{ color: '#94A3B8', fontSize: 12, fontWeight: '700', textTransform: 'uppercase' }}>Skill Swap</Text>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>{item.tutorSkillName}</Text>
-                                        <Text style={{ color: '#94A3B8', fontSize: 10 }}>GEVRAAGD</Text>
-                                    </View>
-                                    <View style={{ paddingHorizontal: 10 }}>
-                                        <Ionicons name="repeat" size={16} color={scheduleMatchColors.primary} />
-                                    </View>
-                                    <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                                        <Text style={{ color: scheduleMatchColors.primary, fontSize: 14, fontWeight: '700', textAlign: 'right' }}>{item.swapSkillName}</Text>
-                                        <Text style={{ color: '#94A3B8', fontSize: 10 }}>AANGEBODEN</Text>
-                                    </View>
-                                </View>
-                            </View>
-                        ) : (
-                            <Text style={{ color: '#22C55E', fontSize: 16, fontWeight: '700', marginTop: 4 }}>Prijs: €{item.proposedPrice || 0}</Text>
-                        )}
-                    </View>
 
-                    {item.appointmentStatus === 'pending' ? (
-                        item.sender === 'other' ? (
-                            <View style={{ gap: 8, marginTop: 8 }}>
-                                <View style={{ flexDirection: 'row', gap: 10 }}>
-                                    <TouchableOpacity
-                                        style={{ flex: 1, backgroundColor: '#10B981', padding: 10, borderRadius: 8, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
-                                        onPress={() => handleRespondAppointment(item.id, 'accepted')}
-                                    >
-                                        <Ionicons name="checkmark-circle" size={16} color="white" style={{ marginRight: 4 }} />
-                                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>Accepteren</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={{ flex: 1, backgroundColor: '#EF4444', padding: 10, borderRadius: 8, alignItems: 'center', flexDirection: 'row', justifyContent: 'center' }}
-                                        onPress={() => handleRespondAppointment(item.id, 'rejected')}
-                                    >
-                                        <Ionicons name="close-circle" size={16} color="white" style={{ marginRight: 4 }} />
-                                        <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 13 }}>Weigeren</Text>
-                                    </TouchableOpacity>
-                                </View>
-                                <TouchableOpacity
-                                    style={{ backgroundColor: 'rgba(99, 102, 241, 0.1)', padding: 10, borderRadius: 8, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', borderWidth: 1, borderColor: '#6366f1' }}
-                                    onPress={() => {
-                                        setSelectedMessageForCounter(item);
-                                        setShowScheduleMatch(true);
-                                    }}
-                                >
-                                    <Ionicons name="create-outline" size={16} color="#6366f1" style={{ marginRight: 4 }} />
-                                    <Text style={{ color: '#6366f1', fontWeight: 'bold', fontSize: 13 }}>Tegenbod / Wijzigen</Text>
-                                </TouchableOpacity>
-                            </View>
-                        ) : (
-                            <View style={{ marginTop: 8, padding: 10, backgroundColor: 'rgba(251, 191, 36, 0.2)', borderRadius: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                                <Ionicons name="time-outline" size={16} color="#FBBF24" style={{ marginRight: 6 }} />
-                                <Text style={{ fontSize: 13, color: '#FBBF24', fontWeight: '600' }}>Wachten op reactie...</Text>
-                            </View>
-                        )
-                    ) : (
-                        <View style={{
-                            marginTop: 8,
-                            padding: 10,
-                            backgroundColor: item.appointmentStatus === 'accepted' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                            borderRadius: 8,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                        }}>
-                            <Ionicons
-                                name={item.appointmentStatus === 'accepted' ? 'checkmark-circle' : 'close-circle'}
-                                size={18}
-                                color={item.appointmentStatus === 'accepted' ? '#10B981' : '#EF4444'}
-                                style={{ marginRight: 6 }}
-                            />
-                            <Text style={{
-                                color: item.appointmentStatus === 'accepted' ? '#10B981' : '#EF4444',
-                                fontWeight: '600',
-                                fontSize: 13
-                            }}>
-                                {item.appointmentStatus === 'accepted' ? '✓ Afspraak geaccepteerd!' : item.appointmentStatus === 'countered' ? '↺ Tegenbod verstuurd' : '✕ Afspraak geweigerd'}
-                            </Text>
-                        </View>
-                    )}
 
-                    <Text style={styles.messageTime}>{item.time}</Text>
-                </View>
-            );
-        }
+    const handleCounterAppointment = useCallback((item: Message) => {
+        setSelectedMessageForCounter(item);
+        setShowScheduleMatch(true);
+    }, []);
 
+    const renderMessage = useCallback(({ item }: { item: Message }) => {
         return (
-            <View style={[
-                styles.messageBubble,
-                item.sender === 'me' ? styles.myMessage : styles.otherMessage
-            ]}>
-                <Text style={[
-                    styles.messageText,
-                    item.sender === 'me' ? styles.myMessageText : styles.otherMessageText
-                ]}>
-                    {item.text}
-                </Text>
-                <Text style={styles.messageTime}>{item.time}</Text>
-            </View>
+            <MessageItem
+                item={item}
+                onRespond={handleRespondAppointment}
+                onCounter={handleCounterAppointment}
+            />
         );
-    };
+    }, [handleRespondAppointment, handleCounterAppointment]);
 
     if (showScheduleMatch) {
         return (
@@ -438,6 +482,10 @@ function ConversationScreen({ route, navigation }: ConversationProps) {
                 onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
                 onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
                 showsVerticalScrollIndicator={false}
+                removeClippedSubviews={true}
+                initialNumToRender={15}
+                maxToRenderPerBatch={10}
+                windowSize={10}
             />
             <View style={[styles.inputContainer, !canSendMessage && { opacity: 0.5 }]}>
                 <TextInput

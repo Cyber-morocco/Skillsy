@@ -111,8 +111,7 @@ const ProfileCreationStep3: React.FC<NavProps> = ({ navigation }) => {
                 updatedAt: serverTimestamp(),
             });
 
-            // Profile completion listener in App.tsx will automatically
-            // transition to main app when profileComplete becomes true
+            navigation.navigate('MainTabs');
 
         } catch (error: any) {
             console.error(error);
