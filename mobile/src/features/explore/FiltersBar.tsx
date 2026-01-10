@@ -134,14 +134,6 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
             color={selectedCategories.length > 0 ? '#fff' : '#7c3aed'}
           />
         </TouchableOpacity>
-
-        <TouchableOpacity style={styles.viewModeToggleButton} onPress={onToggleViewMode}>
-          <MaterialCommunityIcons
-            name={viewMode === 'map' ? 'format-list-bulleted' : 'map'}
-            size={18}
-            color="#7c3aed"
-          />
-        </TouchableOpacity>
       </View>
 
       {shouldRenderDistanceDropdown && (
