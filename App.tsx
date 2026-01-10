@@ -298,9 +298,9 @@ export default function App() {
       <View style={styles.screenContainer}>{renderScreen()}</View>
       <BottomNavBar
         activeScreen={
-          activeScreen === 'exploreProfile'
-            ? (prevScreen === 'explore' ? 'explore' : 'home')
-            : (activeScreen === 'availabilitySpecificDates' ? 'availability' : (activeScreen as any))
+          activeScreen === 'exploreProfile' ? 'explore' : 
+          activeScreen === 'availabilitySpecificDates' ? 'availability' : 
+          activeScreen as any
         }
         onNavigate={handleNavigate}
         badges={{
