@@ -9,22 +9,9 @@ export const exploreMapStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
     backgroundColor: '#050816',
     gap: 8,
-  },
-  searchTypeToggleButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 12,
-    backgroundColor: '#7c3aed',
-    shadowColor: '#7c3aed',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
   },
   searchContainer: {
     flex: 1,
@@ -35,6 +22,36 @@ export const exploreMapStyles = StyleSheet.create({
     paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.25)',
+  },
+  sectionTabsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    backgroundColor: '#050816',
+    gap: 12,
+  },
+  sectionTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 0,
+    backgroundColor: 'rgba(124, 58, 237, 0.1)',
+    gap: 8,
+  },
+  sectionTabActive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+  },
+  sectionTabText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  sectionTabTextActive: {
+    color: '#10b981',
   },
   searchInput: {
     flex: 1,
@@ -52,7 +69,7 @@ export const exploreMapStyles = StyleSheet.create({
   filterSection: {
     backgroundColor: '#050816',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 6,
     marginBottom: 0,
   },
   filterButtonsContainer: {
@@ -181,7 +198,7 @@ export const exploreMapStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#050816',
     paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingVertical: 6,
   },
   talentCard: {
     flexDirection: 'row',

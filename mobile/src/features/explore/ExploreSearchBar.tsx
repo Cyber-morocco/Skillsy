@@ -15,7 +15,13 @@ interface ExploreSearchBarProps {
   onClear: () => void;
   onToggleFilters: () => void;
   filtersActive: boolean;
+  onSearchBarFocus?: () => void;
+  onSearchBarBlur?: () => void;
 }
+
+const getPlaceholder = (searchType: SearchType): string => {
+  return searchType === 'address' ? 'Zoek locatie...' : 'Zoek skill...';
+};
 
 export const ExploreSearchBar: React.FC<ExploreSearchBarProps> = ({
   searchQuery,
@@ -27,66 +33,22 @@ export const ExploreSearchBar: React.FC<ExploreSearchBarProps> = ({
   onClear,
   onToggleFilters,
   filtersActive,
+  onSearchBarFocus,
+  onSearchBarBlur,
 }) => {
-  const [showTypeMenu, setShowTypeMenu] = useState(false);
-
-  const handleSelectType = (type: SearchType) => {
-    onSelectSearchType(type);
-    setShowTypeMenu(false);
-  };
-
   return (
     <View style={styles.header}>
-      <View style={{ position: 'relative' }}>
-        <TouchableOpacity style={styles.searchTypeToggleButton} onPress={() => setShowTypeMenu((prev) => !prev)}>
-          <MaterialCommunityIcons name={searchType === 'skill' ? 'star-outline' : 'map-marker'} size={20} color="#fff" />
-        </TouchableOpacity>
-        {showTypeMenu && (
-          <View
-            style={{
-              position: 'absolute',
-              top: 44,
-              left: 0,
-              backgroundColor: '#0f172a',
-              borderRadius: 10,
-              paddingVertical: 6,
-              paddingHorizontal: 8,
-              shadowColor: '#000',
-              shadowOpacity: 0.2,
-              shadowOffset: { width: 0, height: 4 },
-              shadowRadius: 8,
-              elevation: 12,
-              gap: 6,
-              minWidth: 150,
-              zIndex: 50,
-            }}
-          >
-            <TouchableOpacity
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 }}
-              onPress={() => handleSelectType('skill')}
-            >
-              <MaterialCommunityIcons name="star-outline" size={18} color="#e0e7ff" />
-              <Text style={{ color: '#e0e7ff', fontSize: 14 }}>zoek skill</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 6 }}
-              onPress={() => handleSelectType('address')}
-            >
-              <MaterialCommunityIcons name="map-marker" size={18} color="#e0e7ff" />
-              <Text style={{ color: '#e0e7ff', fontSize: 14 }}>zoek locatie</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={18} color="#94A3B8" />
         <TextInput
           style={styles.searchInput}
-          placeholder="Zoek hier voor..."
+          placeholder={getPlaceholder(searchType)}
           placeholderTextColor="#94A3B8"
           value={searchQuery}
           onChangeText={onChangeQuery}
           onSubmitEditing={onSubmit}
+          onFocus={onSearchBarFocus}
+          onBlur={onSearchBarBlur}
           returnKeyType="search"
         />
         {/* Removed clear (close) and submit (arrow) buttons as requested */}
