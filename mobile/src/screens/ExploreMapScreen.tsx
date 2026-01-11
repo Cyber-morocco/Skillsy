@@ -376,10 +376,16 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
 
                   return (
                     <>
-                      {matchLabel && (
+                      {matchLabel ? (
                         <View style={[styles.matchPill, matchLabel === 'perfect' && styles.matchPillPerfect]}>
                           <Text style={styles.matchPillText}>{matchLabel === 'perfect' ? 'perfect match' : 'match'}</Text>
                         </View>
+                      ) : (
+                        talent.averageRating && talent.reviewCount && talent.reviewCount >= 5 ? (
+                          <View style={styles.matchPill}>
+                            <Text style={styles.ratingPillText}>⭐ {talent.averageRating.toFixed(1)}</Text>
+                          </View>
+                        ) : null
                       )}
                       <Avatar
                         uri={talent.avatar}
@@ -396,7 +402,7 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
                           {talent.location?.city ? (
                             <Text style={styles.talentLocation}>📍 {talent.location.city}</Text>
                           ) : <View />}
-                          {talent.averageRating && talent.reviewCount && talent.reviewCount >= 5 ? (
+                          {matchLabel && talent.averageRating && talent.reviewCount && talent.reviewCount >= 5 ? (
                             <View style={styles.ratingPill}>
                               <Text style={styles.ratingPillText}>⭐ {talent.averageRating.toFixed(1)}</Text>
                             </View>
