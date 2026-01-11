@@ -51,6 +51,8 @@ const FeedVideoItem = ({
 
     useEffect(() => {
         if (isActive) {
+            // Restart video from beginning when scrolling back to it
+            player.currentTime = 0;
             player.play();
         } else {
             player.pause();
