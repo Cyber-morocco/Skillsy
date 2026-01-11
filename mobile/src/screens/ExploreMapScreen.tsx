@@ -56,6 +56,7 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
     userLearnSkills,
     userSkills,
     viewMode,
+    mapClusters,
     profileReady,
   } = useExploreMap();
 
@@ -225,9 +226,9 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
                     viewMode === 'list'
                       ? 0
                       : sectionTabsAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [-20, 0],
-                        }),
+                        inputRange: [0, 1],
+                        outputRange: [-20, 0],
+                      }),
                 },
               ],
             },
@@ -290,7 +291,8 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
               <MapViewLeaflet
                 userLocation={userLocation}
                 radiusKm={selectedDistance}
-                talents={filteredTalents}
+                talents={filteredTalents} // Keep for legacy/fallback if needed, but clusters are main
+                clusters={mapClusters}
                 filtersActive={filtersActive}
                 focusTalent={focusTalent}
                 onTalentClick={handleTalentPress}

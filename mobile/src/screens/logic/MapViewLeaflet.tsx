@@ -6,10 +6,13 @@ import { Location } from './types';
 import { Talent } from '../../types';
 import { exploreMapStyles as styles } from '../../styles/exploreMapStyles';
 
+import { Cluster } from './clustering';
+
 interface MapViewLeafletProps {
   userLocation: Location;
   radiusKm: number | null;
   talents: Talent[];
+  clusters: Cluster[]; // New prop
   filtersActive: boolean;
   focusTalent?: { id: string; lat: number; lng: number } | null;
   onTalentClick?: (id: string) => void;
@@ -21,6 +24,7 @@ export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({
   userLocation,
   radiusKm,
   talents,
+  clusters,
   filtersActive,
   focusTalent,
   onTalentClick,
@@ -36,6 +40,7 @@ export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({
         userLocation,
         radiusKm: radiusKm,
         talents,
+        clusters,
         filtersActive,
       }),
     []
@@ -48,7 +53,7 @@ export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({
 
   useEffect(() => {
     if (!isReady) return;
-    postMessage({ type: 'updateRadius', radiusKm: radiusKm, talents });
+    postMessage({ type: 'updateRadius', radiusKm: radiusKm, talents, clusters });
   }, [isReady, radiusKm]);
 
   useEffect(() => {
@@ -58,8 +63,8 @@ export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({
 
   useEffect(() => {
     if (!isReady) return;
-    postMessage({ type: 'updateTalents', talents });
-  }, [isReady, talents]);
+    postMessage({ type: 'updateTalents', talents, clusters });
+  }, [isReady, talents, clusters]);
 
   useEffect(() => {
     if (!isReady) return;

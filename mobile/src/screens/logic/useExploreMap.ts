@@ -5,6 +5,7 @@ import { subscribeToTalents, subscribeToOtherUserSkills, subscribeToOtherUserRev
 import { CATEGORY_OPTIONS, DISTANCE_OPTIONS } from '../../constants/exploreMap';
 import { auth } from '../../config/firebase';
 import { calculateDistance } from './distance';
+import { calculateClusters, Cluster } from './clustering';
 
 const DEFAULT_LOCATION: Location = { lat: 52.3676, lng: 4.9041 };
 
@@ -222,6 +223,11 @@ export const useExploreMap = () => {
     });
   }, [allTalents, selectedDistance, selectedCategories, skillSearch, userLocation, userLearnSkills]);
 
+  // Calculate clusters for privacy-safe map display
+  const mapClusters = useMemo(() => {
+    return calculateClusters(filteredTalents, userLocation);
+  }, [filteredTalents, userLocation]);
+
   // Center map on user's actual GPS location
   const centerToUserLocation = async () => {
     try {
@@ -389,6 +395,7 @@ export const useExploreMap = () => {
     allTalents,
     clearCategories,
     filteredTalents,
+    mapClusters,
     focusTalent,
     handleCategorySelect,
     handleDistanceSelect,
@@ -414,3 +421,4 @@ export const useExploreMap = () => {
     profileReady,
   };
 };
+
