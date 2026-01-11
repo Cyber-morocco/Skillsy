@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { Alert, Linking, Platform } from 'react-native';
 import { Location, GeocodingResult, Talent, LearnSkill, Skill } from '../../types';
-import { subscribeToTalents, subscribeToOtherUserSkills, subscribeToOtherUserReviews, subscribeToLearnSkills, subscribeToUserProfile, subscribeToSkills, subscribeToOtherUserLearnSkills } from '../../services/userService';
+import { subscribeToTalents, subscribeToOtherUserSkills, subscribeToOtherUserReviews, subscribeToLearnSkills, subscribeToUserProfile, subscribeToOtherUserLearnSkills } from '../../services/userService';
 import { CATEGORY_OPTIONS, DISTANCE_OPTIONS } from '../../constants/exploreMap';
 import { auth } from '../../config/firebase';
 import { calculateDistance } from './distance';
@@ -168,17 +168,6 @@ export const useExploreMap = () => {
             )
           );
         });
-
-        // Subscribe to learn skills (for reverse matching - what they want to learn)
-        subscribeToOtherUserLearnSkills(talent.userId, (learnSkills) => {
-          setAllTalents((prev) =>
-            prev.map((t) =>
-              t.id === talent.id
-                ? { ...t, learnSkillSubjects: learnSkills.map(ls => ls.subject.toLowerCase()) }
-                : t
-            )
-          );
-        });
       });
 
       setAllTalents(mappedTalents);
@@ -202,14 +191,6 @@ export const useExploreMap = () => {
   useEffect(() => {
     const unsubscribe = subscribeToLearnSkills((learnSkills) => {
       setUserLearnSkills(learnSkills);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  // Subscribe to current user's skills (for reverse matching - what I can teach)
-  useEffect(() => {
-    const unsubscribe = subscribeToSkills((skills) => {
-      setUserSkills(skills);
     });
     return () => unsubscribe();
   }, []);
@@ -495,7 +476,6 @@ export const useExploreMap = () => {
     toggleSearchType,
     userLocation,
     userLearnSkills,
-    userSkills,
     viewMode,
     centerToUserLocation,
     profileReady,

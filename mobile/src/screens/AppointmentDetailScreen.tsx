@@ -74,21 +74,6 @@ export default function AppointmentDetailScreen({
     };
 
     const handleConfirmLesson = async () => {
-        // Prevent completion if appointment hasn't ended yet
-        if (appointment.dateKey && appointment.endTimeMinutes) {
-            const [year, month, day] = appointment.dateKey.split('-').map(Number);
-            const appointmentEnd = new Date(year, month - 1, day);
-            appointmentEnd.setMinutes(appointment.endTimeMinutes);
-
-            if (new Date() < appointmentEnd) {
-                Alert.alert(
-                    'Te vroeg',
-                    'Je kunt de afspraak pas afronden nadat deze is afgelopen.'
-                );
-                return;
-            }
-        }
-
         setConfirming(true);
         try {
             const role = isMeAsTutor ? 'tutor' : 'student';
@@ -275,7 +260,7 @@ export default function AppointmentDetailScreen({
 
                 {isConfirmed && (
                     <View style={styles.sectionCard}>
-                        <Text style={styles.sectionTitle}>Bevestiging Afronding</Text>
+                        <Text style={styles.sectionTitle}>Bevestiging Voltooiing</Text>
                         <View style={{ gap: 12 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 12 }}>
                                 <Text style={{ color: '#F8FAFC', fontSize: 14 }}>Student: {appointment.studentName}</Text>
@@ -321,8 +306,8 @@ export default function AppointmentDetailScreen({
                                     <Ionicons name="checkmark-done-circle" size={20} color="#fff" style={{ marginRight: 8 }} />
                                     <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>
                                         {((isMeAsTutor && appointment.confirmations?.tutorConfirmed) || (!isMeAsTutor && appointment.confirmations?.studentConfirmed))
-                                            ? 'Al Beëindigd'
-                                            : 'Les Beëindigen'}
+                                            ? 'Al Bevestigd'
+                                            : 'Les Bevestigen'}
                                     </Text>
                                 </>
                             )}

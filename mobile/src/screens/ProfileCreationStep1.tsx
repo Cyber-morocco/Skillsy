@@ -9,7 +9,6 @@ import {
     Text,
     TouchableOpacity,
     View,
-    Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authColors, authStyles as styles } from '../styles/authStyles';
@@ -42,8 +41,6 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
     const [loading, setLoading] = useState(true);
-    const [agreedToTerms, setAgreedToTerms] = useState(false);
-    const [agreedToDataSharing, setAgreedToDataSharing] = useState(false);
 
     useEffect(() => {
         if (auth.currentUser?.displayName) {
@@ -254,7 +251,7 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                                 <View style={{ marginBottom: 20, marginTop: 16 }}>
                                     <Text style={[styles.label, { fontSize: 18, marginBottom: 6 }]}>Locatie</Text>
                                     <Text style={{ color: authColors.muted, fontSize: 13, lineHeight: 20, marginBottom: 12 }}>
-                                        Enkel de stad zal gedeeld worden met andere gebruikers.
+                                        We delen je exacte adres niet. Alleen je wijk of buurt wordt getoond.
                                     </Text>
 
                                     <View style={{ zIndex: 1000 }}>
@@ -312,39 +309,7 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                                         />
                                     </View>
 
-                                    <View style={{ gap: 16, marginBottom: 28, marginTop: 8 }}>
-                                        <TouchableOpacity
-                                            style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}
-                                            onPress={() => setAgreedToTerms(!agreedToTerms)}
-                                            activeOpacity={0.7}
-                                        >
-                                            <Ionicons
-                                                name={agreedToTerms ? "checkbox" : "square-outline"}
-                                                size={24}
-                                                color={agreedToTerms ? authColors.accent : authColors.muted}
-                                            />
-                                            <Text style={{ color: authColors.text, fontSize: 14, flex: 1, lineHeight: 20 }}>
-                                                Ik ga akkoord met de <Text style={{ color: authColors.accent }} onPress={() => Linking.openURL('https://www.canva.com/nl_nl/beleid/terms-of-use/')}>Gebruiksvoorwaarden</Text> en het <Text style={{ color: authColors.accent }} onPress={() => Linking.openURL('https://www.leostevens.com/privacybeleid?gad_source=1&gad_campaignid=23152040378&gbraid=0AAAAA9mCzoye238ZOL913DI-JLcfd73U5&gclid=CjwKCAiAjojLBhAlEiwAcjhrDknWHI8PLltpYlBu94rLWyyS1YI8N4lCmjUi_5_23B5VKPyy7UnO9RoCDt0QAvD_BwE')}>Privacybeleid</Text>
-                                            </Text>
-                                        </TouchableOpacity>
-
-                                        <TouchableOpacity
-                                            style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}
-                                            onPress={() => setAgreedToDataSharing(!agreedToDataSharing)}
-                                            activeOpacity={0.7}
-                                        >
-                                            <Ionicons
-                                                name={agreedToDataSharing ? "checkbox" : "square-outline"}
-                                                size={24}
-                                                color={agreedToDataSharing ? authColors.accent : authColors.muted}
-                                            />
-                                            <Text style={{ color: authColors.text, fontSize: 14, flex: 1, lineHeight: 20 }}>
-                                                Ik ben akkoord om mijn profielgegevens te delen met de Skillsy community om matches te vinden.
-                                            </Text>
-                                        </TouchableOpacity>
-                                    </View>
-
-                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12, alignItems: 'center' }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, alignItems: 'center' }}>
                                         <TouchableOpacity
                                             onPress={handleLogout}
                                             style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(148,163,184,0.2)' }}
@@ -356,11 +321,7 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                                         </TouchableOpacity>
 
                                         <TouchableOpacity
-                                            style={[
-                                                styles.primaryButton,
-                                                { marginTop: 0, paddingVertical: 12, paddingHorizontal: 32 },
-                                                (saving || !agreedToTerms || !agreedToDataSharing) && { opacity: 0.5 }
-                                            ]}
+                                            style={[styles.primaryButton, { marginTop: 0, paddingVertical: 12, paddingHorizontal: 32 }, saving && { opacity: 0.7 }]}
                                             onPress={async () => {
                                                 if (!auth.currentUser) {
                                                     Alert.alert('Fout', 'Niet ingelogd');
@@ -369,11 +330,6 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
 
                                                 if (!name.trim() || !street.trim() || !zipCode.trim() || !city.trim()) {
                                                     Alert.alert('Fout', 'Vul alle verplichte velden in');
-                                                    return;
-                                                }
-
-                                                if (!agreedToTerms || !agreedToDataSharing) {
-                                                    Alert.alert('Akkoord vereist', 'Je moet akkoord gaan met de voorwaarden om verder te kunnen.');
                                                     return;
                                                 }
 
@@ -411,8 +367,6 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                                                             lat: finalCoords.lat,
                                                             lng: finalCoords.lng,
                                                         },
-                                                        agreedToTerms: true,
-                                                        agreedToDataSharing: true,
                                                         updatedAt: serverTimestamp(),
                                                     });
 
@@ -423,7 +377,7 @@ const ProfileCreationStep1: React.FC<NavProps> = ({ navigation }) => {
                                                     setSaving(false);
                                                 }
                                             }}
-                                            disabled={saving || !agreedToTerms || !agreedToDataSharing}
+                                            disabled={saving}
                                         >
                                             {saving ? (
                                                 <ActivityIndicator color="#fff" />
