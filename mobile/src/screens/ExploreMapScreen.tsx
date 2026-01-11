@@ -76,6 +76,13 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
   }, [searchType]);
 
   useEffect(() => {
+    // Ensure skill search is active whenever we are in list view
+    if (viewMode === 'list' && searchType !== 'skill') {
+      setSearchType('skill');
+    }
+  }, [viewMode, searchType]);
+
+  useEffect(() => {
     // Animate section tabs appearance/disappearance
     const showSections = isSearching || viewMode === 'list' || searchBarFocused;
 
@@ -214,7 +221,11 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
               styles.sectionTab,
               searchType === 'address' && styles.sectionTabActive,
             ]}
-            onPress={() => setSearchType('address')}
+            onPress={() => {
+              // Switch to map and enable address search
+              setSearchType('address');
+              setViewMode('map');
+            }}
           >
             <MaterialCommunityIcons
               name="map-marker"
@@ -266,7 +277,10 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
                 filtersActive={filtersActive}
                 focusTalent={focusTalent}
                 onTalentClick={handleTalentPress}
-                onSwitchToList={() => setViewMode('list')}
+                onSwitchToList={() => {
+                  setSearchType('skill');
+                  setViewMode('list');
+                }}
                 onClusterClick={(talents) => {
                   setClusterTalents(talents);
                   setClusterModalVisible(true);
