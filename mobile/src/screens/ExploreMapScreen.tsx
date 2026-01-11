@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StatusBar, View, TouchableOpacity, ScrollView, Text, Animated } from 'react-native';
+import { StatusBar, View, TouchableOpacity, ScrollView, Text, Animated, Modal, TouchableWithoutFeedback } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { ExploreSearchBar } from '../features/explore/ExploreSearchBar';
@@ -51,6 +51,11 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
   const [shouldRenderFilters, setShouldRenderFilters] = useState<boolean>(false);
   const [prevShowSections, setPrevShowSections] = useState<boolean>(false);
   const sectionTabsAnim = useRef(new Animated.Value(0)).current;
+
+  // Cluster Modal State
+  const [clusterModalVisible, setClusterModalVisible] = useState(false);
+  const [clusterTalents, setClusterTalents] = useState<Partial<Talent>[]>([]);
+
   const filtersAnim = useRef(new Animated.Value(0)).current;
 
   const filtersActive = (selectedDistance !== null) || (selectedCategories.length > 0) || (Boolean(skillSearch && skillSearch.trim().length > 0));
@@ -262,6 +267,10 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
                 focusTalent={focusTalent}
                 onTalentClick={handleTalentPress}
                 onSwitchToList={() => setViewMode('list')}
+                onClusterClick={(talents) => {
+                  setClusterTalents(talents);
+                  setClusterModalVisible(true);
+                }}
               />
             ) : (
               <View style={{ flex: 1 }} />
@@ -374,6 +383,47 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
           {skillSearch && ` · "${skillSearch}"`}
         </Text>
       </View>
+
+      {/* Cluster List Modal */}
+      <Modal
+        visible={clusterModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setClusterModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setClusterModalVisible(false)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+            <TouchableWithoutFeedback>
+              <View style={{ backgroundColor: '#050816', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '60%', padding: 20 }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
+                  <Text style={{ color: 'white', fontSize: 18, fontWeight: 'bold' }}>{clusterTalents.length} Gebruikers in de buurt</Text>
+                  <TouchableOpacity onPress={() => setClusterModalVisible(false)}>
+                    <Ionicons name="close" size={24} color="#94A3B8" />
+                  </TouchableOpacity>
+                </View>
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  {clusterTalents.map((t, idx) => (
+                    <TouchableOpacity
+                      key={idx}
+                      style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(148, 163, 184, 0.1)' }}
+                      onPress={() => {
+                        setClusterModalVisible(false);
+                        if (t.id) handleTalentPress(t.id);
+                      }}
+                    >
+                      <Avatar uri={t.avatar} name={t.name} size={50} style={{ marginRight: 15 }} />
+                      <View>
+                        <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>{t.name}</Text>
+                        <Text style={{ color: '#7c3aed', fontSize: 12 }}>Bekijk profiel</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </SafeAreaView>
   );
 }

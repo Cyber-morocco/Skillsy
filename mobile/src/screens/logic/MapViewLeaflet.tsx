@@ -14,6 +14,7 @@ interface MapViewLeafletProps {
   focusTalent?: { id: string; lat: number; lng: number } | null;
   onTalentClick?: (id: string) => void;
   onSwitchToList?: () => void;
+  onClusterClick?: (talents: Partial<Talent>[]) => void;
 }
 
 export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({
@@ -24,6 +25,7 @@ export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({
   focusTalent,
   onTalentClick,
   onSwitchToList,
+  onClusterClick,
 }) => {
   const webViewRef = useRef<WebView>(null);
   const [isReady, setIsReady] = useState(false);
@@ -77,12 +79,19 @@ export const MapViewLeaflet: React.FC<MapViewLeafletProps> = ({
         style={styles.map}
         onLoadEnd={() => setIsReady(true)}
         onMessage={(event) => {
-          const data = JSON.parse(event.nativeEvent.data);
-          if (data.type === 'talentClick' && onTalentClick) {
-            onTalentClick(data.talentId);
-          }
-          if (data.type === 'switchToList' && onSwitchToList) {
-            onSwitchToList();
+          try {
+            const data = JSON.parse(event.nativeEvent.data);
+            if (data.type === 'talentClick' && onTalentClick) {
+              onTalentClick(data.talentId);
+            }
+            if (data.type === 'switchToList' && onSwitchToList) {
+              onSwitchToList();
+            }
+            if (data.type === 'clusterClick' && onClusterClick) {
+              onClusterClick(data.talents);
+            }
+          } catch (e) {
+            console.error('Failed to parse message from WebView', e);
           }
         }}
       />
