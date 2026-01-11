@@ -22,27 +22,48 @@ import {
 import { UserProfile, Skill, Review, LearnSkill } from '../types';
 
 import { Avatar } from '../components/Avatar';
+import { FullScreenVideoModal } from '../components/FullScreenVideoModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Separate component for video item to avoid hook violation
-const VideoItem: React.FC<{ url: string; title: string; description: string }> = ({ url, title, description }) => {
+// Separate component for video item to avoid hook violation
+const VideoItem: React.FC<{
+  url: string;
+  title: string;
+  description: string;
+  onPress: () => void;
+}> = ({ url, title, description, onPress }) => {
   const player = useVideoPlayer(url, (player) => {
     player.loop = false;
   });
 
   return (
-    <View style={styles.videoContainer}>
-      <VideoView
-        player={player}
-        style={styles.video}
-        nativeControls
-      />
-      <View style={styles.videoInfo}>
-        <Text style={styles.videoTitle}>{title}</Text>
-        {description ? <Text style={styles.videoDescription}>{description}</Text> : null}
+    <TouchableOpacity activeOpacity={0.9} onPress={onPress}>
+      <View style={styles.videoContainer}>
+        <View pointerEvents="none">
+          <VideoView
+            player={player}
+            style={styles.video}
+            nativeControls={false}
+          />
+        </View>
+
+        {/* Play icon overlay */}
+        <View style={styles.playIconOverlay}>
+          <Ionicons name="play" size={32} color="rgba(255,255,255,0.9)" />
+        </View>
+
+        <View style={styles.videoInfo}>
+          <Text style={styles.videoTitle}>{title}</Text>
+          {description ? (
+            <Text style={styles.videoDescription} numberOfLines={2}>
+              {description}
+            </Text>
+          ) : null}
+        </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -77,6 +98,24 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({
   const [learnSkills, setLearnSkills] = useState<LearnSkill[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Video Modal State
+  const [videoModalVisible, setVideoModalVisible] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<{
+    url: string;
+    title: string;
+    description: string;
+  } | null>(null);
+
+  const handleVideoPress = (video: { url: string; title: string; description: string }) => {
+    setSelectedVideo(video);
+    setVideoModalVisible(true);
+  };
+
+  const handleCloseVideo = () => {
+    setVideoModalVisible(false);
+    setSelectedVideo(null);
+  };
 
   useEffect(() => {
     if (!userId) return;
@@ -130,9 +169,9 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({
 
       <View style={styles.content}>
         <View style={styles.topRow}>
-          <TouchableOpacity 
-            activeOpacity={0.7} 
-            style={styles.backButton} 
+          <TouchableOpacity
+            activeOpacity={0.7}
+            style={styles.backButton}
             onPress={onBack}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
@@ -294,6 +333,7 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({
                     url={url}
                     title={title}
                     description={description}
+                    onPress={() => handleVideoPress({ url, title, description })}
                   />
                 );
               })
@@ -303,6 +343,21 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({
           )}
         </ScrollView>
       </View>
+
+      {/* Full Screen Video Modal */}
+      {selectedVideo && profile && (
+        <FullScreenVideoModal
+          visible={videoModalVisible}
+          videoUrl={selectedVideo.url}
+          title={selectedVideo.title}
+          description={selectedVideo.description}
+          onClose={handleCloseVideo}
+          userProfile={{
+            name: profile.displayName,
+            avatar: profile.photoURL || '',
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -619,6 +674,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textMuted,
     lineHeight: 16,
+  },
+  playIconOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    zIndex: 10,
   },
 });
 
