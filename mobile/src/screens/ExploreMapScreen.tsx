@@ -199,18 +199,21 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
         </Animated.View>
       )}
 
-      {shouldRenderSections && (
+      {(shouldRenderSections || viewMode === 'list') && (
         <Animated.View
           style={[
             styles.sectionTabsContainer,
             {
-              opacity: sectionTabsAnim,
+              opacity: viewMode === 'list' ? 1 : sectionTabsAnim,
               transform: [
                 {
-                  translateY: sectionTabsAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-20, 0],
-                  }),
+                  translateY:
+                    viewMode === 'list'
+                      ? 0
+                      : sectionTabsAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-20, 0],
+                        }),
                 },
               ],
             },
