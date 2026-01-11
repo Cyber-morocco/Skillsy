@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { VideoView, useVideoPlayer } from 'expo-video';
+import { Ionicons } from '@expo/vector-icons';
 import {
   subscribeToOtherUserProfile,
   subscribeToOtherUserSkills,
@@ -21,6 +22,7 @@ import {
 import { UserProfile, Skill, Review, LearnSkill } from '../types';
 
 import { Avatar } from '../components/Avatar';
+import { FullScreenVideoModal } from '../components/FullScreenVideoModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -35,8 +37,11 @@ const VideoItem: React.FC<{ url: string; title: string; description: string }> =
       <VideoView
         player={player}
         style={styles.video}
-        nativeControls
+        nativeControls={false}
       />
+      <View style={styles.playOverlay}>
+        <Text style={{ fontSize: 30 }}>▶️</Text>
+      </View>
       <View style={styles.videoInfo}>
         <Text style={styles.videoTitle}>{title}</Text>
         {description ? <Text style={styles.videoDescription}>{description}</Text> : null}
@@ -76,6 +81,14 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({
   const [learnSkills, setLearnSkills] = useState<LearnSkill[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Video Player State
+  const [videoModalVisible, setVideoModalVisible] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<{
+    url: string;
+    title: string;
+    description: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!userId) return;
@@ -129,8 +142,8 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({
 
       <View style={styles.content}>
         <View style={styles.topRow}>
-          <TouchableOpacity activeOpacity={0.8} style={styles.roundIconButton} onPress={onBack}>
-            <Text style={styles.roundIconText}>←</Text>
+          <TouchableOpacity activeOpacity={0.8} style={styles.backButton} onPress={onBack}>
+            <Ionicons name="arrow-back" size={28} color="white" />
           </TouchableOpacity>
         </View>
 
@@ -281,12 +294,20 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({
                 if (!url) return null;
 
                 return (
-                  <VideoItem
+                  <TouchableOpacity
                     key={index}
-                    url={url}
-                    title={title}
-                    description={description}
-                  />
+                    activeOpacity={0.9}
+                    onPress={() => {
+                      setSelectedVideo({ url, title, description });
+                      setVideoModalVisible(true);
+                    }}
+                  >
+                    <VideoItem
+                      url={url}
+                      title={title}
+                      description={description}
+                    />
+                  </TouchableOpacity>
                 );
               })
             ) : (
@@ -294,6 +315,22 @@ const ExploreProfileScreen: React.FC<ExploreProfileScreenProps> = ({
             )
           )}
         </ScrollView>
+        {selectedVideo && profile && (
+          <FullScreenVideoModal
+            visible={videoModalVisible}
+            videoUrl={selectedVideo.url}
+            title={selectedVideo.title}
+            description={selectedVideo.description}
+            onClose={() => {
+              setVideoModalVisible(false);
+              setSelectedVideo(null);
+            }}
+            userProfile={{
+              name: profile.displayName,
+              avatar: profile.photoURL || '',
+            }}
+          />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -320,22 +357,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  roundIconButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.card,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
-  },
-  roundIconText: {
-    fontSize: 18,
-    color: colors.text,
   },
   profileHeader: {
     alignItems: 'center',
@@ -576,6 +604,12 @@ const styles = StyleSheet.create({
   video: {
     width: '100%',
     height: 200,
+  },
+  playOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.2)',
   },
   videoInfo: {
     padding: 12,

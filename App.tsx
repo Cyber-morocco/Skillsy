@@ -299,17 +299,19 @@ export default function App() {
         </Animated.View>
       )}
       <View style={styles.screenContainer}>{renderScreen()}</View>
-      <BottomNavBar
-        activeScreen={
-          activeScreen === 'exploreProfile'
-            ? (prevScreen === 'explore' ? 'explore' : 'home')
-            : (activeScreen === 'availabilitySpecificDates' ? 'availability' : (activeScreen as any))
-        }
-        onNavigate={handleNavigate}
-        badges={{
-          messages: unreadMessagesCount + pendingMatchesCount
-        }}
-      />
+      {activeScreen !== 'videoFeed' && (
+        <BottomNavBar
+          activeScreen={
+            activeScreen === 'exploreProfile'
+              ? (prevScreen === 'explore' ? 'explore' : 'home')
+              : (activeScreen === 'availabilitySpecificDates' ? 'availability' : (activeScreen as any))
+          }
+          onNavigate={handleNavigate}
+          badges={{
+            messages: unreadMessagesCount + pendingMatchesCount
+          }}
+        />
+      )}
     </View>
   );
 }

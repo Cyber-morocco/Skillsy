@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ScrollView, Text, TouchableOpacity, View, Animated } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, Animated, useWindowDimensions } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { exploreMapStyles as styles } from '../../styles/exploreMapStyles';
 
@@ -40,6 +40,8 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
   const [categoryLayout, setCategoryLayout] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const distanceDropdownAnim = useRef(new Animated.Value(0)).current;
   const categoryDropdownAnim = useRef(new Animated.Value(0)).current;
+  const { height: screenHeight } = useWindowDimensions();
+  const dropdownMaxHeight = screenHeight * 0.6;
 
   useEffect(() => {
     if (showDistanceDropdown) {
@@ -145,6 +147,8 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
               left: distanceLayout.x + 16,
               minWidth: Math.max(distanceLayout.width, 120),
               maxWidth: Math.max(distanceLayout.width, 180),
+              maxHeight: dropdownMaxHeight,
+              overflow: 'hidden',
               opacity: distanceDropdownAnim,
               transform: [
                 {
@@ -192,7 +196,8 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
               left: categoryLayout.x + 16,
               minWidth: Math.max(categoryLayout.width, 160),
               maxWidth: Math.max(categoryLayout.width, 200),
-              maxHeight: 300,
+              maxHeight: dropdownMaxHeight,
+              overflow: 'hidden',
               opacity: categoryDropdownAnim,
               transform: [
                 {

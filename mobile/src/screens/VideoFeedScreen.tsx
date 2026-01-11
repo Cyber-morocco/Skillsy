@@ -8,8 +8,9 @@ import {
     StyleSheet,
     ActivityIndicator,
     StatusBar,
+    ViewToken,
 } from 'react-native';
-import { Video, ResizeMode, Audio } from 'expo-av';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { collection, getDocs, query, where } from 'firebase/firestore';
@@ -33,34 +34,87 @@ interface VideoFeedScreenProps {
     onViewProfile: (user: { uid: string; name: string; avatar: string }) => void;
 }
 
+const FeedVideoItem = ({
+    item,
+    isActive,
+    onViewProfile,
+}: {
+    item: VideoItem;
+    isActive: boolean;
+    onViewProfile: (user: { uid: string; name: string; avatar: string }) => void;
+}) => {
+    const player = useVideoPlayer(item.video.url, (player) => {
+        player.loop = true;
+    });
+
+    const [descriptionVisible, setDescriptionVisible] = useState(false);
+
+    useEffect(() => {
+        if (isActive) {
+            player.play();
+        } else {
+            player.pause();
+        }
+    }, [isActive, player]);
+
+    return (
+        <View style={styles.videoContainer}>
+            <VideoView
+                player={player}
+                style={styles.video}
+                contentFit="cover"
+                nativeControls={false}
+            />
+
+            <SafeAreaView style={styles.overlay}>
+                <View style={styles.bottomInfo}>
+                    <View style={styles.userInfo}>
+                        <TouchableOpacity onPress={() => onViewProfile({ uid: item.userId, name: item.userName, avatar: item.userAvatar })}>
+                            <Avatar
+                                uri={item.userAvatar}
+                                name={item.userName}
+                                size={40}
+                                style={styles.avatar}
+                            />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => onViewProfile({ uid: item.userId, name: item.userName, avatar: item.userAvatar })}>
+                            <Text style={styles.username}>{item.userName}</Text>
+                        </TouchableOpacity>
+                        {!item.isMatched && (
+                            <View style={styles.followBadge}>
+                                <Text style={styles.followText}>• Volgen</Text>
+                            </View>
+                        )}
+                    </View>
+
+                    <TouchableOpacity onPress={() => setDescriptionVisible(!descriptionVisible)}>
+                        <Text style={styles.title}>{item.video.title}</Text>
+                        {item.video.description ? (
+                            <Text
+                                style={styles.description}
+                                numberOfLines={descriptionVisible ? undefined : 2}
+                            >
+                                {item.video.description}
+                            </Text>
+                        ) : null}
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        </View>
+    );
+};
+
 export default function VideoFeedScreen({ onBack, onViewProfile }: VideoFeedScreenProps) {
     const [videos, setVideos] = useState<VideoItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [videoLoadStates, setVideoLoadStates] = useState<{ [key: string]: boolean }>({});
-    const videoRefs = useRef<{ [key: string]: Video }>({});
 
     useEffect(() => {
-        // Enable audio in silent mode (iOS)
-        const configureAudio = async () => {
-            try {
-                await Audio.setAudioModeAsync({
-                    playsInSilentModeIOS: true,
-                    staysActiveInBackground: false,
-                    shouldDuckAndroid: true,
-                    playThroughEarpieceAndroid: false,
-                });
-            } catch (e) {
-                console.warn('Error configuring audio:', e);
-            }
-        };
-        configureAudio();
         loadVideos();
     }, []);
 
     const loadVideos = async () => {
         try {
-            // Fetch current user's chats to determine matches
             const currentUserId = auth.currentUser?.uid;
             let matchedUserIds: string[] = [];
 
@@ -71,13 +125,11 @@ export default function VideoFeedScreen({ onBack, onViewProfile }: VideoFeedScre
 
                 chatSnapshot.docs.forEach(doc => {
                     const data = doc.data() as Conversation;
-                    // If chat exists, consider them matched (pending or active)
                     const otherId = data.participants.find(id => id !== currentUserId);
                     if (otherId) matchedUserIds.push(otherId);
                 });
             }
 
-            // Fetch all users with promoVideos
             const usersRef = collection(db, 'users');
             const q = query(usersRef, where('profileComplete', '==', true));
             const snapshot = await getDocs(q);
@@ -85,13 +137,11 @@ export default function VideoFeedScreen({ onBack, onViewProfile }: VideoFeedScre
             const allVideos: VideoItem[] = [];
 
             snapshot.docs.forEach(doc => {
-                // Skip current user's own videos
                 if (doc.id === currentUserId) return;
 
                 const data = doc.data() as UserProfile;
                 if (data.promoVideos && data.promoVideos.length > 0) {
                     data.promoVideos.forEach((video, index) => {
-                        // Filter out empty URLs
                         if (video.url && video.url.trim().length > 0) {
                             allVideos.push({
                                 id: `${doc.id}_${index}`,
@@ -106,7 +156,6 @@ export default function VideoFeedScreen({ onBack, onViewProfile }: VideoFeedScre
                 }
             });
 
-            // Shuffle videos for random order
             const shuffled = allVideos.sort(() => Math.random() - 0.5);
             setVideos(shuffled);
         } catch (error) {
@@ -116,98 +165,16 @@ export default function VideoFeedScreen({ onBack, onViewProfile }: VideoFeedScre
         }
     };
 
-    const onViewableItemsChanged = useCallback(({ viewableItems }: any) => {
-        if (viewableItems.length > 0) {
-            const newIndex = viewableItems[0].index;
-            setCurrentIndex(newIndex);
+    const onViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: ViewToken[] }) => {
+        if (viewableItems.length > 0 && viewableItems[0].index !== null) {
+            setCurrentIndex(viewableItems[0].index);
         }
     }, []);
 
+    // Config for visibility
     const viewabilityConfig = useRef({
-        itemVisiblePercentThreshold: 80,
+        itemVisiblePercentThreshold: 50,
     }).current;
-
-    const handleProfilePress = (item: VideoItem) => {
-        onViewProfile({
-            uid: item.userId,
-            name: item.userName,
-            avatar: item.userAvatar,
-        });
-    };
-
-    const handleVideoError = (itemId: string, error: string) => {
-        console.warn(`Video error for ${itemId}:`, error);
-        // Optionally remove from list or show error UI
-    };
-
-    const renderItem = ({ item, index }: { item: VideoItem; index: number }) => {
-        const isActive = index === currentIndex;
-        const isLoading = videoLoadStates[item.id] !== false; // Default to true (loading) until loaded
-
-        return (
-            <View style={styles.videoContainer}>
-                {isLoading && (
-                    <View style={styles.activityIndicatorContainer}>
-                        <ActivityIndicator size="large" color="#7c3aed" />
-                    </View>
-                )}
-
-                <Video
-                    ref={(ref) => {
-                        if (ref) videoRefs.current[item.id] = ref;
-                    }}
-                    source={{ uri: item.video.url }}
-                    style={styles.video}
-                    resizeMode={ResizeMode.COVER}
-                    shouldPlay={isActive}
-                    isLooping
-                    isMuted={false}
-                    useNativeControls={false}
-                    onLoadStart={() => setVideoLoadStates(prev => ({ ...prev, [item.id]: true }))}
-                    onLoad={() => setVideoLoadStates(prev => ({ ...prev, [item.id]: false }))}
-                    onError={(e) => handleVideoError(item.id, e)}
-                />
-
-                {/* Overlay */}
-                <View style={styles.overlay}>
-                    {/* User info */}
-                    {/* User info */}
-                    <View style={styles.userInfoContainer}>
-                        <TouchableOpacity onPress={() => handleProfilePress(item)}>
-                            <View>
-                                <Avatar uri={item.userAvatar} name={item.userName} size={48} style={styles.avatarBorder} />
-                                {!item.isMatched && (
-                                    <View style={styles.addIconContainer}>
-                                        <Ionicons name="add" size={14} color="#fff" />
-                                    </View>
-                                )}
-                            </View>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                            style={styles.userTextWrapper}
-                            onPress={() => handleProfilePress(item)}
-                        >
-                            <Text style={styles.userName}>{item.userName}</Text>
-                            <Text style={styles.videoTitle}>{item.video.title}</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    {/* Description */}
-                    {item.video.description ? (
-                        <Text style={styles.description} numberOfLines={3}>
-                            {item.video.description}
-                        </Text>
-                    ) : null}
-                </View>
-
-                {/* Side buttons */}
-                <View style={styles.sideButtons}>
-                    {/* Add other buttons here later (like/share/comment) */}
-                </View>
-            </View>
-        );
-    };
 
     if (loading) {
         return (
@@ -233,9 +200,6 @@ export default function VideoFeedScreen({ onBack, onViewProfile }: VideoFeedScre
                 <View style={styles.emptyContainer}>
                     <Ionicons name="videocam-off-outline" size={64} color="#94A3B8" />
                     <Text style={styles.emptyText}>Nog geen video's beschikbaar</Text>
-                    <Text style={styles.emptySubtext}>
-                        Gebruikers kunnen promo video's uploaden op hun profiel
-                    </Text>
                 </View>
             </SafeAreaView>
         );
@@ -245,15 +209,22 @@ export default function VideoFeedScreen({ onBack, onViewProfile }: VideoFeedScre
         <View style={styles.container}>
             <StatusBar barStyle="light-content" />
 
-            {/* Back button overlay */}
-            {/* Back button */}
-            <TouchableOpacity onPress={onBack} style={styles.backButtonOverlay}>
-                <Ionicons name="arrow-back" size={28} color="#F8FAFC" />
-            </TouchableOpacity>
+            {/* Back Button Overlay */}
+            <SafeAreaView style={styles.headerOverlay} pointerEvents="box-none">
+                <TouchableOpacity onPress={onBack} style={styles.backButtonOverlay}>
+                    <Ionicons name="arrow-back" size={28} color="white" />
+                </TouchableOpacity>
+            </SafeAreaView>
 
             <FlatList
                 data={videos}
-                renderItem={renderItem}
+                renderItem={({ item, index }) => (
+                    <FeedVideoItem
+                        item={item}
+                        isActive={index === currentIndex}
+                        onViewProfile={onViewProfile}
+                    />
+                )}
                 keyExtractor={(item) => item.id}
                 pagingEnabled
                 showsVerticalScrollIndicator={false}
@@ -267,6 +238,9 @@ export default function VideoFeedScreen({ onBack, onViewProfile }: VideoFeedScre
                     offset: SCREEN_HEIGHT * index,
                     index,
                 })}
+                initialNumToRender={1}
+                maxToRenderPerBatch={2}
+                windowSize={3}
             />
         </View>
     );
@@ -294,152 +268,102 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 12,
     },
-    backButton: {
-        padding: 8,
-    },
     headerTitle: {
         color: '#F8FAFC',
         fontSize: 18,
         fontWeight: '700',
     },
+    backButton: {
+        padding: 8,
+    },
     headerOverlay: {
         position: 'absolute',
         top: 0,
         left: 0,
-        right: 0,
         zIndex: 100,
+        paddingLeft: 20,
+        paddingTop: 10,
     },
     backButtonOverlay: {
-        position: 'absolute',
-        top: 20, // Lower it slightly
-        left: 20,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
-        borderRadius: 25,
-        width: 50,
-        height: 50,
+        width: 40,
+        height: 40,
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 100, // Ensure it's on top
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        borderRadius: 20,
     },
     videoContainer: {
         height: SCREEN_HEIGHT,
         width: SCREEN_WIDTH,
         backgroundColor: '#000',
-        justifyContent: 'center',
-    },
-    activityIndicatorContainer: {
-        ...StyleSheet.absoluteFillObject,
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 5,
     },
     video: {
         flex: 1,
+        width: '100%',
+        height: '100%',
     },
     overlay: {
-        position: 'absolute',
-        bottom: 100,
-        left: 0,
-        right: 70,
-        paddingHorizontal: 16,
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'flex-end',
+    },
+    bottomInfo: {
+        padding: 20,
+        paddingBottom: 40,
     },
     userInfo: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 10,
     },
-    userInfoContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 12,
+    avatar: {
+        marginRight: 10,
+        borderWidth: 1,
+        borderColor: 'white',
     },
-    avatarBorder: {
-        borderWidth: 2,
-        borderColor: '#fff',
-    },
-    addIconContainer: {
-        position: 'absolute',
-        bottom: -4,
-        right: -4,
-        backgroundColor: '#7c3aed',
-        borderRadius: 10,
-        width: 20,
-        height: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1.5,
-        borderColor: '#fff',
-    },
-    userTextWrapper: {
-        marginLeft: 12,
-        flex: 1,
-    },
-    userTextContainer: {
-        marginLeft: 0,
-        marginBottom: 4,
-    },
-    userName: {
-        color: '#F8FAFC',
+    username: {
+        color: 'white',
+        fontWeight: 'bold',
         fontSize: 16,
-        fontWeight: '700',
         textShadowColor: 'rgba(0, 0, 0, 0.75)',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 3,
     },
-    videoTitle: {
-        color: '#F8FAFC',
-        fontSize: 14,
-        fontWeight: '500',
-        marginTop: 2,
+    followBadge: {
+        marginLeft: 8,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    followText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    title: {
+        color: 'white',
+        fontWeight: 'bold',
+        fontSize: 18,
+        marginBottom: 5,
         textShadowColor: 'rgba(0, 0, 0, 0.75)',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 3,
     },
     description: {
-        color: '#F8FAFC',
+        color: '#e0e0e0',
         fontSize: 14,
         lineHeight: 20,
         textShadowColor: 'rgba(0, 0, 0, 0.75)',
         textShadowOffset: { width: 1, height: 1 },
         textShadowRadius: 3,
     },
-    sideButtons: {
-        position: 'absolute',
-        right: 12,
-        bottom: 150,
-        alignItems: 'center',
-    },
-    sideButton: {
-        marginBottom: 20,
-        alignItems: 'center',
-    },
-    sideAvatar: {
-        borderWidth: 2,
-        borderColor: '#F8FAFC',
-    },
-    addIcon: {
-        position: 'absolute',
-        bottom: -8,
-        backgroundColor: '#fff',
-        borderRadius: 10,
-    },
     emptyContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: 40,
     },
     emptyText: {
-        color: '#F8FAFC',
-        fontSize: 18,
-        fontWeight: '600',
-        marginTop: 16,
-        textAlign: 'center',
-    },
-    emptySubtext: {
-        color: '#94A3B8',
-        fontSize: 14,
-        marginTop: 8,
-        textAlign: 'center',
+        color: '#fff',
+        marginTop: 10,
     },
 });

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, ScrollView, Alert, ActivityIndicator, Image, Platform, Linking } from 'react-native';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { signOut } from 'firebase/auth';
@@ -26,10 +27,27 @@ import * as ImagePicker from 'expo-image-picker';
 import { resolveSkillIntelligence, SkillResolutionResult } from '../services/skillIntelligenceService';
 import { ROOT_CATEGORIES } from '../constants/categories';
 import { useRef } from 'react';
+import { FullScreenVideoModal } from '../components/FullScreenVideoModal';
 
 interface ProfileScreenProps {
   onNavigate?: (screen: 'availability') => void;
 }
+
+const ProfileVideoThumbnail: React.FC<{ url: string }> = ({ url }) => {
+  const player = useVideoPlayer(url, (player) => {
+    player.loop = false;
+    player.muted = true;
+  });
+
+  return (
+    <VideoView
+      player={player}
+      style={{ width: '100%', height: '100%' }}
+      contentFit="cover"
+      nativeControls={false}
+    />
+  );
+};
 
 export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [activeTab, setActiveTab] = useState<'skills' | 'wilLeren' | 'promoVideo' | 'reviews'>('skills');
@@ -55,6 +73,14 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [videoTitle, setVideoTitle] = useState('');
   const [videoDescription, setVideoDescription] = useState('');
   const [selectedVideoUri, setSelectedVideoUri] = useState<string | null>(null);
+
+  // Player State
+  const [playerModalVisible, setPlayerModalVisible] = useState(false);
+  const [playingVideo, setPlayingVideo] = useState<{
+    url: string;
+    title: string;
+    description: string;
+  } | null>(null);
 
   const [profileName, setProfileName] = useState('');
   const [profileLocation, setProfileLocation] = useState('');
@@ -705,10 +731,12 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                     key={index}
                     onPress={() => {
                       if (hasVideo) {
-                        Linking.openURL(videoUrl).catch(err => {
-                          console.error('Error opening video URL:', err);
-                          Alert.alert('Fout', 'Kon de video niet openen');
+                        setPlayingVideo({
+                          url: videoUrl,
+                          title: videoTitleVal,
+                          description: videoDescVal
                         });
+                        setPlayerModalVisible(true);
                       } else {
                         handleVideoPicker(index);
                       }
@@ -727,8 +755,12 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                     }}
                   >
                     {hasVideo ? (
-                      <View style={{ flex: 1, width: '100%', justifyContent: 'center', alignItems: 'center' }}>
-                        <Ionicons name="play-circle" size={40} color={authColors.accent} />
+                      <View style={{ flex: 1, width: '100%', height: '100%' }}>
+                        <ProfileVideoThumbnail url={videoUrl} />
+
+                        <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'center', alignItems: 'center' }}>
+                          <Ionicons name="play-circle" size={40} color="rgba(255,255,255,0.8)" />
+                        </View>
 
                         {videoTitleVal ? (
                           <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.6)', padding: 4 }}>
@@ -741,7 +773,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                             setEditingVideoIndex(index);
                             setVideoTitle(videoTitleVal);
                             setVideoDescription(videoDescVal);
-                            setVideoModalVisible(true);
+                            setEditVideoModalVisible(true);
                           }}
                           style={{
                             position: 'absolute',
@@ -1114,7 +1146,25 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
         </Modal>
 
       </ScrollView>
-    </SafeAreaView >
+
+      {/* Full Screen Player Modal */}
+      {playingVideo && userProfile && (
+        <FullScreenVideoModal
+          visible={playerModalVisible}
+          videoUrl={playingVideo.url}
+          title={playingVideo.title}
+          description={playingVideo.description}
+          onClose={() => {
+            setPlayerModalVisible(false);
+            setPlayingVideo(null);
+          }}
+          userProfile={{
+            name: userProfile.displayName,
+            avatar: userProfile.photoURL || '',
+          }}
+        />
+      )}
+    </SafeAreaView>
   );
 }
 
