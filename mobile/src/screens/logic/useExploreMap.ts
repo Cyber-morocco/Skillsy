@@ -214,15 +214,47 @@ export const useExploreMap = () => {
       userLocation,
     });
 
-    // Sort talents: those with matching skills first
+    // Sort talents: Priority: Distance > Match > Review
     const sorted = filtered.sort((a, b) => {
-      const aHasMatch = (a.skillsWithPrices || []).some(skill =>
+      // 1. Distance (Ascending)
+      const distA = calculateDistance(userLocation.lat, userLocation.lng, a.lat, a.lng);
+      const distB = calculateDistance(userLocation.lat, userLocation.lng, b.lat, b.lng);
+
+      // Use a small threshold (e.g. 100m) to treat distances as "equal" for secondary sorting
+      // otherwise floating point differences make secondary sorts impossible.
+      if (Math.abs(distA - distB) > 0.1) {
+        return distA - distB;
+      }
+
+      // 2. Skill Match (Any Match > No Match)
+      // Check if I want their skills
+      const aUserWant = (a.skillsWithPrices || []).some(skill =>
         userLearnSkills.some(ls => ls.subject.toLowerCase() === skill.subject.toLowerCase())
       );
-      const bHasMatch = (b.skillsWithPrices || []).some(skill =>
+      const bUserWant = (b.skillsWithPrices || []).some(skill =>
         userLearnSkills.some(ls => ls.subject.toLowerCase() === skill.subject.toLowerCase())
       );
-      return aHasMatch === bHasMatch ? 0 : aHasMatch ? -1 : 1;
+
+      // Check if they want my skills (Reverse Match)
+      const aTheyWant = (a.learnSkillSubjects || []).some(subject =>
+        userSkills.some(s => s.subject.toLowerCase() === subject.toLowerCase())
+      );
+      const bTheyWant = (b.learnSkillSubjects || []).some(subject =>
+        userSkills.some(s => s.subject.toLowerCase() === subject.toLowerCase())
+      );
+
+      const aHasMatch = aUserWant || aTheyWant;
+      const bHasMatch = bUserWant || bTheyWant;
+
+      if (aHasMatch !== bHasMatch) {
+        return aHasMatch ? -1 : 1; // Match first
+      }
+
+      // 3. Review (Average Rating Descending)
+      const aRating = a.averageRating || 0;
+      const bRating = b.averageRating || 0;
+
+      return bRating - aRating;
     });
 
     return sorted;
