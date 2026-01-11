@@ -737,6 +737,10 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
               <Text style={styles.sectionTitle}>Promo Video's</Text>
             </View>
 
+            <Text style={{ color: authColors.muted, marginBottom: 20, lineHeight: 20 }}>
+              Je kunt tot 3 promo video's uploaden waarin je jezelf of je skills voorstelt, zodat andere gebruikers deze kunnen zien.
+            </Text>
+
             <View style={styles.videoGrid}>
               {[0, 1, 2].map((index) => {
                 const videoEntry = userProfile?.promoVideos?.[index];
