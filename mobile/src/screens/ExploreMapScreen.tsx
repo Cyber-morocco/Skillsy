@@ -10,6 +10,20 @@ import { exploreMapStyles as styles } from '../styles/exploreMapStyles';
 import { Talent } from '../types';
 import { Avatar } from '../components/Avatar';
 
+const normalizeSubject = (s: string) => s.trim().toLowerCase();
+const uniqByNormalized = (arr: string[]) => {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  arr.forEach((item) => {
+    const norm = normalizeSubject(item);
+    if (!seen.has(norm)) {
+      seen.add(norm);
+      result.push(item.trim());
+    }
+  });
+  return result;
+};
+
 interface ExploreMapScreenProps {
   onViewProfile?: (user: any) => void;
   onVideoFeed?: () => void;
@@ -316,76 +330,125 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
                 style={styles.talentCard}
                 onPress={() => handleTalentPress(talent.id)}
               >
-                <Avatar
-                  uri={talent.avatar}
-                  name={talent.name}
-                  size={60}
-                  style={styles.talentAvatar}
-                />
-                <View style={styles.talentInfo}>
-                  <View style={styles.talentHeader}>
-                    <Text style={styles.talentName}>{talent.name}</Text>
-                    {talent.averageRating && talent.reviewCount && talent.reviewCount >= 5 ? (
-                      <View style={styles.ratingContainer}>
-                        <Text style={styles.ratingIcon}>⭐</Text>
-                        <Text style={styles.ratingText}>{talent.averageRating.toFixed(1)}</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  {talent.location?.city && (
-                    <Text style={styles.talentLocation}>📍 {talent.location.city}</Text>
-                  )}
-                  <View style={styles.skillsContainer}>
-                    {(() => {
-                      const allSkills = talent.skillsWithPrices || [];
-                      // Sort skills: green matches first, then orange, then others
-                      const sortedSkills = [...allSkills].sort((a, b) => {
-                        const aLower = a.subject.toLowerCase();
-                        const bLower = b.subject.toLowerCase();
+                {(() => {
+                  // Precompute match data per talent for reuse in badges
+                  const userWantMatches = (talent.skillsWithPrices || []).filter(skill =>
+                    userLearnSkills.some(ls => ls.subject.toLowerCase() === skill.subject.toLowerCase())
+                  );
+                  const theyWantMatches = (talent.learnSkillSubjects || []).filter(subject =>
+                    userSkills.some(s => s.subject.toLowerCase() === subject.toLowerCase())
+                  );
 
-                        const aIsGreen = userLearnSkills.some(ls => ls.subject.toLowerCase() === aLower);
-                        const bIsGreen = userLearnSkills.some(ls => ls.subject.toLowerCase() === bLower);
+                  const uniqueUserWant = uniqByNormalized(userWantMatches.map(s => s.subject));
+                  const uniqueTheyWant = uniqByNormalized(theyWantMatches);
+                  const userWantSetNorm = new Set(uniqueUserWant.map(normalizeSubject));
 
-                        const aIsOrange = !aIsGreen &&
-                          (talent.learnSkillSubjects || []).includes(aLower) &&
-                          userSkills.some(s => s.subject.toLowerCase() === aLower);
-                        const bIsOrange = !bIsGreen &&
-                          (talent.learnSkillSubjects || []).includes(bLower) &&
-                          userSkills.some(s => s.subject.toLowerCase() === bLower);
+                  return (
+                    <>
+                      <Avatar
+                        uri={talent.avatar}
+                        name={talent.name}
+                        size={60}
+                        style={styles.talentAvatar}
+                      />
+                      <View style={styles.talentInfo}>
+                        <View style={styles.talentHeader}>
+                          <Text style={styles.talentName}>{talent.name}</Text>
+                          {talent.averageRating && talent.reviewCount && talent.reviewCount >= 5 ? (
+                            <View style={styles.ratingContainer}>
+                              <Text style={styles.ratingIcon}>⭐</Text>
+                              <Text style={styles.ratingText}>{talent.averageRating.toFixed(1)}</Text>
+                            </View>
+                          ) : null}
+                        </View>
+                        {talent.location?.city && (
+                          <Text style={styles.talentLocation}>📍 {talent.location.city}</Text>
+                        )}
 
-                        // Priority: Green (2) > Orange (1) > Normal (0)
-                        const aPriority = aIsGreen ? 2 : aIsOrange ? 1 : 0;
-                        const bPriority = bIsGreen ? 2 : bIsOrange ? 1 : 0;
+                        {(uniqueUserWant.length > 0 || uniqueTheyWant.length > 0) && (
+                          <View style={{ marginTop: 6, flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+                            {uniqueUserWant.length > 0 && (
+                              <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+                                {uniqueUserWant.map((subject, idx) => (
+                                  <View key={`uw-${idx}`} style={[styles.skillBadge, styles.skillBadgeMatch, { marginBottom: 4 }]}>
+                                    <Text style={styles.matchIndicator}>✓</Text>
+                                    <Text style={styles.skillText}>{subject}</Text>
+                                  </View>
+                                ))}
+                              </View>
+                            )}
 
-                        return bPriority - aPriority;
-                      });
-
-                      return sortedSkills.slice(0, 2).map((skill, index) => {
-                        const skillLower = skill.subject.toLowerCase();
-                        const isMatch = userLearnSkills.some(ls => ls.subject.toLowerCase() === skillLower);
-                        const isReverseMatch = !isMatch &&
-                          (talent.learnSkillSubjects || []).includes(skillLower) &&
-                          userSkills.some(s => s.subject.toLowerCase() === skillLower);
-                        return (
-                          <View key={index} style={[
-                            styles.skillBadge,
-                            isMatch && styles.skillBadgeMatch,
-                            isReverseMatch && styles.skillBadgeReverseMatch
-                          ]}>
-                            {isMatch && <Text style={styles.matchIndicator}>✓</Text>}
-                            {isReverseMatch && <Text style={styles.matchIndicator}>↔</Text>}
-                            <Text style={styles.skillText}>{skill.subject}</Text>
+                            {uniqueTheyWant.length > 0 && (
+                              <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 4 }}>
+                                {uniqueTheyWant.map((subject, idx) => (
+                                  <View key={`tw-${idx}`} style={[styles.skillBadge, styles.skillBadgeReverseMatch, { marginBottom: 4 }]}>
+                                    <Text style={styles.matchIndicator}>↔</Text>
+                                    <Text style={styles.skillText}>{subject}</Text>
+                                  </View>
+                                ))}
+                              </View>
+                            )}
                           </View>
-                        );
-                      });
-                    })()}
-                    {(talent.skillsWithPrices || []).length > 2 ? (
-                      <View style={styles.moreSkillsBadge}>
-                        <Text style={styles.moreSkillsText}>+{(talent.skillsWithPrices || []).length - 2} meer</Text>
+                        )}
+
+                        <View style={styles.skillsContainer}>
+                          {(() => {
+                            const allSkills = talent.skillsWithPrices || [];
+
+                            // Exclude subjects already displayed as your desired skills to avoid duplicates
+                            const filteredSkills = allSkills.filter(
+                              (skill) => !userWantSetNorm.has(normalizeSubject(skill.subject))
+                            );
+
+                            const sortedSkills = [...filteredSkills].sort((a, b) => {
+                              const aLower = a.subject.toLowerCase();
+                              const bLower = b.subject.toLowerCase();
+
+                              const aIsGreen = userLearnSkills.some(ls => ls.subject.toLowerCase() === aLower);
+                              const bIsGreen = userLearnSkills.some(ls => ls.subject.toLowerCase() === bLower);
+
+                              const aIsOrange = !aIsGreen &&
+                                (talent.learnSkillSubjects || []).includes(aLower) &&
+                                userSkills.some(s => s.subject.toLowerCase() === aLower);
+                              const bIsOrange = !bIsGreen &&
+                                (talent.learnSkillSubjects || []).includes(bLower) &&
+                                userSkills.some(s => s.subject.toLowerCase() === bLower);
+
+                              const aPriority = aIsGreen ? 2 : aIsOrange ? 1 : 0;
+                              const bPriority = bIsGreen ? 2 : bIsOrange ? 1 : 0;
+
+                              return bPriority - aPriority;
+                            });
+
+                            return sortedSkills.slice(0, 2).map((skill, index) => {
+                              const skillLower = skill.subject.toLowerCase();
+                              const isMatch = userLearnSkills.some(ls => ls.subject.toLowerCase() === skillLower);
+                              const isReverseMatch = !isMatch &&
+                                (talent.learnSkillSubjects || []).includes(skillLower) &&
+                                userSkills.some(s => s.subject.toLowerCase() === skillLower);
+                              return (
+                                <View key={index} style={[
+                                  styles.skillBadge,
+                                  isMatch && styles.skillBadgeMatch,
+                                  isReverseMatch && styles.skillBadgeReverseMatch
+                                ]}>
+                                  {isMatch && <Text style={styles.matchIndicator}>✓</Text>}
+                                  {isReverseMatch && <Text style={styles.matchIndicator}>↔</Text>}
+                                  <Text style={styles.skillText}>{skill.subject}</Text>
+                                </View>
+                              );
+                            });
+                          })()}
+                          {(talent.skillsWithPrices || []).length > 2 ? (
+                            <View style={styles.moreSkillsBadge}>
+                              <Text style={styles.moreSkillsText}>+{(talent.skillsWithPrices || []).length - 2} meer</Text>
+                            </View>
+                          ) : null}
+                        </View>
                       </View>
-                    ) : null}
-                  </View>
-                </View>
+                    </>
+                  );
+                })()}
               </TouchableOpacity>
             ))}
           </ScrollView>
