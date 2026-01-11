@@ -343,8 +343,44 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
                   const uniqueTheyWant = uniqByNormalized(theyWantMatches);
                   const userWantSetNorm = new Set(uniqueUserWant.map(normalizeSubject));
 
+                  const allSkills = talent.skillsWithPrices || [];
+
+                  // Exclude subjects already displayed as your desired skills to avoid duplicates
+                  const filteredSkills = allSkills.filter(
+                    (skill) => !userWantSetNorm.has(normalizeSubject(skill.subject))
+                  );
+
+                  const sortedSkills = [...filteredSkills].sort((a, b) => {
+                    const aLower = a.subject.toLowerCase();
+                    const bLower = b.subject.toLowerCase();
+
+                    const aIsGreen = userLearnSkills.some(ls => ls.subject.toLowerCase() === aLower);
+                    const bIsGreen = userLearnSkills.some(ls => ls.subject.toLowerCase() === bLower);
+
+                    const aIsOrange = !aIsGreen &&
+                      (talent.learnSkillSubjects || []).includes(aLower) &&
+                      userSkills.some(s => s.subject.toLowerCase() === aLower);
+                    const bIsOrange = !bIsGreen &&
+                      (talent.learnSkillSubjects || []).includes(bLower) &&
+                      userSkills.some(s => s.subject.toLowerCase() === bLower);
+
+                    const aPriority = aIsGreen ? 2 : aIsOrange ? 1 : 0;
+                    const bPriority = bIsGreen ? 2 : bIsOrange ? 1 : 0;
+
+                    return bPriority - aPriority;
+                  });
+
+                  const hasUserWant = uniqueUserWant.length > 0;
+                  const hasTheyWant = uniqueTheyWant.length > 0;
+                  const matchLabel = hasUserWant && hasTheyWant ? 'perfect' : (hasUserWant || hasTheyWant ? 'match' : null);
+
                   return (
                     <>
+                      {matchLabel && (
+                        <View style={[styles.matchPill, matchLabel === 'perfect' && styles.matchPillPerfect]}>
+                          <Text style={styles.matchPillText}>{matchLabel === 'perfect' ? 'perfect match' : 'match'}</Text>
+                        </View>
+                      )}
                       <Avatar
                         uri={talent.avatar}
                         name={talent.name}
@@ -352,18 +388,20 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
                         style={styles.talentAvatar}
                       />
                       <View style={styles.talentInfo}>
-                        <View style={styles.talentHeader}>
+                        <View style={[styles.talentHeader, styles.rowBetween]}>
                           <Text style={styles.talentName}>{talent.name}</Text>
+                        </View>
+
+                        <View style={[styles.rowBetween, { marginTop: 2 }]}>
+                          {talent.location?.city ? (
+                            <Text style={styles.talentLocation}>📍 {talent.location.city}</Text>
+                          ) : <View />}
                           {talent.averageRating && talent.reviewCount && talent.reviewCount >= 5 ? (
-                            <View style={styles.ratingContainer}>
-                              <Text style={styles.ratingIcon}>⭐</Text>
-                              <Text style={styles.ratingText}>{talent.averageRating.toFixed(1)}</Text>
+                            <View style={styles.ratingPill}>
+                              <Text style={styles.ratingPillText}>⭐ {talent.averageRating.toFixed(1)}</Text>
                             </View>
                           ) : null}
                         </View>
-                        {talent.location?.city && (
-                          <Text style={styles.talentLocation}>📍 {talent.location.city}</Text>
-                        )}
 
                         {(uniqueUserWant.length > 0 || uniqueTheyWant.length > 0) && (
                           <View style={{ marginTop: 6, flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
@@ -391,36 +429,9 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
                           </View>
                         )}
 
-                        <View style={styles.skillsContainer}>
-                          {(() => {
-                            const allSkills = talent.skillsWithPrices || [];
-
-                            // Exclude subjects already displayed as your desired skills to avoid duplicates
-                            const filteredSkills = allSkills.filter(
-                              (skill) => !userWantSetNorm.has(normalizeSubject(skill.subject))
-                            );
-
-                            const sortedSkills = [...filteredSkills].sort((a, b) => {
-                              const aLower = a.subject.toLowerCase();
-                              const bLower = b.subject.toLowerCase();
-
-                              const aIsGreen = userLearnSkills.some(ls => ls.subject.toLowerCase() === aLower);
-                              const bIsGreen = userLearnSkills.some(ls => ls.subject.toLowerCase() === bLower);
-
-                              const aIsOrange = !aIsGreen &&
-                                (talent.learnSkillSubjects || []).includes(aLower) &&
-                                userSkills.some(s => s.subject.toLowerCase() === aLower);
-                              const bIsOrange = !bIsGreen &&
-                                (talent.learnSkillSubjects || []).includes(bLower) &&
-                                userSkills.some(s => s.subject.toLowerCase() === bLower);
-
-                              const aPriority = aIsGreen ? 2 : aIsOrange ? 1 : 0;
-                              const bPriority = bIsGreen ? 2 : bIsOrange ? 1 : 0;
-
-                              return bPriority - aPriority;
-                            });
-
-                            return sortedSkills.slice(0, 2).map((skill, index) => {
+                        {sortedSkills.length > 0 && (
+                          <View style={styles.skillsContainer}>
+                            {sortedSkills.slice(0, 2).map((skill, index) => {
                               const skillLower = skill.subject.toLowerCase();
                               const isMatch = userLearnSkills.some(ls => ls.subject.toLowerCase() === skillLower);
                               const isReverseMatch = !isMatch &&
@@ -437,14 +448,14 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
                                   <Text style={styles.skillText}>{skill.subject}</Text>
                                 </View>
                               );
-                            });
-                          })()}
-                          {(talent.skillsWithPrices || []).length > 2 ? (
-                            <View style={styles.moreSkillsBadge}>
-                              <Text style={styles.moreSkillsText}>+{(talent.skillsWithPrices || []).length - 2} meer</Text>
-                            </View>
-                          ) : null}
-                        </View>
+                            })}
+                            {sortedSkills.length > 2 && (
+                              <View style={styles.moreSkillsBadge}>
+                                <Text style={styles.moreSkillsText}>+{sortedSkills.length - 2} meer</Text>
+                              </View>
+                            )}
+                          </View>
+                        )}
                       </View>
                     </>
                   );

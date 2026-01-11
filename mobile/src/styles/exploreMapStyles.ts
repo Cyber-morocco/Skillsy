@@ -205,11 +205,18 @@ export const exploreMapStyles = StyleSheet.create({
   talentCard: {
     flexDirection: 'row',
     backgroundColor: '#101936',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 14,
     borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.25)',
+    borderColor: 'rgba(148, 163, 184, 0.15)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 8,
+    position: 'relative',
+    overflow: 'hidden',
   },
   talentAvatar: {
     width: 60,
@@ -219,6 +226,7 @@ export const exploreMapStyles = StyleSheet.create({
   },
   talentInfo: {
     flex: 1,
+    gap: 6,
   },
   talentHeader: {
     flexDirection: 'row',
@@ -234,6 +242,19 @@ export const exploreMapStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  ratingPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: 'rgba(124, 58, 237, 0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(124, 58, 237, 0.4)',
+  },
+  ratingPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#F8FAFC',
   },
   ratingIcon: {
     fontSize: 12,
@@ -260,8 +281,8 @@ export const exploreMapStyles = StyleSheet.create({
   skillsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 8,
-    gap: 6,
+    marginTop: 10,
+    gap: 8,
   },
   skillBadge: {
     flexDirection: 'row',
@@ -361,5 +382,31 @@ export const exploreMapStyles = StyleSheet.create({
     borderRadius: 22,
     borderWidth: 1,
     borderColor: 'rgba(148, 163, 184, 0.25)',
+  },
+  matchPill: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(124, 58, 237, 0.2)',
+    borderWidth: 1,
+    borderColor: '#7c3aed',
+  },
+  matchPillPerfect: {
+    backgroundColor: 'rgba(16, 185, 129, 0.25)',
+    borderColor: '#10b981',
+  },
+  matchPillText: {
+    color: '#F8FAFC',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  rowBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 });
