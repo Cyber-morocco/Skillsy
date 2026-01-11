@@ -47,7 +47,7 @@ const FeedItem: React.FC<FeedItemProps> = ({ post, onUserPress, onLike, onCommen
                     <Avatar
                         uri={post.userAvatar}
                         name={post.userName}
-                        size={40}
+                        size={44}
                         style={styles.avatar}
                     />
                     <View>
@@ -55,7 +55,7 @@ const FeedItem: React.FC<FeedItemProps> = ({ post, onUserPress, onLike, onCommen
                         <Text style={styles.date}>{formatDate(post.createdAt)}</Text>
                     </View>
                 </TouchableOpacity>
-                <View style={[styles.badge, { borderColor: getTypeColor(post.type) }]}>
+                <View style={[styles.badge, { backgroundColor: `${getTypeColor(post.type)}15` }]}>
                     <Text style={[styles.badgeText, { color: getTypeColor(post.type) }]}>
                         {post.type}
                     </Text>
@@ -76,19 +76,26 @@ const FeedItem: React.FC<FeedItemProps> = ({ post, onUserPress, onLike, onCommen
                 </TouchableOpacity>
             )}
 
+            <View style={styles.separator} />
+
             <View style={styles.footer}>
                 <TouchableOpacity style={styles.interaction} onPress={onLike}>
-                    <Ionicons
-                        name={isLiked ? "heart" : "heart-outline"}
-                        size={20}
-                        color={isLiked ? "#EF4444" : authColors.muted}
-                    />
+                    <View style={[styles.iconCircle, isLiked && { backgroundColor: 'rgba(239, 68, 68, 0.1)' }]}>
+                        <Ionicons
+                            name={isLiked ? "heart" : "heart-outline"}
+                            size={20}
+                            color={isLiked ? "#EF4444" : authColors.muted}
+                        />
+                    </View>
                     <Text style={[styles.interactionText, isLiked && { color: "#EF4444" }]}>
                         {post.likes?.length || 0}
                     </Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity style={styles.interaction} onPress={onComment}>
-                    <Ionicons name="chatbubble-outline" size={20} color={authColors.muted} />
+                    <View style={styles.iconCircle}>
+                        <Ionicons name="chatbubble-outline" size={20} color={authColors.muted} />
+                    </View>
                     <Text style={styles.interactionText}>{post.commentCount || 0}</Text>
                 </TouchableOpacity>
             </View>
@@ -99,73 +106,85 @@ const FeedItem: React.FC<FeedItemProps> = ({ post, onUserPress, onLike, onCommen
 const styles = StyleSheet.create({
     container: {
         backgroundColor: authColors.card,
-        borderRadius: 20,
+        borderRadius: 24,
         padding: 16,
         marginBottom: 16,
-        borderWidth: 1,
-        borderColor: 'rgba(148, 163, 184, 0.15)',
+        // Removed border, cleaner flat look
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 12,
+        alignItems: 'center',
+        marginBottom: 16,
     },
     userInfo: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     avatar: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
         marginRight: 12,
     },
     userName: {
         color: authColors.text,
-        fontWeight: '600',
-        fontSize: 16,
+        fontWeight: '700',
+        fontSize: 15,
+        marginBottom: 2,
     },
     date: {
         color: authColors.muted,
         fontSize: 12,
-        marginTop: 2,
     },
     badge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 12,
-        borderWidth: 1,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
     },
     badgeText: {
         fontSize: 12,
-        fontWeight: '600',
+        fontWeight: '700',
+        letterSpacing: 0.3,
     },
     content: {
         color: authColors.text,
-        fontSize: 15,
-        lineHeight: 22,
+        fontSize: 16,
+        lineHeight: 24,
         marginBottom: 16,
     },
     postImage: {
         width: '100%',
-        height: 200,
-        borderRadius: 12,
+        height: 220,
+        borderRadius: 16,
         marginBottom: 16,
+    },
+    separator: {
+        height: 1,
+        backgroundColor: 'rgba(148, 163, 184, 0.1)',
+        marginBottom: 12,
     },
     footer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
+        gap: 24,
     },
     interaction: {
         flexDirection: 'row',
         alignItems: 'center',
     },
+    iconCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 8,
+    },
     interactionText: {
         color: authColors.muted,
-        marginLeft: 6,
         fontSize: 14,
+        fontWeight: '600',
     },
 });
 

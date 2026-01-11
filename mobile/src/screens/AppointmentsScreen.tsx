@@ -231,7 +231,7 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                         <Ionicons name="calendar-outline" size={16} color={authColors.muted} />
                         <Text style={styles.detailText}>{item.date}</Text>
                     </View>
-                    <View style={[styles.detailRow, { marginLeft: 20 }]}>
+                    <View style={styles.detailRow}>
                         <Ionicons name="time-outline" size={16} color={authColors.muted} />
                         <Text style={styles.detailText}>{item.time} ({item.duration || 1}u)</Text>
                     </View>
@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     cardDetails: {
-        flexDirection: 'row',
+        flexDirection: 'column',
         marginBottom: 12,
     },
     detailRow: {

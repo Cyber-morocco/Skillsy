@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, ScrollView, Alert, ActivityIndicator, Image, Platform, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, TouchableWithoutFeedback, Keyboard, ScrollView, Alert, ActivityIndicator, Image, Platform, Linking, KeyboardAvoidingView } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -561,91 +561,16 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
     <SafeAreaView style={styles.container}>
       <View style={styles.headerBackground} />
 
-      <View style={styles.content}>
-        <View style={styles.topRow}>
-          <TouchableOpacity style={styles.squareButtonWide} onPress={() => onNavigate?.('availability')}>
-            <Ionicons name="calendar-outline" size={18} color={authColors.text} />
-            <Text style={styles.squareButtonText}>Agenda</Text>
+      {/* Top Bar for Actions */}
+      <View style={styles.topBar}>
+        <Text style={styles.topBarTitle}>Mijn Profiel</Text>
+        <View style={styles.topIcons}>
+          <TouchableOpacity style={styles.iconButton} onPress={handleEditProfile}>
+            <Ionicons name="pencil-outline" size={20} color="#fff" />
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.squareButtonWide} onPress={handleEditProfile}>
-            <Ionicons name="create-outline" size={18} color={authColors.text} />
-            <Text style={styles.squareButtonText}>Edit</Text>
+          <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={20} color="#fff" />
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.squareButton} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={20} color="#ff4444" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.profileInfo}>
-          <View style={styles.profileImageContainer}>
-            <Avatar
-              uri={userProfile?.photoURL}
-              name={userProfile?.displayName || 'Gebruiker'}
-              size={110}
-              style={styles.profileImage}
-            />
-          </View>
-
-          <Text style={styles.nameText}>{userProfile?.displayName || 'Naamloos'}</Text>
-
-          <View style={styles.locationContainer}>
-            <Ionicons name="location-outline" size={16} color="rgba(255,255,255,0.9)" />
-            <Text style={styles.locationText}>
-              {userProfile?.location?.city || userProfile?.location?.address || 'Geen locatie'}
-            </Text>
-          </View>
-
-          <View style={styles.reviewsContainer}>
-            {reviews.length >= 5 ? (
-              <>
-                <Ionicons name="star" size={16} color="#FFD700" />
-                <Text style={styles.reviewsText}>
-                  {(reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)} ({reviews.length} reviews)
-                </Text>
-              </>
-            ) : (
-              <Text style={styles.reviewsText}>Nieuw profiel</Text>
-            )}
-            <Text style={styles.punt}>•</Text>
-            <Ionicons name="laptop-outline" size={16} color="rgba(255,255,255,0.9)" />
-            <Text style={styles.reviewsText}>Lid sinds {formatDate(userProfile?.createdAt)}</Text>
-          </View>
-
-          <Text style={styles.aboutText}>
-            {userProfile?.bio || 'Geen beschrijving beschikbaar.'}
-          </Text>
-
-          <View style={styles.tabsContainer}>
-            <TouchableOpacity onPress={() => setActiveTab('skills')} style={styles.tabItem}>
-              <Text style={[styles.tabText, activeTab === 'skills' && styles.tabTextActive]}>
-                Vaardigheden
-              </Text>
-              {activeTab === 'skills' && <View style={styles.tabButtonActive} />}
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => setActiveTab('wilLeren')} style={styles.tabItem}>
-              <Text style={[styles.tabText, activeTab === 'wilLeren' && styles.tabTextActive]}>
-                Wil leren
-              </Text>
-              {activeTab === 'wilLeren' && <View style={styles.tabButtonActive} />}
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => setActiveTab('promoVideo')} style={styles.tabItem}>
-              <Text style={[styles.tabText, activeTab === 'promoVideo' && styles.tabTextActive]}>
-                Promo video
-              </Text>
-              {activeTab === 'promoVideo' && <View style={styles.tabButtonActive} />}
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => setActiveTab('reviews')} style={styles.tabItem}>
-              <Text style={[styles.tabText, activeTab === 'reviews' && styles.tabTextActive]}>
-                Reviews
-              </Text>
-              {activeTab === 'reviews' && <View style={styles.tabButtonActive} />}
-            </TouchableOpacity>
-          </View>
         </View>
       </View>
 
@@ -654,71 +579,165 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        <View style={styles.content}>
+
+          {/* Profile Header Block */}
+          <View style={styles.profileHeader}>
+            <View style={styles.profileImageContainer}>
+              <Avatar
+                uri={userProfile?.photoURL}
+                name={userProfile?.displayName || 'Gebruiker'}
+                size={110}
+                style={styles.profileImage}
+              />
+            </View>
+
+            <Text style={styles.nameText}>{userProfile?.displayName || 'Naamloos'}</Text>
+
+            <View style={styles.locationContainer}>
+              <Ionicons name="location" size={14} color={authColors.accent} />
+              <Text style={styles.locationText}>
+                {userProfile?.location?.city || userProfile?.location?.address || 'Geen locatie'}
+              </Text>
+            </View>
+
+            {/* Stats Row */}
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <Ionicons name="star" size={16} color="#FFD700" />
+                <Text style={styles.statText}>
+                  {reviews.length > 0
+                    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+                    : 'New'}
+                </Text>
+              </View>
+              <View style={{ width: 1, height: 16, backgroundColor: 'rgba(255,255,255,0.2)' }} />
+              <View style={styles.statItem}>
+                <Ionicons name="people-outline" size={16} color={authColors.accent} />
+                <Text style={styles.statText}>{reviews.length} reviews</Text>
+              </View>
+              <View style={{ width: 1, height: 16, backgroundColor: 'rgba(255,255,255,0.2)' }} />
+              <View style={styles.statItem}>
+                <Ionicons name="time-outline" size={16} color={authColors.accent} />
+                <Text style={styles.statText}>Lid sinds {formatDate(userProfile?.createdAt).split(' ').slice(-1)[0]}</Text>
+              </View>
+            </View>
+
+            <View style={styles.bioContainer}>
+              <Text style={styles.aboutText}>
+                {userProfile?.bio || 'Vertel je buren wie je bent en wat je leuk vindt...'}
+              </Text>
+            </View>
+
+            {/* Main Action Action (Agenda) */}
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity style={styles.agendaButton} onPress={() => onNavigate?.('availability')}>
+                <Ionicons name="calendar" size={20} color="#fff" />
+                <Text style={styles.agendaButtonText}>Mijn beschikbaarheden</Text>
+              </TouchableOpacity>
+            </View>
+
+          </View>
+        </View>
+
+        {/* Floating Tabs */}
+        <View style={styles.tabsWrapper}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsContainer}>
+            <TouchableOpacity onPress={() => setActiveTab('skills')} style={styles.tabItem}>
+              <Text style={[styles.tabText, activeTab === 'skills' && styles.tabTextActive]}>Vaardigheden</Text>
+              {activeTab === 'skills' && <View style={styles.activeIndicator} />}
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setActiveTab('wilLeren')} style={styles.tabItem}>
+              <Text style={[styles.tabText, activeTab === 'wilLeren' && styles.tabTextActive]}>Wil Leren</Text>
+              {activeTab === 'wilLeren' && <View style={styles.activeIndicator} />}
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setActiveTab('promoVideo')} style={styles.tabItem}>
+              <Text style={[styles.tabText, activeTab === 'promoVideo' && styles.tabTextActive]}>Video's</Text>
+              {activeTab === 'promoVideo' && <View style={styles.activeIndicator} />}
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setActiveTab('reviews')} style={styles.tabItem}>
+              <Text style={[styles.tabText, activeTab === 'reviews' && styles.tabTextActive]}>Reviews</Text>
+              {activeTab === 'reviews' && <View style={styles.activeIndicator} />}
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+
+
+        {/* Dynamic Content Section */}
         {activeTab === 'skills' && (
           <View style={styles.sectionContainer}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Wat ik kan aanleren</Text>
-              <TouchableOpacity onPress={AddSkill} style={styles.plusButton}>
-                <Ionicons name="add" size={20} color={authColors.text} />
+              <Text style={styles.sectionTitle}>Mijn Skills</Text>
+              <TouchableOpacity onPress={AddSkill} style={styles.addButton}>
+                <Ionicons name="add" size={24} color={authColors.accent} />
               </TouchableOpacity>
             </View>
 
             {skills.map((skill) => {
-              const catColor = ROOT_CATEGORIES.find(c => c.id === skill.rootId)?.color || 'rgba(255,255,255,0.2)';
+              const catColor = ROOT_CATEGORIES.find(c => c.id === skill.rootId)?.color || authColors.accent;
               return (
-                <TouchableOpacity key={skill.id} style={styles.skillCard} activeOpacity={0.7}>
-                  <View style={styles.skillInfo}>
-                    <View style={styles.skillHeader}>
-                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: catColor, marginRight: 4 }} />
+                <View key={skill.id} style={styles.skillCard}>
+                  <View style={styles.skillContent}>
+                    <View style={[styles.colorDot, { backgroundColor: catColor }]} />
+                    <View style={styles.skillInfo}>
                       <Text style={styles.skillSubject}>{skill.subject}</Text>
-                      <View style={styles.levelBadge}>
-                        <Text style={styles.levelText}>{skill.level}</Text>
+                      <View style={styles.skillBadge}>
+                        <Text style={styles.skillLevel}>{skill.level}</Text>
                       </View>
                     </View>
                   </View>
-                  <TouchableOpacity onPress={() => handleDeleteSkill(skill.id)}>
+                  <TouchableOpacity onPress={() => handleDeleteSkill(skill.id)} style={styles.deleteButton}>
                     <Ionicons name="trash-outline" size={20} color="#ff4444" />
                   </TouchableOpacity>
-                </TouchableOpacity>
+                </View>
               );
             })}
+            {skills.length === 0 && (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="construct-outline" size={40} color={authColors.muted} />
+                <Text style={styles.emptyText}>Je hebt nog geen skills toegevoegd.</Text>
+              </View>
+            )}
           </View>
         )}
+
         {activeTab === 'wilLeren' && (
           <View style={styles.sectionContainer}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Wat ik wil leren</Text>
-
-              <TouchableOpacity onPress={AddLearnSkill} style={styles.plusButton}>
-                <Ionicons name="add" size={20} color={authColors.text} />
+              <Text style={styles.sectionTitle}>Wil ik leren</Text>
+              <TouchableOpacity onPress={AddLearnSkill} style={styles.addButton}>
+                <Ionicons name="add" size={24} color={authColors.accent} />
               </TouchableOpacity>
             </View>
             {learnSkills.map((skill) => (
-              <TouchableOpacity key={skill.id} style={styles.skillCard} activeOpacity={0.7}>
-                <View style={styles.skillInfo}>
-                  <Text style={styles.skillSubject}>{skill.subject}</Text>
+              <View key={skill.id} style={styles.skillCard}>
+                <View style={styles.skillContent}>
+                  <View style={[styles.colorDot, { backgroundColor: '#FBBF24' }]} />
+                  <View style={styles.skillInfo}>
+                    <Text style={styles.skillSubject}>{skill.subject}</Text>
+                  </View>
                 </View>
-                <TouchableOpacity onPress={() => handleDeleteLearnSkill(skill.id)}>
+                <TouchableOpacity onPress={() => handleDeleteLearnSkill(skill.id)} style={styles.deleteButton}>
                   <Ionicons name="trash-outline" size={20} color="#ff4444" />
                 </TouchableOpacity>
-              </TouchableOpacity>
+              </View>
             ))}
+            {learnSkills.length === 0 && (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="school-outline" size={40} color={authColors.muted} />
+                <Text style={styles.emptyText}>Nog niets dat je wilt leren?</Text>
+              </View>
+            )}
           </View>
         )}
 
         {activeTab === 'promoVideo' && (
           <View style={styles.sectionContainer}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Mijn Promo Video's</Text>
+              <Text style={styles.sectionTitle}>Promo Video's</Text>
             </View>
 
-            <View style={{ marginBottom: 20, backgroundColor: 'rgba(124, 58, 237, 0.1)', padding: 15, borderRadius: 12 }}>
-              <Text style={{ color: authColors.text, fontSize: 13, lineHeight: 18 }}>
-                Stel jezelf voor en vertel over je skills! Je kunt maximaal 3 video's van elk max 3 minuten uploaden.
-              </Text>
-            </View>
-
-            <View style={{ flexDirection: 'row', gap: 10 }}>
+            <View style={styles.videoGrid}>
               {[0, 1, 2].map((index) => {
                 const videoEntry = userProfile?.promoVideos?.[index];
                 const videoUrl = typeof videoEntry === 'string' ? videoEntry : (videoEntry?.url || '');
@@ -729,6 +748,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 return (
                   <TouchableOpacity
                     key={index}
+                    activeOpacity={0.8}
                     onPress={() => {
                       if (hasVideo) {
                         setPlayingVideo({
@@ -741,18 +761,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                         handleVideoPicker(index);
                       }
                     }}
-                    style={{
-                      flex: 1,
-                      aspectRatio: 9 / 16,
-                      backgroundColor: 'rgba(255,255,255,0.05)',
-                      borderRadius: 12,
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      borderWidth: 1,
-                      borderColor: 'rgba(255,255,255,0.1)',
-                      borderStyle: hasVideo ? 'solid' : 'dashed',
-                      overflow: 'hidden'
-                    }}
+                    style={[styles.videoCard, !hasVideo && styles.videoPlaceholder]}
                   >
                     {hasVideo ? (
                       <View style={{ flex: 1, width: '100%', height: '100%' }}>
@@ -763,8 +772,8 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                         </View>
 
                         {videoTitleVal ? (
-                          <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.6)', padding: 4 }}>
-                            <Text numberOfLines={1} style={{ color: '#fff', fontSize: 10, textAlign: 'center' }}>{videoTitleVal}</Text>
+                          <View style={{ position: 'absolute', bottom: 0, width: '100%', padding: 4, backgroundColor: 'rgba(0,0,0,0.6)' }}>
+                            <Text style={{ color: 'white', fontSize: 10, textAlign: 'center' }} numberOfLines={1}>{videoTitleVal}</Text>
                           </View>
                         ) : null}
 
@@ -773,7 +782,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                             setEditingVideoIndex(index);
                             setVideoTitle(videoTitleVal);
                             setVideoDescription(videoDescVal);
-                            setEditVideoModalVisible(true);
+                            setVideoModalVisible(true);
                           }}
                           style={{
                             position: 'absolute',
@@ -787,22 +796,12 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                           <Ionicons name="create-outline" size={16} color="#fff" />
                         </TouchableOpacity>
 
-                        <TouchableOpacity
-                          onPress={() => handleDeleteVideo(index)}
-                          style={{
-                            position: 'absolute',
-                            top: 5,
-                            right: 5,
-                            backgroundColor: 'rgba(0,0,0,0.5)',
-                            padding: 4,
-                            borderRadius: 12
-                          }}
-                        >
+                        <TouchableOpacity onPress={() => handleDeleteVideo(index)} style={{ position: 'absolute', top: 5, right: 5, padding: 4, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 12 }}>
                           <Ionicons name="close" size={16} color="#fff" />
                         </TouchableOpacity>
                       </View>
                     ) : (
-                      <Ionicons name="add" size={30} color={authColors.muted} />
+                      <Ionicons name="add" size={24} color="rgba(255,255,255,0.5)" />
                     )}
                   </TouchableOpacity>
                 );
@@ -810,10 +809,11 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
             </View>
           </View>
         )}
+
         {activeTab === 'reviews' && (
           <View style={styles.sectionContainer}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Reviews ({reviews.length})</Text>
+              <Text style={styles.sectionTitle}>Reviews</Text>
             </View>
             {reviews.length > 0 ? (
               reviews.map((review) => (
@@ -822,12 +822,13 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                     <Text style={styles.reviewName}>{review.fromName || 'Anoniem'}</Text>
                     <Text style={styles.reviewRating}>⭐ {review.rating.toFixed(1)}</Text>
                   </View>
+                  {/* Add review content if available in schema */}
                 </View>
               ))
             ) : (
               <View style={styles.emptyContainer}>
-                <Ionicons name="chatbubbles-outline" size={48} color={authColors.muted} style={{ opacity: 0.5 }} />
-                <Text style={styles.emptyText}>Je hebt nog geen reviews ontvangen.</Text>
+                <Ionicons name="chatbubbles-outline" size={40} color={authColors.muted} />
+                <Text style={styles.emptyText}>Nog geen reviews.</Text>
               </View>
             )}
           </View>
@@ -841,26 +842,31 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Nieuwe Interesse</Text>
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ width: '100%', alignItems: 'center' }}
+              >
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Nieuwe Interesse</Text>
 
-                <Text style={styles.inputLabel}>Onderwerp</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Bijv. Piano"
-                  value={newLearnSubject}
-                  onChangeText={setNewLearnSubject}
-                />
+                  <Text style={styles.inputLabel}>Onderwerp</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Bijv. Piano"
+                    value={newLearnSubject}
+                    onChangeText={setNewLearnSubject}
+                  />
 
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity onPress={() => setLearnModalVisible(false)} style={styles.cancelButton}>
-                    <Text style={styles.cancelButtonText}>Annuleren</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={SaveLearnSkill} style={styles.saveButton}>
-                    <Text style={styles.saveButtonText}>Toevoegen</Text>
-                  </TouchableOpacity>
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity onPress={() => setLearnModalVisible(false)} style={styles.cancelButton}>
+                      <Text style={styles.cancelButtonText}>Annuleren</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={SaveLearnSkill} style={styles.saveButton}>
+                      <Text style={styles.saveButtonText}>Toevoegen</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
+              </KeyboardAvoidingView>
             </View>
           </TouchableWithoutFeedback>
         </Modal>
@@ -876,56 +882,64 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>{selectedVideoUri ? 'Video toevoegen' : 'Video bewerken'}</Text>
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ width: '100%', alignItems: 'center' }}
+              >
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>{selectedVideoUri ? 'Video toevoegen' : 'Video bewerken'}</Text>
 
-                <Text style={styles.inputLabel}>Titel</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Titel..."
-                  value={videoTitle}
-                  onChangeText={setVideoTitle}
-                />
+                  <Text style={styles.inputLabel}>Titel</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Titel..."
+                    value={videoTitle}
+                    onChangeText={setVideoTitle}
+                  />
 
-                <View style={styles.labelContainer}>
-                  <Text style={styles.inputLabel}>Beschrijving</Text>
-                  <Text style={styles.charCount}>{videoDescription.length}/100</Text>
+                  <View style={styles.labelContainer}>
+                    <Text style={styles.inputLabel}>Beschrijving</Text>
+                    <Text style={styles.charCount}>{videoDescription.length}/100</Text>
+                  </View>
+                  <TextInput
+                    style={[styles.input, { height: 100, textAlignVertical: 'top', marginBottom: 8 }]}
+                    placeholder="Korte beschrijving (max 100 tekens)..."
+                    value={videoDescription}
+                    onChangeText={setVideoDescription}
+                    multiline={true}
+                    numberOfLines={4}
+                    maxLength={100}
+                  />
+                  <Text style={{ color: authColors.muted, fontSize: 12, marginBottom: 20, fontStyle: 'italic' }}>
+                    Je kan max 3 video's toevoegen van max 3 minuten.
+                  </Text>
+
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setVideoModalVisible(false);
+                        setSelectedVideoUri(null);
+                        setVideoTitle('');
+                        setVideoDescription('');
+                      }}
+                      style={styles.cancelButton}
+                    >
+                      <Text style={styles.cancelButtonText}>Annuleren</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={handleSaveVideoMetadata}
+                      style={[styles.saveButton, saving && { opacity: 0.7 }]}
+                      disabled={saving}
+                    >
+                      {saving ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <Text style={styles.saveButtonText}>{selectedVideoUri ? 'Plaatsen' : 'Opslaan'}</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
                 </View>
-                <TextInput
-                  style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-                  placeholder="Korte beschrijving (max 100 tekens)..."
-                  value={videoDescription}
-                  onChangeText={setVideoDescription}
-                  multiline={true}
-                  numberOfLines={4}
-                  maxLength={100}
-                />
-
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setVideoModalVisible(false);
-                      setSelectedVideoUri(null);
-                      setVideoTitle('');
-                      setVideoDescription('');
-                    }}
-                    style={styles.cancelButton}
-                  >
-                    <Text style={styles.cancelButtonText}>Annuleren</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={handleSaveVideoMetadata}
-                    style={[styles.saveButton, saving && { opacity: 0.7 }]}
-                    disabled={saving}
-                  >
-                    {saving ? (
-                      <ActivityIndicator color="#fff" />
-                    ) : (
-                      <Text style={styles.saveButtonText}>{selectedVideoUri ? 'Plaatsen' : 'Opslaan'}</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </View>
+              </KeyboardAvoidingView>
             </View>
           </TouchableWithoutFeedback>
         </Modal>
@@ -938,62 +952,67 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Nieuwe Vaardigheid</Text>
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ width: '100%', alignItems: 'center' }}
+              >
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Nieuwe Vaardigheid</Text>
 
-                <Text style={styles.inputLabel}>Onderwerp</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Bijv. Wiskunde"
-                  value={newSubject}
-                  onChangeText={setNewSubject}
-                />
-                {loadingIntelligence && (
-                  <View style={{ position: 'absolute', right: 36, top: 105 }}>
-                    <ActivityIndicator size="small" color={authColors.accent} />
-                  </View>
-                )}
+                  <Text style={styles.inputLabel}>Onderwerp</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Bijv. Wiskunde"
+                    value={newSubject}
+                    onChangeText={setNewSubject}
+                  />
+                  {loadingIntelligence && (
+                    <View style={{ position: 'absolute', right: 36, top: 105 }}>
+                      <ActivityIndicator size="small" color={authColors.accent} />
+                    </View>
+                  )}
 
-                {intelligenceResult?.type === 'auto_map' && intelligenceResult.match && (
-                  <View style={{ marginTop: -10, marginBottom: 15, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(124, 58, 237, 0.1)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 }}>
-                    <Ionicons name="checkmark-circle" size={16} color={authColors.accent} />
-                    <Text style={{ color: authColors.text, fontSize: 13, marginLeft: 8 }}>
-                      Gevonden: <Text style={{ fontWeight: '700' }}>{intelligenceResult.match.concept.label}</Text>
-                    </Text>
-                  </View>
-                )}
-
-                {intelligenceResult?.type === 'discovery' && intelligenceResult.proposed && (
-                  <View style={{ marginTop: -10, marginBottom: 15, backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(16, 185, 129, 0.2)' }}>
-                    <Text style={{ color: '#10b981', fontSize: 12, fontWeight: '700', marginBottom: 4 }}>✨ Nieuwe vaardigheid herkend</Text>
-                    <Text style={{ color: authColors.muted, fontSize: 13 }}>In categorie: <Text style={{ color: authColors.text, fontWeight: '600' }}>{intelligenceResult.proposed.rootLabel}</Text></Text>
-                  </View>
-                )}
-
-                <Text style={styles.inputLabel}>Niveau</Text>
-                <View style={styles.levelSelector}>
-                  {(['Beginner', 'Gevorderd', 'Expert'] as SkillLevel[]).map((lvl) => (
-                    <TouchableOpacity
-                      key={lvl}
-                      style={[styles.levelOption, newLevel === lvl && styles.levelOptionActive]}
-                      onPress={() => setNewLevel(lvl)}
-                    >
-                      <Text style={[styles.levelOptionText, newLevel === lvl && styles.levelOptionTextActive]}>
-                        {lvl}
+                  {intelligenceResult?.type === 'auto_map' && intelligenceResult.match && (
+                    <View style={{ marginTop: -10, marginBottom: 15, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(124, 58, 237, 0.1)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 }}>
+                      <Ionicons name="checkmark-circle" size={16} color={authColors.accent} />
+                      <Text style={{ color: authColors.text, fontSize: 13, marginLeft: 8 }}>
+                        Gevonden: <Text style={{ fontWeight: '700' }}>{intelligenceResult.match.concept.label}</Text>
                       </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                    </View>
+                  )}
 
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.cancelButton}>
-                    <Text style={styles.cancelButtonText}>Annuleren</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={SaveSkill} style={styles.saveButton}>
-                    <Text style={styles.saveButtonText}>Toevoegen</Text>
-                  </TouchableOpacity>
+                  {intelligenceResult?.type === 'discovery' && intelligenceResult.proposed && (
+                    <View style={{ marginTop: -10, marginBottom: 15, backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: 12, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(16, 185, 129, 0.2)' }}>
+                      <Text style={{ color: '#10b981', fontSize: 12, fontWeight: '700', marginBottom: 4 }}>✨ Nieuwe vaardigheid herkend</Text>
+                      <Text style={{ color: authColors.muted, fontSize: 13 }}>In categorie: <Text style={{ color: authColors.text, fontWeight: '600' }}>{intelligenceResult.proposed.rootLabel}</Text></Text>
+                    </View>
+                  )}
+
+                  <Text style={styles.inputLabel}>Niveau</Text>
+                  <View style={styles.levelSelector}>
+                    {(['Beginner', 'Gevorderd', 'Expert'] as SkillLevel[]).map((lvl) => (
+                      <TouchableOpacity
+                        key={lvl}
+                        style={[styles.levelOption, newLevel === lvl && styles.levelOptionActive]}
+                        onPress={() => setNewLevel(lvl)}
+                      >
+                        <Text style={[styles.levelOptionText, newLevel === lvl && styles.levelOptionTextActive]}>
+                          {lvl}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.cancelButton}>
+                      <Text style={styles.cancelButtonText}>Annuleren</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={SaveSkill} style={styles.saveButton}>
+                      <Text style={styles.saveButtonText}>Toevoegen</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
+              </KeyboardAvoidingView>
             </View>
           </TouchableWithoutFeedback>
         </Modal>
@@ -1006,141 +1025,146 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Profiel Bewerken</Text>
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ width: '100%', alignItems: 'center' }}
+              >
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Profiel Bewerken</Text>
 
-                <ScrollView
-                  style={{ maxHeight: '80%' }}
-                  showsVerticalScrollIndicator={false}
-                >
-                  <Text style={styles.inputLabel}>Gebruikersnaam</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Gebruikersnaam..."
-                    value={tempName}
-                    onChangeText={setTempName}
-                  />
-
-                  <Text style={{ color: authColors.muted, fontSize: 13, marginBottom: 16, marginTop: 8 }}>
-                    Enkel de stad zal gedeeld worden met andere gebruikers.
-                  </Text>
-
-                  <Text style={styles.inputLabel}>Adres of Straat</Text>
-                  <View style={{ zIndex: 1000 }}>
+                  <ScrollView
+                    style={{ maxHeight: '80%' }}
+                    showsVerticalScrollIndicator={false}
+                  >
+                    <Text style={styles.inputLabel}>Gebruikersnaam</Text>
                     <TextInput
                       style={styles.input}
-                      placeholder="Typ je adres..."
-                      value={tempStreet}
-                      onChangeText={searchAddress}
-                      onFocus={() => addressSuggestions.length > 0 && setShowAddressSuggestions(true)}
+                      placeholder="Gebruikersnaam..."
+                      value={tempName}
+                      onChangeText={setTempName}
                     />
-                    {showAddressSuggestions && (
-                      <ScrollView
-                        style={[styles.autocompleteDropdown, { maxHeight: 150 }]}
-                        nestedScrollEnabled={true}
-                        keyboardShouldPersistTaps="handled"
-                      >
-                        {addressSuggestions.map((item, index) => {
-                          const { properties } = item;
-                          const mainText = properties.street
-                            ? `${properties.street}${properties.housenumber ? ' ' + properties.housenumber : ''}`
-                            : properties.name;
-                          const subText = `${properties.postcode || ''} ${properties.city || ''} ${properties.country || ''}`.trim();
 
-                          return (
-                            <TouchableOpacity
-                              key={index}
-                              style={styles.suggestionItem}
-                              onPress={() => selectAddressSuggestion(item)}
-                            >
-                              <Text style={styles.suggestionText}>{mainText}</Text>
-                              {subText ? (
-                                <Text style={styles.suggestionSubtext}>{subText}</Text>
-                              ) : null}
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </ScrollView>
-                    )}
-                  </View>
+                    <Text style={{ color: authColors.muted, fontSize: 13, marginBottom: 16, marginTop: 8 }}>
+                      Enkel de stad zal gedeeld worden met andere gebruikers.
+                    </Text>
 
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <View style={{ flex: 0.48 }}>
-                      <Text style={styles.inputLabel}>Postcode</Text>
+                    <Text style={styles.inputLabel}>Adres of Straat</Text>
+                    <View style={{ zIndex: 1000 }}>
                       <TextInput
                         style={styles.input}
-                        placeholder="Bijv. 1030"
-                        value={tempZipCode}
-                        onChangeText={setTempZipCode}
+                        placeholder="Typ je adres..."
+                        value={tempStreet}
+                        onChangeText={searchAddress}
+                        onFocus={() => addressSuggestions.length > 0 && setShowAddressSuggestions(true)}
                       />
-                    </View>
-                    <View style={{ flex: 0.48 }}>
-                      <Text style={styles.inputLabel}>Stad</Text>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Bijv. Brussel"
-                        value={tempCity}
-                        onChangeText={setTempCity}
-                      />
-                    </View>
-                  </View>
-
-                  <View style={styles.labelContainer}>
-                    <Text style={styles.inputLabel}>Over mij</Text>
-                    <Text style={styles.charCount}>{tempAbout?.length || 0}/175</Text>
-                  </View>
-                  <TextInput
-                    style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-                    placeholder="Vertel iets over jezelf..."
-                    value={tempAbout}
-                    onChangeText={setTempAbout}
-                    multiline={true}
-                    numberOfLines={4}
-                    maxLength={175}
-                  />
-
-                  <Text style={styles.inputLabel}>Profielfoto</Text>
-                  <View style={styles.imageEditContainer}>
-                    <View style={styles.tempImageContainer}>
-                      {tempImage ? (
-                        <Image source={{ uri: tempImage as string }} style={styles.tempImage} />
-                      ) : (
-                        <View style={styles.profileImagePlaceholder}>
-                          <Ionicons name="person" size={40} color="#ccc" />
-                        </View>
-                      )}
-                    </View>
-                    <View style={styles.imageButtons}>
-                      <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
-                        <Ionicons name="image-outline" size={20} color={authColors.text} />
-                        <Text style={styles.imagePickerButtonText}>Galerij</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity style={styles.imagePickerButton} onPress={takePhoto}>
-                        <Ionicons name="camera-outline" size={20} color={authColors.text} />
-                        <Text style={styles.imagePickerButtonText}>Camera</Text>
-                      </TouchableOpacity>
-                      {(tempImage || userProfile?.photoURL) && (
-                        <TouchableOpacity
-                          style={[styles.imagePickerButton, { borderColor: '#ff4444' }]}
-                          onPress={() => setTempImage(null)}
+                      {showAddressSuggestions && (
+                        <ScrollView
+                          style={[styles.autocompleteDropdown, { maxHeight: 150 }]}
+                          nestedScrollEnabled={true}
+                          keyboardShouldPersistTaps="handled"
                         >
-                          <Ionicons name="trash-outline" size={20} color="#ff4444" />
-                          <Text style={[styles.imagePickerButtonText, { color: '#ff4444' }]}>Verwijder</Text>
-                        </TouchableOpacity>
+                          {addressSuggestions.map((item, index) => {
+                            const { properties } = item;
+                            const mainText = properties.street
+                              ? `${properties.street}${properties.housenumber ? ' ' + properties.housenumber : ''}`
+                              : properties.name;
+                            const subText = `${properties.postcode || ''} ${properties.city || ''} ${properties.country || ''}`.trim();
+
+                            return (
+                              <TouchableOpacity
+                                key={index}
+                                style={styles.suggestionItem}
+                                onPress={() => selectAddressSuggestion(item)}
+                              >
+                                <Text style={styles.suggestionText}>{mainText}</Text>
+                                {subText ? (
+                                  <Text style={styles.suggestionSubtext}>{subText}</Text>
+                                ) : null}
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </ScrollView>
                       )}
                     </View>
-                  </View>
-                </ScrollView>
 
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.cancelButton}>
-                    <Text style={styles.cancelButtonText}>Annuleren</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={saveProfile} style={styles.saveButton}>
-                    <Text style={styles.saveButtonText}>Opslaan</Text>
-                  </TouchableOpacity>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                      <View style={{ flex: 0.48 }}>
+                        <Text style={styles.inputLabel}>Postcode</Text>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Bijv. 1030"
+                          value={tempZipCode}
+                          onChangeText={setTempZipCode}
+                        />
+                      </View>
+                      <View style={{ flex: 0.48 }}>
+                        <Text style={styles.inputLabel}>Stad</Text>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="Bijv. Brussel"
+                          value={tempCity}
+                          onChangeText={setTempCity}
+                        />
+                      </View>
+                    </View>
+
+                    <View style={styles.labelContainer}>
+                      <Text style={styles.inputLabel}>Over mij</Text>
+                      <Text style={styles.charCount}>{tempAbout?.length || 0}/175</Text>
+                    </View>
+                    <TextInput
+                      style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+                      placeholder="Vertel iets over jezelf..."
+                      value={tempAbout}
+                      onChangeText={setTempAbout}
+                      multiline={true}
+                      numberOfLines={4}
+                      maxLength={175}
+                    />
+
+                    <Text style={styles.inputLabel}>Profielfoto</Text>
+                    <View style={styles.imageEditContainer}>
+                      <View style={styles.tempImageContainer}>
+                        {tempImage ? (
+                          <Image source={{ uri: tempImage as string }} style={styles.tempImage} />
+                        ) : (
+                          <View style={styles.profileImagePlaceholder}>
+                            <Ionicons name="person" size={40} color="#ccc" />
+                          </View>
+                        )}
+                      </View>
+                      <View style={styles.imageButtons}>
+                        <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
+                          <Ionicons name="image-outline" size={20} color={authColors.text} />
+                          <Text style={styles.imagePickerButtonText}>Galerij</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.imagePickerButton} onPress={takePhoto}>
+                          <Ionicons name="camera-outline" size={20} color={authColors.text} />
+                          <Text style={styles.imagePickerButtonText}>Camera</Text>
+                        </TouchableOpacity>
+                        {(tempImage || userProfile?.photoURL) && (
+                          <TouchableOpacity
+                            style={[styles.imagePickerButton, { borderColor: '#ff4444' }]}
+                            onPress={() => setTempImage(null)}
+                          >
+                            <Ionicons name="trash-outline" size={20} color="#ff4444" />
+                            <Text style={[styles.imagePickerButtonText, { color: '#ff4444' }]}>Verwijder</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    </View>
+                  </ScrollView>
+
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.cancelButton}>
+                      <Text style={styles.cancelButtonText}>Annuleren</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={saveProfile} style={styles.saveButton}>
+                      <Text style={styles.saveButtonText}>Opslaan</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
+              </KeyboardAvoidingView>
             </View>
           </TouchableWithoutFeedback>
         </Modal>
@@ -1171,83 +1195,68 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: authColors.accent,
+    backgroundColor: authColors.background,
   },
   scrollView: {
     flex: 1,
-    backgroundColor: authColors.background,
   },
   scrollContent: {
-    flexGrow: 1,
+    paddingBottom: 100,
   },
   headerBackground: {
     position: 'absolute',
     top: 0,
     width: '100%',
-    height: 0,
-    backgroundColor: authColors.accent,
+    height: 200,
+    backgroundColor: 'rgba(124, 58, 237, 0.08)',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
   content: {
+    paddingHorizontal: 0,
+  },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 10,
+    marginTop: 10,
+    marginBottom: 10,
+    zIndex: 10,
   },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 16,
-  },
-  squareButton: {
-    height: 44,
-    minWidth: 44,
-    borderRadius: 12,
-    backgroundColor: authColors.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.25)',
-  },
-  squareButtonWide: {
-    flex: 1,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: authColors.card,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.25)',
-  },
-  squareButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
+  topBarTitle: {
+    fontSize: 18,
+    fontWeight: '700',
     color: authColors.text,
   },
-  profileInfo: {
+  topIcons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  iconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
-    marginTop: 20,
-    width: '100%',
+    justifyContent: 'center',
+  },
+  profileHeader: {
+    alignItems: 'center',
+    marginTop: 10,
+    paddingHorizontal: 20,
   },
   profileImageContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: authColors.card,
-    overflow: 'hidden',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.2)',
+    marginBottom: 16,
+    elevation: 8,
+    shadowColor: authColors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
   },
   profileImage: {
-    width: '100%',
-    height: '100%',
+    borderWidth: 4,
+    borderColor: authColors.background,
   },
   profileImagePlaceholder: {
     width: '100%',
@@ -1257,206 +1266,209 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   nameText: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 26,
+    fontWeight: '800',
     color: authColors.text,
-    marginTop: 12,
+    marginBottom: 4,
   },
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginTop: 6,
+    gap: 6,
+    marginBottom: 16,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
   locationText: {
-    fontSize: 16,
-    color: authColors.muted,
-  },
-  reviewsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 8,
-  },
-  reviewsText: {
     fontSize: 14,
     color: authColors.muted,
     fontWeight: '500',
   },
-  punt: {
+  statsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 20,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  statText: {
     fontSize: 14,
+    fontWeight: '600',
     color: authColors.muted,
-    opacity: 0.6,
+  },
+  bioContainer: {
+    marginBottom: 24,
+    paddingHorizontal: 10,
   },
   aboutText: {
-    fontSize: 14,
-    color: authColors.text,
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.8)',
     textAlign: 'center',
-    marginTop: 10,
-    lineHeight: 20,
+    lineHeight: 22,
+  },
+  actionButtonsContainer: {
+    width: '100%',
+    marginBottom: 30,
     paddingHorizontal: 20,
-    opacity: 0.9,
+  },
+  agendaButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: authColors.accent,
+    paddingVertical: 14,
+    borderRadius: 16,
+    gap: 8,
+    shadowColor: authColors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  agendaButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  tabsWrapper: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(148, 163, 184, 0.1)',
+    marginBottom: 20,
+    backgroundColor: authColors.background,
   },
   tabsContainer: {
     flexDirection: 'row',
-    marginTop: 5,
-    paddingTop: 18,
-    backgroundColor: authColors.background,
-    marginHorizontal: -20,
-    paddingHorizontal: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(148, 163, 184, 0.1)',
+    paddingHorizontal: 20,
   },
   tabItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingBottom: 15,
+    marginRight: 24,
+    paddingVertical: 14,
+    position: 'relative',
   },
   tabText: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: '600',
     color: authColors.muted,
   },
   tabTextActive: {
-    color: authColors.accent,
+    color: authColors.text,
     fontWeight: '700',
   },
-  tabButtonActive: {
+  activeIndicator: {
     position: 'absolute',
     bottom: 0,
-    width: 40,
+    left: 0,
+    right: 0,
     height: 3,
     backgroundColor: authColors.accent,
-    borderRadius: 1.5,
+    borderRadius: 2,
   },
   sectionContainer: {
-    paddingTop: 24,
-    paddingBottom: 40,
-    width: '100%',
     paddingHorizontal: 20,
+    paddingBottom: 40,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     color: authColors.text,
   },
-  plusButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: authColors.card,
+  addButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(124, 58, 237, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.25)',
   },
   skillCard: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: authColors.card,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 16,
+    padding: 16,
+    borderRadius: 20,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.15)',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  skillContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  colorDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   skillInfo: {
     flex: 1,
   },
-  skillHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 4,
-  },
   skillSubject: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: authColors.text,
+    marginBottom: 4,
   },
-  levelBadge: {
+  skillBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(124, 58, 237, 0.1)',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    backgroundColor: 'rgba(124, 58, 237, 0.15)',
-    borderRadius: 6,
+    borderRadius: 8,
   },
-  levelText: {
+  skillLevel: {
     fontSize: 12,
-    fontWeight: '500',
     color: authColors.accent,
-  },
-  priceText: {
-    fontSize: 14,
-    color: authColors.muted,
-  },
-  reviewItem: {
-    padding: 16,
-    backgroundColor: authColors.card,
-    borderRadius: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.15)',
-  },
-  reviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  reviewName: {
-    fontSize: 14,
     fontWeight: '600',
-    color: authColors.text,
   },
-  reviewRating: {
-    fontSize: 13,
-    color: '#fbbf24',
+  deleteButton: {
+    padding: 8,
+    opacity: 0.7,
   },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 40,
-    gap: 12,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: authColors.muted,
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
+  // Modals
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'flex-start',
-    paddingTop: 60,
-    paddingHorizontal: 20,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: authColors.card,
-    borderRadius: 24,
+    width: '100%',
+    backgroundColor: '#1E293B',
+    borderRadius: 30,
     padding: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.25)',
+    paddingBottom: 40,
+    maxHeight: '90%',
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
-    marginBottom: 20,
+    color: '#fff',
     textAlign: 'center',
-    color: authColors.text,
+    marginBottom: 24,
   },
   inputLabel: {
+    color: authColors.muted,
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,
-    color: authColors.text,
+    marginLeft: 4,
   },
   labelContainer: {
     flexDirection: 'row',
@@ -1470,52 +1482,23 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 15,
+    borderRadius: 16,
     padding: 16,
     fontSize: 16,
-    marginBottom: 16,
-    color: authColors.text,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.3)',
-  },
-  levelSelector: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 24,
-  },
-  levelOption: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.3)',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-  },
-  levelOptionActive: {
-    backgroundColor: authColors.accent,
-    borderColor: authColors.accent,
-  },
-  levelOptionText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: authColors.muted,
-  },
-  levelOptionTextActive: {
     color: '#fff',
+    marginBottom: 20,
   },
   modalButtons: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 16,
+    marginTop: 20,
   },
   cancelButton: {
     flex: 1,
     padding: 16,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.2)',
   },
   saveButton: {
     flex: 1,
@@ -1523,85 +1506,18 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: authColors.accent,
     alignItems: 'center',
+    shadowColor: authColors.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: authColors.muted,
-  },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  imageEditContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    marginBottom: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    padding: 12,
-    borderRadius: 16,
-  },
-  tempImageContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    overflow: 'hidden',
-    backgroundColor: authColors.card,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  tempImage: {
-    width: '100%',
-    height: '100%',
-  },
-  imageButtons: {
-    flex: 1,
-    gap: 8,
-  },
-  imagePickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.3)',
-  },
-  imagePickerButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: authColors.text,
-  },
-  logoutContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 30,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(148, 163, 184, 0.1)',
-    marginTop: 20,
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 16,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 68, 68, 0.1)',
-    borderWidth: 1,
-    borderColor: '#ff4444',
-  },
-  logoutButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#ff4444',
-  },
+  cancelButtonText: { color: authColors.muted, fontWeight: '600', fontSize: 16 },
+  saveButtonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  // Autocomplete
   autocompleteDropdown: {
     position: 'absolute',
-    top: 55,
+    top: 85,
     left: 0,
     right: 0,
     backgroundColor: '#1E293B',
@@ -1610,24 +1526,101 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.1)',
     zIndex: 2000,
     elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
   },
   suggestionItem: {
-    padding: 12,
+    padding: 14,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.05)',
   },
-  suggestionText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+  suggestionText: { color: '#fff', fontWeight: '600' },
+  suggestionSubtext: { color: '#94a3b8', fontSize: 12 },
+
+  // Video Grid
+  videoGrid: {
+    flexDirection: 'row',
+    gap: 12,
   },
-  suggestionSubtext: {
-    color: '#94a3b8',
-    fontSize: 12,
-    marginTop: 2,
+  videoCard: {
+    flex: 1,
+    aspectRatio: 9 / 16,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    overflow: 'hidden',
   },
+  videoPlaceholder: {
+    borderStyle: 'dashed',
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+
+  // Empty state
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+    opacity: 0.6,
+  },
+  emptyText: {
+    color: authColors.muted,
+    marginTop: 12,
+    fontSize: 15,
+  },
+
+  // Image Edit
+  imageEditContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+    marginBottom: 24,
+    justifyContent: 'center',
+  },
+  tempImageContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: authColors.accent,
+  },
+  tempImage: { width: '100%', height: '100%' },
+  imageButtons: { gap: 10 },
+  imagePickerButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 12,
+  },
+  imagePickerButtonText: { color: '#fff', fontWeight: '600' },
+
+  // Level Selector
+  levelSelector: { flexDirection: 'row', gap: 10, marginBottom: 24 },
+  levelOption: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  levelOptionActive: {
+    backgroundColor: 'rgba(124, 58, 237, 0.15)',
+    borderColor: authColors.accent,
+  },
+  levelOptionText: { color: authColors.muted, fontWeight: '600' },
+  levelOptionTextActive: { color: authColors.accent },
+
+  // Review Items
+  reviewItem: {
+    backgroundColor: authColors.card,
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+  },
+  reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
+  reviewName: { color: '#fff', fontWeight: '700' },
+  reviewRating: { color: '#FBBF24', fontWeight: '700' },
 });

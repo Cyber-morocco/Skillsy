@@ -540,9 +540,12 @@ export const uploadProfileImage = async (uri: string): Promise<string> => {
     const userId = getCurrentUserId();
     const response = await fetch(uri);
     const blob = await response.blob();
+    // Revert to fixed path to satisfy storage rules
     const storageRef = ref(storage, `profiles/${userId}`);
     await uploadBytes(storageRef, blob);
-    return getDownloadURL(storageRef);
+    const url = await getDownloadURL(storageRef);
+    // Append timestamp to URL to force client-side refresh
+    return `${url}&t=${Date.now()}`;
 };
 
 export const deleteProfileImage = async (): Promise<void> => {

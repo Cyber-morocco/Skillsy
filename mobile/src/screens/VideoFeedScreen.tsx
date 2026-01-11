@@ -70,21 +70,23 @@ const FeedVideoItem = ({
                 <View style={styles.bottomInfo}>
                     <View style={styles.userInfo}>
                         <TouchableOpacity onPress={() => onViewProfile({ uid: item.userId, name: item.userName, avatar: item.userAvatar })}>
-                            <Avatar
-                                uri={item.userAvatar}
-                                name={item.userName}
-                                size={40}
-                                style={styles.avatar}
-                            />
+                            <View>
+                                <Avatar
+                                    uri={item.userAvatar}
+                                    name={item.userName}
+                                    size={40}
+                                    style={styles.avatar}
+                                />
+                                {!item.isMatched && (
+                                    <View style={styles.addIconContainer}>
+                                        <Ionicons name="add" size={14} color="#fff" />
+                                    </View>
+                                )}
+                            </View>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={() => onViewProfile({ uid: item.userId, name: item.userName, avatar: item.userAvatar })}>
                             <Text style={styles.username}>{item.userName}</Text>
                         </TouchableOpacity>
-                        {!item.isMatched && (
-                            <View style={styles.followBadge}>
-                                <Text style={styles.followText}>• Volgen</Text>
-                            </View>
-                        )}
                     </View>
 
                     <TouchableOpacity onPress={() => setDescriptionVisible(!descriptionVisible)}>
@@ -282,7 +284,7 @@ const styles = StyleSheet.create({
         left: 0,
         zIndex: 100,
         paddingLeft: 20,
-        paddingTop: 10,
+        paddingTop: 30,
     },
     backButtonOverlay: {
         width: 40,
@@ -339,6 +341,19 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 12,
         fontWeight: '600',
+    },
+    addIconContainer: {
+        position: 'absolute',
+        bottom: -4,
+        right: 4,
+        backgroundColor: '#7c3aed',
+        borderRadius: 10,
+        width: 20,
+        height: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1.5,
+        borderColor: '#fff',
     },
     title: {
         color: 'white',

@@ -59,23 +59,27 @@ export default function HomePage({ onViewProfile }: HomePageProps) {
 
   const renderHeader = () => (
     <View style={styles.headerContainer}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Buurt Feed</Text>
-        <Text style={styles.subtitle}>
-          Deel je vragen, successen en materialen met je buurt
-        </Text>
+      <View style={styles.headerTop}>
+        <View>
+          <Text style={styles.title}>Buurt Feed</Text>
+          <Text style={styles.subtitle}>Jouw wijk in beeld</Text>
+        </View>
+
       </View>
 
       <TouchableOpacity
-        style={styles.newPostButton}
+        style={styles.composeTrigger}
         onPress={() => setIsModalVisible(true)}
+        activeOpacity={0.9}
       >
-        <Ionicons name="add" size={24} color={authColors.text} style={styles.icon} />
-        <Text style={styles.buttonText}>Nieuw Bericht Plaatsen</Text>
+        <View style={styles.composeIconCircle}>
+          <Ionicons name="create-outline" size={20} color={authColors.accent} />
+        </View>
+        <Text style={styles.composePlaceholder} numberOfLines={1} ellipsizeMode="tail">Deel een vraag, succes of materiaal...</Text>
       </TouchableOpacity>
 
       <View style={styles.tabsContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 4 }}>
           {tabs.map((tab) => (
             <TouchableOpacity
               key={tab}
@@ -162,63 +166,77 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   listContent: {
-    padding: 24,
+    padding: 16,
     paddingTop: 0,
   },
   headerContainer: {
-    marginBottom: 24,
-    paddingTop: 40,
+    marginBottom: 20,
+    paddingTop: 20,
+    paddingHorizontal: 8,
   },
-  header: {
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 24,
+    paddingHorizontal: 8,
+  },
+  headerAddButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: '800',
     color: authColors.text,
-    marginBottom: 8,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: authColors.muted,
-    lineHeight: 22,
+    fontWeight: '500',
   },
-  newPostButton: {
+  composeTrigger: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: authColors.card,
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.1)',
+  },
+  composeIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(124, 58, 237, 0.1)',
     justifyContent: 'center',
-    backgroundColor: authColors.accent,
-    paddingVertical: 16,
-    borderRadius: 20,
-    shadowColor: authColors.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    alignItems: 'center',
+    marginRight: 12,
   },
-  icon: {
-    marginRight: 8,
-  },
-  buttonText: {
-    color: authColors.text,
-    fontSize: 16,
-    fontWeight: '600',
+  composePlaceholder: {
+    flex: 1,
+    color: authColors.muted,
+    fontSize: 15,
+    fontWeight: '500',
   },
   tabsContainer: {
-    marginTop: 24,
+    marginTop: 16,
   },
   tab: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: authColors.card,
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(148, 163, 184, 0.25)',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    marginRight: 8,
   },
   activeTab: {
     backgroundColor: authColors.accent,
-    borderColor: authColors.accent,
   },
   tabText: {
     color: authColors.muted,
@@ -226,14 +244,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   activeTabText: {
-    color: authColors.text,
+    color: '#fff',
   },
   emptyContainer: {
     alignItems: 'center',
-    marginTop: 40,
+    marginTop: 60,
+    opacity: 0.7,
   },
   emptyText: {
     color: authColors.muted,
     fontSize: 16,
+    fontStyle: 'italic',
   },
 });
