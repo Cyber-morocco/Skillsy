@@ -396,6 +396,19 @@ export const useExploreMap = () => {
     }
   };
 
+  // Reset map to user/profile location when address search is cleared
+  useEffect(() => {
+    if (searchType === 'address' && searchQuery === '') {
+      if (locationPermissionGranted) {
+        // If GPS is allowed, use it (centerToUserLocation handles fetching)
+        centerToUserLocation();
+      } else {
+        // Fallback to profile location without triggering permission alert
+        setUserLocation(profileLocationRef.current);
+      }
+    }
+  }, [searchQuery, searchType, locationPermissionGranted]);
+
   return {
     CATEGORY_OPTIONS,
     DISTANCE_OPTIONS,
