@@ -173,7 +173,7 @@ Als de app geen skills herkent, controleer dan of uw telefoon en computer op het
 | Project Team | Met begeleiding van |
 | :--- | :--- |
 | **Yassine Eddouks** | **Robin Bervoets** |
-| **Iliés Mazouz** | **Ruben Dejonckheere** |
+| **Iliès Mazouz** | **Ruben Dejonckheere** |
 | **Safwane El Masaoudi** | **Steve Weemaels** |
 | **Imad Ben Ali Idrissi** | |
 | **Adam Yousfi** | |
