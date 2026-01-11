@@ -17,6 +17,7 @@ interface ExploreSearchBarProps {
   filtersActive: boolean;
   onSearchBarFocus?: () => void;
   onSearchBarBlur?: () => void;
+  onVideoFeed?: () => void;
 }
 
 const getPlaceholder = (searchType: SearchType): string => {
@@ -35,6 +36,7 @@ export const ExploreSearchBar: React.FC<ExploreSearchBarProps> = ({
   filtersActive,
   onSearchBarFocus,
   onSearchBarBlur,
+  onVideoFeed,
 }) => {
   return (
     <View style={styles.header}>
@@ -65,6 +67,13 @@ export const ExploreSearchBar: React.FC<ExploreSearchBarProps> = ({
           />
         </TouchableOpacity>
       </View>
+
+      {/* Video Feed Button */}
+      {onVideoFeed && (
+        <TouchableOpacity onPress={onVideoFeed} style={styles.videoFeedButton}>
+          <Ionicons name="play-circle" size={28} color="#7c3aed" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };

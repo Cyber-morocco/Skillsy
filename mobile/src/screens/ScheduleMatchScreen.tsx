@@ -103,7 +103,7 @@ export default function ScheduleMatchScreen({
                         ? skills.find(s => s.subject === initialData.tutorSkillName) || skills[0]
                         : skills[0];
                     setSelectedSkill(initialTutorSkill);
-                    setProposedPrice(initialTutorSkill.price || '25');
+                    setProposedPrice(initialTutorSkill.price || '10');
                 }
                 if (studentSkills.length > 0) {
                     const initialSkill = initialData?.swapSkillName
@@ -192,13 +192,44 @@ export default function ScheduleMatchScreen({
                 const dateKey = date.toISOString().split('T')[0];
 
                 const getSlotsForUser = (user: any) => {
-                    if (user.mode === 'specific') {
-                        const specific = user.specific.find((s: any) => s.date.toISOString().split('T')[0] === dateKey);
-                        return specific ? [{ start: specific.start, end: specific.end }] : [];
-                    } else {
-                        const weekly = user.weekly.find((w: any) => w.name === dayName);
-                        return weekly && weekly.enabled ? [{ start: weekly.start, end: weekly.end }] : [];
+                    // NEW LOGIC: Specific dates OVERRIDE weekly for that specific day
+                    // If a specific date exists for this day, use it (even if it means no availability)
+                    // If no specific date, fall back to weekly
+
+                    // Helper to compare dates without timezone issues
+                    const formatLocalDate = (d: Date) => {
+                        const year = d.getFullYear();
+                        const month = String(d.getMonth() + 1).padStart(2, '0');
+                        const day = String(d.getDate()).padStart(2, '0');
+                        return `${year}-${month}-${day}`;
+                    };
+
+                    const localDateKey = formatLocalDate(date);
+
+                    const specificSlot = user.specific?.find((s: any) => {
+                        if (!s.date) return false;
+                        // Handle both Date objects and Firebase Timestamps
+                        const slotDate = s.date instanceof Date ? s.date :
+                            (s.date.toDate ? s.date.toDate() : new Date(s.date));
+                        return formatLocalDate(slotDate) === localDateKey;
+                    });
+
+                    // If there's a specific date entry for this day, it OVERRIDES weekly
+                    if (specificSlot) {
+                        // Check if marked as unavailable (start === end or unavailable flag)
+                        if (specificSlot.unavailable || specificSlot.start === specificSlot.end) {
+                            return []; // Blocked day
+                        }
+                        return [{ start: specificSlot.start, end: specificSlot.end }];
                     }
+
+                    // No specific date, use weekly
+                    const weeklySlot = user.weekly?.find((w: any) => w.name === dayName && w.enabled);
+                    if (weeklySlot) {
+                        return [{ start: weeklySlot.start, end: weeklySlot.end }];
+                    }
+
+                    return [];
                 };
 
                 const mySlots = getSlotsForUser(rawAvailability.me);

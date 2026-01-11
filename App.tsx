@@ -10,6 +10,7 @@ import ProfileScreen from './mobile/src/screens/ProfileScreen';
 import ExploreProfileScreen from './mobile/src/screens/ExploreProfileScreen';
 import Availability from './mobile/src/screens/Availability';
 import AvailabilitySpecificDates from './mobile/src/screens/Availability_SpecificDates';
+import VideoFeedScreen from './mobile/src/screens/VideoFeedScreen';
 import PrePagina from './mobile/src/screens/PrePagina';
 import BottomNavBar from './mobile/src/components/BottomNavBar';
 import ChatStackNavigator from './mobile/src/navigation/ChatStack';
@@ -19,7 +20,7 @@ import { subscribeToMatchRequests, sendMatchRequest, respondToMatchRequest, subs
 import { Ionicons } from '@expo/vector-icons';
 import { UserProfile, Talent, Review, MatchRequest, Conversation } from './mobile/src/types';
 
-type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability' | 'exploreProfile' | 'availabilitySpecificDates';
+type NavName = 'home' | 'explore' | 'appointments' | 'messages' | 'profile' | 'availability' | 'exploreProfile' | 'availabilitySpecificDates' | 'videoFeed';
 
 export default function App() {
   const [activeScreen, setActiveScreen] = useState<NavName>('home');
@@ -210,7 +211,9 @@ export default function App() {
       case 'home':
         return <HomePage onViewProfile={handleViewProfile} />;
       case 'explore':
-        return <ExploreMapScreen onViewProfile={handleViewProfile} />;
+        return <ExploreMapScreen onViewProfile={handleViewProfile} onVideoFeed={() => setActiveScreen('videoFeed')} />;
+      case 'videoFeed':
+        return <VideoFeedScreen onBack={() => setActiveScreen('explore')} onViewProfile={handleViewProfile} />;
       case 'appointments':
         return <AppointmentStackNavigator />;
       case 'messages':

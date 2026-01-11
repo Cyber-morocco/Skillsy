@@ -15,6 +15,7 @@ interface FeedItemProps {
     onLike?: () => void;
     onComment?: () => void;
     onImagePress?: () => void;
+    onContentPress?: () => void;
 }
 
 const getTypeColor = (type: PostType) => {
@@ -36,7 +37,7 @@ const formatDate = (timestamp: any) => {
     return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 };
 
-const FeedItem: React.FC<FeedItemProps> = ({ post, onUserPress, onLike, onComment, onImagePress }) => {
+const FeedItem: React.FC<FeedItemProps> = ({ post, onUserPress, onLike, onComment, onImagePress, onContentPress }) => {
     const isLiked = post.likes?.includes(auth.currentUser?.uid || '');
 
     return (
@@ -61,7 +62,9 @@ const FeedItem: React.FC<FeedItemProps> = ({ post, onUserPress, onLike, onCommen
                 </View>
             </View>
 
-            <Text style={styles.content}>{post.content}</Text>
+            <TouchableOpacity activeOpacity={0.8} onPress={onContentPress}>
+                <Text style={styles.content}>{post.content}</Text>
+            </TouchableOpacity>
 
             {post.imageURL && (
                 <TouchableOpacity activeOpacity={0.9} onPress={onImagePress}>

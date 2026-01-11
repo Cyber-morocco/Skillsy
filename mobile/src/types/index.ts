@@ -93,6 +93,7 @@ export interface Talent {
     averageRating?: number;
     reviewCount?: number;
     rootCategoryIds?: string[];
+    learnSkillSubjects?: string[];
     isActive: boolean;
 }
 

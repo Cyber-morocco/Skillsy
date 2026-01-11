@@ -228,7 +228,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      alert('Sorry, we hebben toestemming nodig om de camera te gebruiken! Geef toestemming in de instellingen van jouw telefoon.');
+      Alert.alert('Fout', 'Sorry, we hebben toestemming nodig om de camera te gebruiken! Geef toestemming in de instellingen van jouw telefoon.');
       return;
     }
 
@@ -977,120 +977,128 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
               <View style={styles.modalContent}>
                 <Text style={styles.modalTitle}>Profiel Bewerken</Text>
 
-
-                <Text style={styles.inputLabel}>Gebruikersnaam</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Gebruikersnaam..."
-                  value={tempName}
-                  onChangeText={setTempName}
-                />
-
-                <Text style={styles.inputLabel}>Adres of Straat</Text>
-                <View style={{ zIndex: 1000 }}>
+                <ScrollView
+                  style={{ maxHeight: '80%' }}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <Text style={styles.inputLabel}>Gebruikersnaam</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="Typ je adres..."
-                    value={tempStreet}
-                    onChangeText={searchAddress}
-                    onFocus={() => addressSuggestions.length > 0 && setShowAddressSuggestions(true)}
+                    placeholder="Gebruikersnaam..."
+                    value={tempName}
+                    onChangeText={setTempName}
                   />
-                  {showAddressSuggestions && (
-                    <ScrollView
-                      style={[styles.autocompleteDropdown, { maxHeight: 150 }]}
-                      nestedScrollEnabled={true}
-                      keyboardShouldPersistTaps="handled"
-                    >
-                      {addressSuggestions.map((item, index) => {
-                        const { properties } = item;
-                        const mainText = properties.street
-                          ? `${properties.street}${properties.housenumber ? ' ' + properties.housenumber : ''}`
-                          : properties.name;
-                        const subText = `${properties.postcode || ''} ${properties.city || ''} ${properties.country || ''}`.trim();
 
-                        return (
-                          <TouchableOpacity
-                            key={index}
-                            style={styles.suggestionItem}
-                            onPress={() => selectAddressSuggestion(item)}
-                          >
-                            <Text style={styles.suggestionText}>{mainText}</Text>
-                            {subText ? (
-                              <Text style={styles.suggestionSubtext}>{subText}</Text>
-                            ) : null}
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </ScrollView>
-                  )}
-                </View>
+                  <Text style={{ color: authColors.muted, fontSize: 13, marginBottom: 16, marginTop: 8 }}>
+                    Enkel de stad zal gedeeld worden met andere gebruikers.
+                  </Text>
 
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <View style={{ flex: 0.48 }}>
-                    <Text style={styles.inputLabel}>Postcode</Text>
+                  <Text style={styles.inputLabel}>Adres of Straat</Text>
+                  <View style={{ zIndex: 1000 }}>
                     <TextInput
                       style={styles.input}
-                      placeholder="Bijv. 1030"
-                      value={tempZipCode}
-                      onChangeText={setTempZipCode}
+                      placeholder="Typ je adres..."
+                      value={tempStreet}
+                      onChangeText={searchAddress}
+                      onFocus={() => addressSuggestions.length > 0 && setShowAddressSuggestions(true)}
                     />
-                  </View>
-                  <View style={{ flex: 0.48 }}>
-                    <Text style={styles.inputLabel}>Stad</Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Bijv. Brussel"
-                      value={tempCity}
-                      onChangeText={setTempCity}
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.labelContainer}>
-                  <Text style={styles.inputLabel}>Over mij</Text>
-                  <Text style={styles.charCount}>{tempAbout?.length || 0}/175</Text>
-                </View>
-                <TextInput
-                  style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-                  placeholder="Vertel iets over jezelf..."
-                  value={tempAbout}
-                  onChangeText={setTempAbout}
-                  multiline={true}
-                  numberOfLines={4}
-                  maxLength={175}
-                />
-
-                <Text style={styles.inputLabel}>Profielfoto</Text>
-                <View style={styles.imageEditContainer}>
-                  <View style={styles.tempImageContainer}>
-                    {tempImage ? (
-                      <Image source={{ uri: tempImage as string }} style={styles.tempImage} />
-                    ) : (
-                      <View style={styles.profileImagePlaceholder}>
-                        <Ionicons name="person" size={40} color="#ccc" />
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.imageButtons}>
-                    <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
-                      <Ionicons name="image-outline" size={20} color={authColors.text} />
-                      <Text style={styles.imagePickerButtonText}>Galerij</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.imagePickerButton} onPress={takePhoto}>
-                      <Ionicons name="camera-outline" size={20} color={authColors.text} />
-                      <Text style={styles.imagePickerButtonText}>Camera</Text>
-                    </TouchableOpacity>
-                    {(tempImage || userProfile?.photoURL) && (
-                      <TouchableOpacity
-                        style={[styles.imagePickerButton, { borderColor: '#ff4444' }]}
-                        onPress={() => setTempImage(null)}
+                    {showAddressSuggestions && (
+                      <ScrollView
+                        style={[styles.autocompleteDropdown, { maxHeight: 150 }]}
+                        nestedScrollEnabled={true}
+                        keyboardShouldPersistTaps="handled"
                       >
-                        <Ionicons name="trash-outline" size={20} color="#ff4444" />
-                        <Text style={[styles.imagePickerButtonText, { color: '#ff4444' }]}>Verwijder</Text>
-                      </TouchableOpacity>
+                        {addressSuggestions.map((item, index) => {
+                          const { properties } = item;
+                          const mainText = properties.street
+                            ? `${properties.street}${properties.housenumber ? ' ' + properties.housenumber : ''}`
+                            : properties.name;
+                          const subText = `${properties.postcode || ''} ${properties.city || ''} ${properties.country || ''}`.trim();
+
+                          return (
+                            <TouchableOpacity
+                              key={index}
+                              style={styles.suggestionItem}
+                              onPress={() => selectAddressSuggestion(item)}
+                            >
+                              <Text style={styles.suggestionText}>{mainText}</Text>
+                              {subText ? (
+                                <Text style={styles.suggestionSubtext}>{subText}</Text>
+                              ) : null}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </ScrollView>
                     )}
                   </View>
-                </View>
+
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <View style={{ flex: 0.48 }}>
+                      <Text style={styles.inputLabel}>Postcode</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Bijv. 1030"
+                        value={tempZipCode}
+                        onChangeText={setTempZipCode}
+                      />
+                    </View>
+                    <View style={{ flex: 0.48 }}>
+                      <Text style={styles.inputLabel}>Stad</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Bijv. Brussel"
+                        value={tempCity}
+                        onChangeText={setTempCity}
+                      />
+                    </View>
+                  </View>
+
+                  <View style={styles.labelContainer}>
+                    <Text style={styles.inputLabel}>Over mij</Text>
+                    <Text style={styles.charCount}>{tempAbout?.length || 0}/175</Text>
+                  </View>
+                  <TextInput
+                    style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+                    placeholder="Vertel iets over jezelf..."
+                    value={tempAbout}
+                    onChangeText={setTempAbout}
+                    multiline={true}
+                    numberOfLines={4}
+                    maxLength={175}
+                  />
+
+                  <Text style={styles.inputLabel}>Profielfoto</Text>
+                  <View style={styles.imageEditContainer}>
+                    <View style={styles.tempImageContainer}>
+                      {tempImage ? (
+                        <Image source={{ uri: tempImage as string }} style={styles.tempImage} />
+                      ) : (
+                        <View style={styles.profileImagePlaceholder}>
+                          <Ionicons name="person" size={40} color="#ccc" />
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.imageButtons}>
+                      <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
+                        <Ionicons name="image-outline" size={20} color={authColors.text} />
+                        <Text style={styles.imagePickerButtonText}>Galerij</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.imagePickerButton} onPress={takePhoto}>
+                        <Ionicons name="camera-outline" size={20} color={authColors.text} />
+                        <Text style={styles.imagePickerButtonText}>Camera</Text>
+                      </TouchableOpacity>
+                      {(tempImage || userProfile?.photoURL) && (
+                        <TouchableOpacity
+                          style={[styles.imagePickerButton, { borderColor: '#ff4444' }]}
+                          onPress={() => setTempImage(null)}
+                        >
+                          <Ionicons name="trash-outline" size={20} color="#ff4444" />
+                          <Text style={[styles.imagePickerButtonText, { color: '#ff4444' }]}>Verwijder</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                </ScrollView>
 
                 <View style={styles.modalButtons}>
                   <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.cancelButton}>

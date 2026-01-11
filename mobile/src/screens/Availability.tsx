@@ -139,7 +139,7 @@ const Availability: React.FC<AvailabilityProps> = ({ onNavigate }) => {
     setSaving(true);
     try {
       await saveAvailability(days);
-      Alert.alert('Succes', 'Beschikbaarheid opgeslagen. Je modus staat nu op Wekelijks.');
+      Alert.alert('Succes', 'Wekelijkse beschikbaarheid opgeslagen.');
     } catch (error) {
       console.error('Error saving availability:', error);
       Alert.alert('Fout', 'Kon beschikbaarheid niet opslaan');

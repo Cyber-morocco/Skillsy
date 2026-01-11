@@ -12,9 +12,10 @@ import { Avatar } from '../components/Avatar';
 
 interface ExploreMapScreenProps {
   onViewProfile?: (user: any) => void;
+  onVideoFeed?: () => void;
 }
 
-export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProps) {
+export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: ExploreMapScreenProps) {
   const {
     CATEGORY_OPTIONS,
     DISTANCE_OPTIONS,
@@ -39,6 +40,7 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
     toggleSearchType,
     userLocation,
     userLearnSkills,
+    userSkills,
     viewMode,
     profileReady,
   } = useExploreMap();
@@ -152,6 +154,7 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
         filtersActive={filtersActive}
         onSearchBarFocus={() => setSearchBarFocused(true)}
         onSearchBarBlur={() => setSearchBarFocused(false)}
+        onVideoFeed={onVideoFeed}
       />
 
       {shouldRenderFilters && (
@@ -307,15 +310,49 @@ export default function ExploreMapScreen({ onViewProfile }: ExploreMapScreenProp
                     <Text style={styles.talentLocation}>📍 {talent.location.city}</Text>
                   )}
                   <View style={styles.skillsContainer}>
-                    {(talent.skillsWithPrices || []).slice(0, 2).map((skill, index) => {
-                      const isMatch = userLearnSkills.some(ls => ls.subject.toLowerCase() === skill.subject.toLowerCase());
-                      return (
-                        <View key={index} style={[styles.skillBadge, isMatch && styles.skillBadgeMatch]}>
-                          {isMatch && <Text style={styles.matchIndicator}>✓</Text>}
-                          <Text style={styles.skillText}>{skill.subject}</Text>
-                        </View>
-                      );
-                    })}
+                    {(() => {
+                      const allSkills = talent.skillsWithPrices || [];
+                      // Sort skills: green matches first, then orange, then others
+                      const sortedSkills = [...allSkills].sort((a, b) => {
+                        const aLower = a.subject.toLowerCase();
+                        const bLower = b.subject.toLowerCase();
+
+                        const aIsGreen = userLearnSkills.some(ls => ls.subject.toLowerCase() === aLower);
+                        const bIsGreen = userLearnSkills.some(ls => ls.subject.toLowerCase() === bLower);
+
+                        const aIsOrange = !aIsGreen &&
+                          (talent.learnSkillSubjects || []).includes(aLower) &&
+                          userSkills.some(s => s.subject.toLowerCase() === aLower);
+                        const bIsOrange = !bIsGreen &&
+                          (talent.learnSkillSubjects || []).includes(bLower) &&
+                          userSkills.some(s => s.subject.toLowerCase() === bLower);
+
+                        // Priority: Green (2) > Orange (1) > Normal (0)
+                        const aPriority = aIsGreen ? 2 : aIsOrange ? 1 : 0;
+                        const bPriority = bIsGreen ? 2 : bIsOrange ? 1 : 0;
+
+                        return bPriority - aPriority;
+                      });
+
+                      return sortedSkills.slice(0, 2).map((skill, index) => {
+                        const skillLower = skill.subject.toLowerCase();
+                        const isMatch = userLearnSkills.some(ls => ls.subject.toLowerCase() === skillLower);
+                        const isReverseMatch = !isMatch &&
+                          (talent.learnSkillSubjects || []).includes(skillLower) &&
+                          userSkills.some(s => s.subject.toLowerCase() === skillLower);
+                        return (
+                          <View key={index} style={[
+                            styles.skillBadge,
+                            isMatch && styles.skillBadgeMatch,
+                            isReverseMatch && styles.skillBadgeReverseMatch
+                          ]}>
+                            {isMatch && <Text style={styles.matchIndicator}>✓</Text>}
+                            {isReverseMatch && <Text style={styles.matchIndicator}>↔</Text>}
+                            <Text style={styles.skillText}>{skill.subject}</Text>
+                          </View>
+                        );
+                      });
+                    })()}
                     {(talent.skillsWithPrices || []).length > 2 ? (
                       <View style={styles.moreSkillsBadge}>
                         <Text style={styles.moreSkillsText}>+{(talent.skillsWithPrices || []).length - 2} meer</Text>

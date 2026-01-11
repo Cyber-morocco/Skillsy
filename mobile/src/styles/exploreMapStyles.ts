@@ -277,6 +277,11 @@ export const exploreMapStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#059669',
   },
+  skillBadgeReverseMatch: {
+    backgroundColor: '#f59e0b',
+    borderWidth: 1,
+    borderColor: '#d97706',
+  },
   matchIndicator: {
     fontSize: 14,
     fontWeight: 'bold',
@@ -346,5 +351,15 @@ export const exploreMapStyles = StyleSheet.create({
   resultsSubtext: {
     fontSize: 12,
     color: '#94A3B8',
+  },
+  videoFeedButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#101936',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: 'rgba(148, 163, 184, 0.25)',
   },
 });

@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { Alert, Linking, Platform } from 'react-native';
-import { Location, GeocodingResult, Talent, LearnSkill } from '../../types';
-import { subscribeToTalents, subscribeToOtherUserSkills, subscribeToOtherUserReviews, subscribeToLearnSkills, subscribeToUserProfile } from '../../services/userService';
+import { Location, GeocodingResult, Talent, LearnSkill, Skill } from '../../types';
+import { subscribeToTalents, subscribeToOtherUserSkills, subscribeToOtherUserReviews, subscribeToLearnSkills, subscribeToUserProfile, subscribeToSkills, subscribeToOtherUserLearnSkills } from '../../services/userService';
 import { CATEGORY_OPTIONS, DISTANCE_OPTIONS } from '../../constants/exploreMap';
 import { auth } from '../../config/firebase';
 import { calculateDistance } from './distance';
@@ -78,6 +78,7 @@ export const useExploreMap = () => {
   const [focusTalent, setFocusTalent] = useState<{ id: string; lat: number; lng: number } | null>(null);
   const [locationPermissionGranted, setLocationPermissionGranted] = useState(false);
   const [userLearnSkills, setUserLearnSkills] = useState<LearnSkill[]>([]);
+  const [userSkills, setUserSkills] = useState<Skill[]>([]);
   const [profileReady, setProfileReady] = useState(false);
 
   // Default center on signup address; keep latest profile location in ref
@@ -156,6 +157,17 @@ export const useExploreMap = () => {
             )
           );
         });
+
+        // Subscribe to learn skills (for reverse matching - what they want to learn)
+        subscribeToOtherUserLearnSkills(talent.userId, (learnSkills) => {
+          setAllTalents((prev) =>
+            prev.map((t) =>
+              t.id === talent.id
+                ? { ...t, learnSkillSubjects: learnSkills.map(ls => ls.subject.toLowerCase()) }
+                : t
+            )
+          );
+        });
       });
 
       setAllTalents(mappedTalents);
@@ -167,6 +179,14 @@ export const useExploreMap = () => {
   useEffect(() => {
     const unsubscribe = subscribeToLearnSkills((learnSkills) => {
       setUserLearnSkills(learnSkills);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Subscribe to current user's skills (for reverse matching - what I can teach)
+  useEffect(() => {
+    const unsubscribe = subscribeToSkills((skills) => {
+      setUserSkills(skills);
     });
     return () => unsubscribe();
   }, []);
@@ -388,6 +408,7 @@ export const useExploreMap = () => {
     toggleSearchType,
     userLocation,
     userLearnSkills,
+    userSkills,
     viewMode,
     centerToUserLocation,
     profileReady,

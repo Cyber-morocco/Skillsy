@@ -1,8 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Alert, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { StatusBar } from 'expo-status-bar';
 
 
 import { fetchPlatformStats, PlatformStats } from '../services/statsService';
@@ -52,7 +51,7 @@ export default function PrePagina({ onLogin, onSignup }: PrePaginaProps) {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar style="light" />
+            <StatusBar barStyle="light-content" />
             <ScrollView contentContainerStyle={styles.scrollContent}>
 
                 <View style={styles.header}>
