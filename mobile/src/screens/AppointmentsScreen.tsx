@@ -131,6 +131,7 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                     onSubmitReview({
                         id: Date.now().toString(),
                         userId: recipientId,
+                        fromUserId: auth.currentUser?.uid || '',
                         fromName: auth.currentUser?.displayName || 'Gebruiker',
                         rating: averageRating,
                         createdAt: new Date(),
@@ -201,9 +202,9 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                             size={44}
                             style={styles.avatarPlaceholder}
                         />
-                        <View>
-                            <Text style={styles.subjectText}>{item.title}</Text>
-                            <Text style={styles.personNameText}>Afspraak met {otherName}</Text>
+                        <View style={{ flex: 1, marginRight: 8 }}>
+                            <Text style={styles.subjectText} numberOfLines={1}>{item.title}</Text>
+                            <Text style={styles.personNameText} numberOfLines={1}>Afspraak met {otherName}</Text>
                         </View>
                     </View>
                     <View style={[
@@ -327,6 +328,16 @@ export default function AppointmentsScreen({ onViewProfile, onSubmitReview, revi
                                         if (navigation) {
                                             navigation.navigate('AppointmentDetail', { appointment: item });
                                         } else {
+                                            // Safety check for fallback completion
+                                            if (item.dateKey && item.endTimeMinutes) {
+                                                const [year, month, day] = item.dateKey.split('-').map(Number);
+                                                const appointmentEnd = new Date(year, month - 1, day);
+                                                appointmentEnd.setMinutes(item.endTimeMinutes);
+                                                if (new Date() < appointmentEnd) {
+                                                    Alert.alert('Te vroeg', 'Je kunt de afspraak pas afronden nadat deze is afgelopen.');
+                                                    return;
+                                                }
+                                            }
                                             handleUpdateAppointmentStatus(item.id, 'completed');
                                         }
                                     }}
@@ -583,6 +594,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         flex: 1,
+        marginRight: 8,
     },
     avatarPlaceholder: {
         width: 44,

@@ -237,7 +237,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      alert('Sorry, we hebben toestemming nodig om de camera te gebruiken! Geef toestemming in de instellingen van jouw telefoon.');
+      Alert.alert('Fout', 'Sorry, we hebben toestemming nodig om de camera te gebruiken! Geef toestemming in de instellingen van jouw telefoon.');
       return;
     }
 
@@ -989,7 +989,10 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 <ScrollView showsVerticalScrollIndicator={false}>
                   <Text style={styles.modalTitle}>Profiel Bewerken</Text>
 
-                  {/* Content wrapped in ScrollView */}
+                <ScrollView
+                  style={{ maxHeight: '80%' }}
+                  showsVerticalScrollIndicator={false}
+                >
                   <Text style={styles.inputLabel}>Gebruikersnaam</Text>
                   <TextInput
                     style={styles.input}
@@ -997,6 +1000,10 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                     value={tempName}
                     onChangeText={setTempName}
                   />
+
+                  <Text style={{ color: authColors.muted, fontSize: 13, marginBottom: 16, marginTop: 8 }}>
+                    Enkel de stad zal gedeeld worden met andere gebruikers.
+                  </Text>
 
                   <Text style={styles.inputLabel}>Adres of Straat</Text>
                   <View style={{ zIndex: 1000 }}>
@@ -1103,6 +1110,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                       )}
                     </View>
                   </View>
+                </ScrollView>
 
                   <View style={styles.modalButtons}>
                     <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.cancelButton}>

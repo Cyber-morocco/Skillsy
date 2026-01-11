@@ -37,6 +37,7 @@ type SpecificDate = {
   date: Date;
   start: string;
   end: string;
+  unavailable?: boolean;
 };
 
 const parseTime = (timeStr: string): Date => {
@@ -176,37 +177,56 @@ const AvailabilitySpecificDates: React.FC<Props> = ({ onNavigate }) => {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.timeRow}>
-              <TouchableOpacity
-                style={styles.timeBox}
-                onPress={() =>
-                  setTimePicker({ visible: true, index: i, field: 'start' })
-                }
-              >
-                <Text style={styles.timeLabel}>Start</Text>
-                <Text style={styles.timeValue}>{item.start}</Text>
-              </TouchableOpacity>
+            {/* Toggle for unavailable */}
+            <TouchableOpacity
+              style={[styles.unavailableToggle, (item as any).unavailable && styles.unavailableToggleActive]}
+              onPress={() => {
+                const newValue = !(item as any).unavailable;
+                handleUpdateDate(item.id, { unavailable: newValue } as any);
+                const copy = [...dates];
+                (copy[i] as any).unavailable = newValue;
+                setDates(copy);
+              }}
+            >
+              <Ionicons
+                name={(item as any).unavailable ? "close-circle" : "close-circle-outline"}
+                size={18}
+                color={(item as any).unavailable ? "#EF4444" : muted}
+              />
+              <Text style={[(item as any).unavailable ? styles.unavailableTextActive : styles.unavailableText]}>
+                Niet beschikbaar
+              </Text>
+            </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.timeBox}
-                onPress={() =>
-                  setTimePicker({ visible: true, index: i, field: 'end' })
-                }
-              >
-                <Text style={styles.timeLabel}>Einde</Text>
-                <Text style={styles.timeValue}>{item.end}</Text>
-              </TouchableOpacity>
-            </View>
+            {!(item as any).unavailable && (
+              <View style={styles.timeRow}>
+                <TouchableOpacity
+                  style={styles.timeBox}
+                  onPress={() =>
+                    setTimePicker({ visible: true, index: i, field: 'start' })
+                  }
+                >
+                  <Text style={styles.timeLabel}>Start</Text>
+                  <Text style={styles.timeValue}>{item.start}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.timeBox}
+                  onPress={() =>
+                    setTimePicker({ visible: true, index: i, field: 'end' })
+                  }
+                >
+                  <Text style={styles.timeLabel}>Einde</Text>
+                  <Text style={styles.timeValue}>{item.end}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         ))}
 
         <TouchableOpacity
           style={styles.saveButton}
-          onPress={() => {
-            Alert.alert('Modus Bijgewerkt', 'Je gebruikt nu Specifieke Datums voor je beschikbaarheid.', [
-              { text: 'OK', onPress: () => onNavigate && onNavigate('profile') }
-            ]);
-          }}
+          onPress={() => onNavigate && onNavigate('profile')}
         >
           <Text style={styles.saveButtonText}>Gereed</Text>
         </TouchableOpacity>
@@ -571,5 +591,31 @@ const styles = StyleSheet.create({
     color: muted,
     fontWeight: '600',
     fontSize: 16
+  },
+  unavailableToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    marginBottom: 12,
+    gap: 8,
+    borderRadius: 10,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.2)',
+  },
+  unavailableToggleActive: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    borderColor: '#EF4444',
+  },
+  unavailableText: {
+    color: muted,
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  unavailableTextActive: {
+    color: '#EF4444',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });

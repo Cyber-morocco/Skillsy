@@ -5,6 +5,28 @@ export const exploreMapStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#050816',
   },
+  headerWithFyp: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#050816',
+    gap: 10,
+  },
+  fypToggleButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#101936',
+    borderWidth: 1.5,
+    borderColor: 'rgba(148, 163, 184, 0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fypToggleButtonActive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderColor: '#10b981',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -65,6 +87,13 @@ export const exploreMapStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 4,
+  },
+  videoFeedButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
   },
   filterSection: {
     backgroundColor: '#050816',
