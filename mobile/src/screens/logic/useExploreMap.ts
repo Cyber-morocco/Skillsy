@@ -192,9 +192,22 @@ export const useExploreMap = () => {
     return () => unsubscribe();
   }, []);
 
-  // Apply fuzzy location to talents for GDPR privacy
+  // Apply fuzzy location to ALL talents first (GDPR)
+  // This ensures map and list use consistent locations
+  const fuzzyTalents = useMemo(() => {
+    return allTalents.map(talent => {
+      const fuzzy = fuzzyLocation(talent.lat, talent.lng, talent.id);
+      return {
+        ...talent,
+        lat: fuzzy.lat,
+        lng: fuzzy.lng
+      };
+    });
+  }, [allTalents]);
+
+  // Filter talents for LIST VIEW (respects all filters including distance)
   const filteredTalents = useMemo(() => {
-    const filtered = filterTalents(allTalents, {
+    const filtered = filterTalents(fuzzyTalents, {
       selectedDistance,
       selectedCategories,
       skillSearch,
@@ -212,21 +225,15 @@ export const useExploreMap = () => {
       return aHasMatch === bHasMatch ? 0 : aHasMatch ? -1 : 1;
     });
 
-    // Apply fuzzy locations for map display (GDPR)
-    return sorted.map(talent => {
-      const fuzzy = fuzzyLocation(talent.lat, talent.lng, talent.id);
-      return {
-        ...talent,
-        lat: fuzzy.lat,
-        lng: fuzzy.lng
-      };
-    });
-  }, [allTalents, selectedDistance, selectedCategories, skillSearch, userLocation, userLearnSkills]);
+    return sorted;
+  }, [fuzzyTalents, selectedDistance, selectedCategories, skillSearch, userLocation, userLearnSkills]);
 
-  // Calculate clusters for privacy-safe map display
+  // Calculate clusters for MAP VIEW (ignores filters except implicit 30km limit in calculateClusters)
+  // Prompt: "Skill/category filters: ... only affect the list view, not the map"
+  // Prompt: "Distance filter: ... only hide overlapping clusters" (handled in mapHtml)
   const mapClusters = useMemo(() => {
-    return calculateClusters(filteredTalents, userLocation);
-  }, [filteredTalents, userLocation]);
+    return calculateClusters(fuzzyTalents, userLocation);
+  }, [fuzzyTalents, userLocation]);
 
   // Center map on user's actual GPS location
   const centerToUserLocation = async () => {

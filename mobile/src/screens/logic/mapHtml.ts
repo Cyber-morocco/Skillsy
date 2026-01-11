@@ -142,30 +142,16 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents, clusters, filter
               if (!mapClusters || mapClusters.length === 0) return;
 
               mapClusters.forEach(cluster => {
-                 // Privacy Logic: Hide if overlapping with distance filter
-                 // Requirement: "Any cluster whose circle overlaps or touches the filter circle must be hidden"
-                 // Overlap = Distance(Center, ClusterCenter) < (FilterRadius + ClusterRadius)
+                 // Privacy Logic: Hide if overlapping with distance filter OR fully inside
+                 // User Requirement 1: "Any cluster whose circle overlaps or touches the filter circle must be hidden"
+                 // User Requirement 2: "Als een cluster volledig binnen de afstandsfilter zit moet die ook verborgen zijn"
+                 // Combined: Hide if NOT fully outside.
                  if (radiusKm !== null) {
                     const distToCenter = calculateDistance(centerLat, centerLng, cluster.lat, cluster.lng);
-                    const overlapThreshold = radiusKm + cluster.radius;
-                    // If center is INSIDE or TOUCHING or OVERLAPPING, we hide?
-                    // Actually, usually "Distance Filter" implies "Show only things INSIDE".
-                    // But the requirement says: "If a distance filter circle is active: Any cluster whose circle overlaps or touches the filter circle must be hidden"
-                    // Wait. "Overlaps... must be hidden".
-                    // That implies if it is NOT FULLY contained, or if it touches the boundary?
-                    // Let's re-read: "Any cluster whose circle overlaps or touches the filter circle must be hidden"
-                    // Usually filters HIDE things OUTSIDE.
-                    // If I am filtering for "5km", I want to see things within 5km.
-                    // If a cluster is at 4.9km with radius 0.2km, it extends to 5.1km (outside).
-                    // Does "hidden" mean "hidden because it's invalid"? Yes.
-                    // So we only show clusters that are FULLY INSIDE the filter circle?
-                    // Or do we strictly hide it if it touches the BOUNDARY?
-                    // "Overlaps or touches the filter circle". The filter circle IS the boundary.
-                    // Interpretation: The cluster must be strictly contained within the filter radius.
-                    // Condition for strict containment: dist + clusterRadius <= filterRadius.
-                    // If dist + clusterRadius > filterRadius, it touches or overlaps the boundary or is outside. -> HIDE.
+                    const innerDist = distToCenter - cluster.radius;
                     
-                    if ((distToCenter + cluster.radius) > radiusKm) {
+                    // If inner edge is within the radius, it is either Inside or Overlapping/Touching. -> HIDE
+                    if (innerDist <= radiusKm) {
                        return;
                     }
                  }

@@ -501,22 +501,58 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
                   </TouchableOpacity>
                 </View>
                 <ScrollView showsVerticalScrollIndicator={false}>
-                  {clusterTalents.map((t, idx) => (
-                    <TouchableOpacity
-                      key={idx}
-                      style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(148, 163, 184, 0.1)' }}
-                      onPress={() => {
-                        setClusterModalVisible(false);
-                        if (t.id) handleTalentPress(t.id);
-                      }}
-                    >
-                      <Avatar uri={t.avatar} name={t.name} size={50} style={{ marginRight: 15 }} />
-                      <View>
-                        <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>{t.name}</Text>
-                        <Text style={{ color: '#7c3aed', fontSize: 12 }}>Bekijk profiel</Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
+                  {clusterTalents.map((t, idx) => {
+                    const talent = t as Talent;
+
+                    // Logic from List View (reused)
+                    const userWantMatches = (talent.skillsWithPrices || []).filter(skill =>
+                      userLearnSkills.some(ls => ls.subject.toLowerCase() === skill.subject.toLowerCase())
+                    );
+                    const theyWantMatches = (talent.learnSkillSubjects || []).filter(subject =>
+                      userSkills.some(s => s.subject.toLowerCase() === subject.toLowerCase())
+                    );
+
+                    const uniqueUserWant = uniqByNormalized(userWantMatches.map(s => s.subject));
+                    const uniqueTheyWant = uniqByNormalized(theyWantMatches);
+
+                    return (
+                      <TouchableOpacity
+                        key={idx}
+                        style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(148, 163, 184, 0.1)' }}
+                        onPress={() => {
+                          setClusterModalVisible(false);
+                          if (t.id) handleTalentPress(t.id);
+                        }}
+                      >
+                        <Avatar uri={t.avatar} name={t.name} size={50} style={{ marginRight: 15 }} />
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>{t.name}</Text>
+                            <Text style={{ color: '#7c3aed', fontSize: 12 }}>Bekijk profiel</Text>
+                          </View>
+
+                          {/* Matches Display */}
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                            {uniqueUserWant.slice(0, 2).map((subject, i) => (
+                              <View key={`uw-${i}`} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(16, 185, 129, 0.2)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                <Text style={{ color: '#10b981', fontSize: 10, marginRight: 4 }}>✓</Text>
+                                <Text style={{ color: '#10b981', fontSize: 11 }}>{subject}</Text>
+                              </View>
+                            ))}
+                            {uniqueTheyWant.slice(0, 2).map((subject, i) => (
+                              <View key={`tw-${i}`} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(124, 58, 237, 0.2)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                <Text style={{ color: '#a78bfa', fontSize: 10, marginRight: 4 }}>↔</Text>
+                                <Text style={{ color: '#a78bfa', fontSize: 11 }}>{subject}</Text>
+                              </View>
+                            ))}
+                            {(uniqueUserWant.length + uniqueTheyWant.length) === 0 && (
+                              <Text style={{ color: '#94A3B8', fontSize: 12 }}>Geen directe match</Text>
+                            )}
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </ScrollView>
               </View>
             </TouchableWithoutFeedback>
