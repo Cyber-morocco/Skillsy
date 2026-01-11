@@ -5,6 +5,7 @@ import { subscribeToTalents, subscribeToOtherUserSkills, subscribeToOtherUserRev
 import { CATEGORY_OPTIONS, DISTANCE_OPTIONS } from '../../constants/exploreMap';
 import { auth } from '../../config/firebase';
 import { calculateDistance } from './distance';
+import { calculateClusters, Cluster } from './clustering';
 
 const DEFAULT_LOCATION: Location = { lat: 52.3676, lng: 4.9041 };
 
@@ -191,28 +192,10 @@ export const useExploreMap = () => {
     return () => unsubscribe();
   }, []);
 
-  // Apply fuzzy location to talents for GDPR privacy
-  const filteredTalents = useMemo(() => {
-    const filtered = filterTalents(allTalents, {
-      selectedDistance,
-      selectedCategories,
-      skillSearch,
-      userLocation,
-    });
-
-    // Sort talents: those with matching skills first
-    const sorted = filtered.sort((a, b) => {
-      const aHasMatch = (a.skillsWithPrices || []).some(skill =>
-        userLearnSkills.some(ls => ls.subject.toLowerCase() === skill.subject.toLowerCase())
-      );
-      const bHasMatch = (b.skillsWithPrices || []).some(skill =>
-        userLearnSkills.some(ls => ls.subject.toLowerCase() === skill.subject.toLowerCase())
-      );
-      return aHasMatch === bHasMatch ? 0 : aHasMatch ? -1 : 1;
-    });
-
-    // Apply fuzzy locations for map display (GDPR)
-    return sorted.map(talent => {
+  // Apply fuzzy location to ALL talents first (GDPR)
+  // This ensures map and list use consistent locations
+  const fuzzyTalents = useMemo(() => {
+    return allTalents.map(talent => {
       const fuzzy = fuzzyLocation(talent.lat, talent.lng, talent.id);
       return {
         ...talent,
@@ -220,7 +203,69 @@ export const useExploreMap = () => {
         lng: fuzzy.lng
       };
     });
-  }, [allTalents, selectedDistance, selectedCategories, skillSearch, userLocation, userLearnSkills]);
+  }, [allTalents]);
+
+  // Filter talents for LIST VIEW (respects all filters including distance)
+  const filteredTalents = useMemo(() => {
+    const filtered = filterTalents(fuzzyTalents, {
+      selectedDistance,
+      selectedCategories,
+      skillSearch,
+      userLocation,
+    });
+
+    // Sort talents: Priority: Distance > Match > Review
+    const sorted = filtered.sort((a, b) => {
+      // 1. Distance (Ascending)
+      const distA = calculateDistance(userLocation.lat, userLocation.lng, a.lat, a.lng);
+      const distB = calculateDistance(userLocation.lat, userLocation.lng, b.lat, b.lng);
+
+      // Use a small threshold (e.g. 100m) to treat distances as "equal" for secondary sorting
+      // otherwise floating point differences make secondary sorts impossible.
+      if (Math.abs(distA - distB) > 0.1) {
+        return distA - distB;
+      }
+
+      // 2. Skill Match (Any Match > No Match)
+      // Check if I want their skills
+      const aUserWant = (a.skillsWithPrices || []).some(skill =>
+        userLearnSkills.some(ls => ls.subject.toLowerCase() === skill.subject.toLowerCase())
+      );
+      const bUserWant = (b.skillsWithPrices || []).some(skill =>
+        userLearnSkills.some(ls => ls.subject.toLowerCase() === skill.subject.toLowerCase())
+      );
+
+      // Check if they want my skills (Reverse Match)
+      const aTheyWant = (a.learnSkillSubjects || []).some(subject =>
+        userSkills.some(s => s.subject.toLowerCase() === subject.toLowerCase())
+      );
+      const bTheyWant = (b.learnSkillSubjects || []).some(subject =>
+        userSkills.some(s => s.subject.toLowerCase() === subject.toLowerCase())
+      );
+
+      const aHasMatch = aUserWant || aTheyWant;
+      const bHasMatch = bUserWant || bTheyWant;
+
+      if (aHasMatch !== bHasMatch) {
+        return aHasMatch ? -1 : 1; // Match first
+      }
+
+      // 3. Review (Average Rating Descending)
+      const aRating = a.averageRating || 0;
+      const bRating = b.averageRating || 0;
+
+      return bRating - aRating;
+    });
+
+    return sorted;
+  }, [fuzzyTalents, selectedDistance, selectedCategories, skillSearch, userLocation, userLearnSkills]);
+
+  // Calculate clusters for MAP VIEW (ignores filters except implicit 30km limit in calculateClusters)
+  // Prompt: "Skill/category filters: ... only affect the list view, not the map"
+  // Prompt: "Distance filter: ... only hide overlapping clusters" (handled in mapHtml)
+  const mapClusters = useMemo(() => {
+    return calculateClusters(fuzzyTalents, userLocation);
+  }, [fuzzyTalents, userLocation]);
 
   // Center map on user's actual GPS location
   const centerToUserLocation = async () => {
@@ -383,12 +428,26 @@ export const useExploreMap = () => {
     }
   };
 
+  // Reset map to user/profile location when address search is cleared
+  useEffect(() => {
+    if (searchType === 'address' && searchQuery === '') {
+      if (locationPermissionGranted) {
+        // If GPS is allowed, use it (centerToUserLocation handles fetching)
+        centerToUserLocation();
+      } else {
+        // Fallback to profile location without triggering permission alert
+        setUserLocation(profileLocationRef.current);
+      }
+    }
+  }, [searchQuery, searchType, locationPermissionGranted]);
+
   return {
     CATEGORY_OPTIONS,
     DISTANCE_OPTIONS,
     allTalents,
     clearCategories,
     filteredTalents,
+    mapClusters,
     focusTalent,
     handleCategorySelect,
     handleDistanceSelect,
@@ -414,3 +473,4 @@ export const useExploreMap = () => {
     profileReady,
   };
 };
+

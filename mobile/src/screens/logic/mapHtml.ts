@@ -1,16 +1,19 @@
 // @ts-nocheck
 import { Location } from './types';
 import { Talent } from '../../types';
+import { Cluster } from './clustering';
 
 interface BuildMapHtmlArgs {
   userLocation: Location;
   radiusKm: number | null;
   talents: Talent[];
+  clusters: Cluster[];
   filtersActive: boolean;
 }
 
-export const buildMapHtml = ({ userLocation, radiusKm, talents, filtersActive }: BuildMapHtmlArgs): string => {
+export const buildMapHtml = ({ userLocation, radiusKm, talents, clusters, filtersActive }: BuildMapHtmlArgs): string => {
   const initialTalents = JSON.stringify(talents);
+  const initialClusters = JSON.stringify(clusters);
   const initialRadius = radiusKm !== null ? radiusKm : 'null';
   const initialFiltersActive = filtersActive ? 'true' : 'false';
 
@@ -41,6 +44,9 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents, filtersActive }:
             height: 100%; 
             border-radius: 50%;
           }
+          .cluster-marker {
+            background: transparent;
+          }
         </style>
       </head>
       <body>
@@ -52,9 +58,9 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents, filtersActive }:
             let radiusKm = ${initialRadius};
             let filtersActive = ${initialFiltersActive};
             let allTalents = ${initialTalents};
+            let mapClusters = ${initialClusters};
             
             let radiusCircle = null;
-            let talentMarkers = {};
             let clusterLayers = [];
             let userMarker = null;
             
@@ -86,6 +92,7 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents, filtersActive }:
               return R * c;
             };
 
+            // Updates the central user/count marker
             const createUserMarker = (count, showCount) => {
               if (userMarker) {
                 map.removeLayer(userMarker);
@@ -115,10 +122,10 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents, filtersActive }:
               const icon = L.divIcon({
                 html: html,
                 iconSize: [size, size],
-                className: 'talent-count-marker'
+                className: 'talent-count-marker' // Reusing class for consistency
               });
               
-              userMarker = L.marker([centerLat, centerLng], { icon: icon }).addTo(map);
+              userMarker = L.marker([centerLat, centerLng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
               
               if (isClickable) {
                 userMarker.on('click', () => {
@@ -132,71 +139,27 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents, filtersActive }:
               clusterLayers.forEach(l => map.removeLayer(l));
               clusterLayers = [];
 
-              if (!allTalents || allTalents.length === 0) return;
+              if (!mapClusters || mapClusters.length === 0) return;
 
-              // Filter talents
-              // 1. Must be within 50km
-              // 2. Must NOT be inside the active filter radius (if set)
-              const validTalents = allTalents.filter(t => {
-                  if (!t.location || !t.location.lat) return false;
-                  const dist = calculateDistance(centerLat, centerLng, t.location.lat, t.location.lng);
-                  
-                  if (dist > 50) return false;
-                  if (radiusKm !== null && dist <= radiusKm) return false;
-                  
-                  return true;
-              });
-
-              // Simple greedy clustering
-              const processed = new Set();
-              const clusters = [];
-              const CLUSTER_DIAMETER_KM = 3; // ~visual target
-              
-              for (let i = 0; i < validTalents.length; i++) {
-                if (processed.has(validTalents[i].id)) continue;
-
-                const t1 = validTalents[i];
-                const currentCluster = [t1];
-                processed.add(t1.id);
-
-                for (let j = i + 1; j < validTalents.length; j++) {
-                  if (processed.has(validTalents[j].id)) continue;
-                  const t2 = validTalents[j];
-                  const dist = calculateDistance(t1.location.lat, t1.location.lng, t2.location.lat, t2.location.lng);
-                  
-                  // Combine if close enough (using somewhat arbitrary cluster distance to form groups)
-                  if (dist <= CLUSTER_DIAMETER_KM) {
-                     currentCluster.push(t2);
-                     processed.add(t2.id);
-                  }
-                }
-
-                if (currentCluster.length >= 2) {
-                  clusters.push(currentCluster);
-                }
-              }
-
-              // Render clusters
-              clusters.forEach(cluster => {
-                 // Calculate center
-                 const latSum = cluster.reduce((sum, t) => sum + t.location.lat, 0);
-                 const lngSum = cluster.reduce((sum, t) => sum + t.location.lng, 0);
-                 const cLat = latSum / cluster.length;
-                 const cLng = lngSum / cluster.length;
-
-                 // Visual Radius check for overlap with active filter
-                 // The cluster circle radius is ~1-2km (diameter 2-4km)
-                 const visualRadiusKm = 1.5; 
-                 const distToUser = calculateDistance(centerLat, centerLng, cLat, cLng);
-
-                 // Overlap check: Distance < (UserRadius + ClusterRadius)
-                 if (radiusKm !== null && distToUser < (radiusKm + visualRadiusKm)) {
-                    return; 
+              mapClusters.forEach(cluster => {
+                 // Privacy Logic: Hide if overlapping with distance filter OR fully inside
+                 // User Requirement 1: "Any cluster whose circle overlaps or touches the filter circle must be hidden"
+                 // User Requirement 2: "Als een cluster volledig binnen de afstandsfilter zit moet die ook verborgen zijn"
+                 // Combined: Hide if NOT fully outside.
+                 if (radiusKm !== null) {
+                    const distToCenter = calculateDistance(centerLat, centerLng, cluster.lat, cluster.lng);
+                    const innerDist = distToCenter - cluster.radius;
+                    
+                    // If inner edge is within the radius, it is either Inside or Overlapping/Touching. -> HIDE
+                    if (innerDist <= radiusKm) {
+                       return;
+                    }
                  }
 
-                 // Draw Circle
-                 const circle = L.circle([cLat, cLng], {
-                    radius: visualRadiusKm * 1000,
+                 // Draw Cluster Circle
+                 // "Purple, Dashed stroke, Semi-transparent"
+                 const circle = L.circle([cluster.lat, cluster.lng], {
+                    radius: cluster.radius * 1000, // km to m
                     color: '#7c3aed',
                     fillColor: '#7c3aed',
                     fillOpacity: 0.15,
@@ -205,26 +168,32 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents, filtersActive }:
                  }).addTo(map);
                  clusterLayers.push(circle);
 
-                 // Draw Marker
-                 const size = 44;
-                 const count = cluster.length;
+                 // Draw Cluster Badge with Count
+                 const size = 40;
+                 const count = cluster.talents.length;
                  const html = '<div style="' +
                     'width: ' + size + 'px; ' +
                     'height: ' + size + 'px; ' +
                     'border-radius: 50%; ' +
-                    'background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); ' +
-                    'border: 3px solid white; ' +
+                    'background: #7c3aed; ' + // Solid purple bubble
+                    'border: 2px solid white; ' +
                     'display: flex; ' +
                     'align-items: center; ' +
                     'justify-content: center; ' +
-                    'box-shadow: 0 2px 8px rgba(124, 58, 237, 0.4); ' +
-                    'cursor: pointer; color: white; font-weight: bold; font-family: sans-serif; font-size: 16px;">' + count + '</div>';
+                    'box-shadow: 0 2px 4px rgba(0,0,0,0.2); ' +
+                    'cursor: pointer; ' +
+                    'color: white; font-weight: bold; font-family: sans-serif; font-size: 16px;">' + count + '</div>';
 
-                 const icon = L.divIcon({ html, iconSize: [size, size], className: 'cluster-marker' });
-                 const marker = L.marker([cLat, cLng], { icon }).addTo(map);
+                 const icon = L.divIcon({ 
+                    html, 
+                    iconSize: [size, size], 
+                    className: 'cluster-marker' 
+                 });
+                 
+                 const marker = L.marker([cluster.lat, cluster.lng], { icon }).addTo(map);
                  
                  marker.on('click', () => {
-                     const talentData = cluster.map(t => ({ 
+                     const talentData = cluster.talents.map(t => ({ 
                        id: t.id, 
                        name: t.name || t.displayName, 
                        avatar: t.avatar || t.photoURL 
@@ -247,8 +216,8 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents, filtersActive }:
                 radius: radiusKm * 1000,
                 color: '#7c3aed',
                 fillColor: '#7c3aed',
-                fillOpacity: 0.15,
-                weight: 2,
+                fillOpacity: 0.05, // Lighter fill for filter circle to distinguish from clusters
+                weight: 1,
                 dashArray: '5, 5'
               }).addTo(map);
             }
@@ -265,8 +234,8 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents, filtersActive }:
                   radius: radius * 1000,
                   color: '#7c3aed',
                   fillColor: '#7c3aed',
-                  fillOpacity: 0.15,
-                  weight: 2,
+                  fillOpacity: 0.05,
+                  weight: 1,
                   dashArray: '5, 5'
                 }).addTo(map);
               } else {
@@ -276,7 +245,7 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents, filtersActive }:
 
             const updateMapState = (newRadius) => {
                updateCircle(newRadius, centerLat, centerLng);
-               createUserMarker(allTalents.length, filtersActive); // Update center marker count
+               createUserMarker(allTalents.length, filtersActive); 
                updateClusters(); 
                if (newRadius) {
                  const zoom = getZoomForRadius(newRadius);
@@ -290,16 +259,18 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents, filtersActive }:
                 const data = JSON.parse(event.data);
                 
                 if (data.type === 'updateRadius') {
+                  // data.clusters might be updated too
+                  if (data.clusters) mapClusters = data.clusters;
+                  if (data.talents) allTalents = data.talents;
                   updateMapState(data.radiusKm);
                 }
                 
                 if (data.type === 'updateTalents') {
-                  if (data.talents) {
-                    allTalents = data.talents;
-                    // Also update user marker count
-                    createUserMarker(allTalents.length, filtersActive);
-                    updateClusters();
-                  }
+                  if (data.talents) allTalents = data.talents;
+                  if (data.clusters) mapClusters = data.clusters;
+                  
+                  createUserMarker(allTalents.length, filtersActive);
+                  updateClusters();
                 }
                 
                 if (data.type === 'updateFiltersActive') {
@@ -317,11 +288,6 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents, filtersActive }:
                   }
                   updateMapState(r);
                   map.setView([centerLat, centerLng], map.getZoom(), { animate: true });
-                }
-                
-                if (data.type === 'focusTalent') {
-                   // ... existing focus logic (if clusters are clickable, maybe focus logic needs adjustment?)
-                   // Leaving focus logic as is for now
                 }
               } catch (e) {
                 console.error('Error handling message:', e);

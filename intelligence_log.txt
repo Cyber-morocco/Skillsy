@@ -172,3 +172,123 @@ Discovery Category Similarities:
   - fotografie: 0.0606
   - overig: 0.1393
 Final Decision: DISCOVERY in Category 'talen'
+
+--- NEW REQUEST: 'javascript' ---
+Input Text: javascript
+Web Augmented: True
+Enriched Text: JavaScript is a programming language and core technology of the Web, alongside HTML and CSS. It was created by Brendan Eich in 1995. As of 2025, the overwhelming majority of websites uses JavaScript f...
+Calculation Details (Top 3 Candidates):
+  - [HTML & CSS] Total: 0.1549 (Sem: 0.0525, Fuz: 0.1000, Pop: 0.6400)
+  - [JavaScript / React] Total: 0.4197 (Sem: 0.0431, Fuz: 1.0000, Pop: 0.6400)
+  - [Engels bijles] Total: 0.1458 (Sem: 0.0361, Fuz: 0.2000, Pop: 0.4400)
+Discovery Category Similarities:
+  - muziek: 0.1609
+  - sport: 0.0702
+  - talen: 0.1134
+  - tech: 0.3033
+  - creatief: 0.1237
+  - academisch: 0.1314
+  - design: 0.2502
+  - koken: -0.0052
+  - business: 0.1186
+  - zorg: 0.0012
+  - ambacht: 0.1857
+  - fotografie: 0.0560
+  - overig: 0.0578
+Final Decision: DISCOVERY in Category 'tech'
+
+--- NEW REQUEST: 'wiskunde' ---
+Input Text: wiskunde
+Web Augmented: True
+Enriched Text: Wiskunde is een formele wetenschap die onder andere getallen, patronen en abstracte structuren bestudeert. De wiskunde komt voort uit het rekenen en de meetkunde, maar omvat veel meer dan dat....
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.1611 (Sem: 0.0365, Fuz: 0.2500, Pop: 0.4400)
+  - [Schilderen] Total: 0.1622 (Sem: 0.0331, Fuz: 0.3800, Pop: 0.2000)
+  - [Akoestische gitaar] Total: 0.1856 (Sem: 0.0320, Fuz: 0.3800, Pop: 0.3600)
+Discovery Category Similarities:
+  - muziek: 0.1671
+  - sport: 0.1444
+  - talen: 0.1621
+  - tech: 0.3085
+  - creatief: 0.1245
+  - academisch: 0.4637
+  - design: 0.1766
+  - koken: 0.1275
+  - business: 0.0831
+  - zorg: 0.0423
+  - ambacht: 0.1380
+  - fotografie: 0.0325
+  - overig: 0.1875
+Final Decision: DISCOVERY in Category 'academisch'
+
+--- NEW REQUEST: 'javascript' ---
+Input Text: javascript
+Web Augmented: True
+Enriched Text: JavaScript is a programming language and core technology of the Web, alongside HTML and CSS. It was created by Brendan Eich in 1995. As of 2025, the overwhelming majority of websites uses JavaScript f...
+Calculation Details (Top 3 Candidates):
+  - [HTML & CSS] Total: 0.1549 (Sem: 0.0525, Fuz: 0.1000, Pop: 0.6400)
+  - [JavaScript / React] Total: 0.4197 (Sem: 0.0431, Fuz: 1.0000, Pop: 0.6400)
+  - [Engels bijles] Total: 0.1458 (Sem: 0.0361, Fuz: 0.2000, Pop: 0.4400)
+Discovery Category Similarities:
+  - muziek: 0.1609
+  - sport: 0.0702
+  - talen: 0.1134
+  - tech: 0.3033
+  - creatief: 0.1237
+  - academisch: 0.1314
+  - design: 0.2502
+  - koken: -0.0052
+  - business: 0.1186
+  - zorg: 0.0012
+  - ambacht: 0.1857
+  - fotografie: 0.0560
+  - overig: 0.0578
+Final Decision: DISCOVERY in Category 'tech'
+
+--- NEW REQUEST: 'wiskunde' ---
+Input Text: wiskunde
+Web Augmented: True
+Enriched Text: Wiskunde is een formele wetenschap die onder andere getallen, patronen en abstracte structuren bestudeert. De wiskunde komt voort uit het rekenen en de meetkunde, maar omvat veel meer dan dat....
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.1611 (Sem: 0.0365, Fuz: 0.2500, Pop: 0.4400)
+  - [Schilderen] Total: 0.1622 (Sem: 0.0331, Fuz: 0.3800, Pop: 0.2000)
+  - [Akoestische gitaar] Total: 0.1856 (Sem: 0.0320, Fuz: 0.3800, Pop: 0.3600)
+Discovery Category Similarities:
+  - muziek: 0.1671
+  - sport: 0.1444
+  - talen: 0.1621
+  - tech: 0.3085
+  - creatief: 0.1245
+  - academisch: 0.4637
+  - design: 0.1766
+  - koken: 0.1275
+  - business: 0.0831
+  - zorg: 0.0423
+  - ambacht: 0.1380
+  - fotografie: 0.0325
+  - overig: 0.1875
+Final Decision: DISCOVERY in Category 'academisch'
+
+--- NEW REQUEST: 'wiskunde' ---
+Input Text: wiskunde
+Web Augmented: True
+Enriched Text: Wiskunde is een formele wetenschap die onder andere getallen, patronen en abstracte structuren bestudeert. De wiskunde komt voort uit het rekenen en de meetkunde, maar omvat veel meer dan dat....
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.1611 (Sem: 0.0365, Fuz: 0.2500, Pop: 0.4400)
+  - [Schilderen] Total: 0.1622 (Sem: 0.0331, Fuz: 0.3800, Pop: 0.2000)
+  - [Akoestische gitaar] Total: 0.1856 (Sem: 0.0320, Fuz: 0.3800, Pop: 0.3600)
+Discovery Category Similarities:
+  - muziek: 0.1671
+  - sport: 0.1444
+  - talen: 0.1621
+  - tech: 0.3085
+  - creatief: 0.1245
+  - academisch: 0.4637
+  - design: 0.1766
+  - koken: 0.1275
+  - business: 0.0831
+  - zorg: 0.0423
+  - ambacht: 0.1380
+  - fotografie: 0.0325
+  - overig: 0.1875
+Final Decision: DISCOVERY in Category 'academisch'

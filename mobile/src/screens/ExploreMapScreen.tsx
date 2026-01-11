@@ -10,6 +10,20 @@ import { exploreMapStyles as styles } from '../styles/exploreMapStyles';
 import { Talent } from '../types';
 import { Avatar } from '../components/Avatar';
 
+const normalizeSubject = (s: string) => s.trim().toLowerCase();
+const uniqByNormalized = (arr: string[]) => {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  arr.forEach((item) => {
+    const norm = normalizeSubject(item);
+    if (!seen.has(norm)) {
+      seen.add(norm);
+      result.push(item.trim());
+    }
+  });
+  return result;
+};
+
 interface ExploreMapScreenProps {
   onViewProfile?: (user: any) => void;
   onVideoFeed?: () => void;
@@ -42,6 +56,7 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
     userLearnSkills,
     userSkills,
     viewMode,
+    mapClusters,
     profileReady,
   } = useExploreMap();
 
@@ -74,6 +89,13 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
       setViewMode('list');
     }
   }, [searchType]);
+
+  useEffect(() => {
+    // Ensure skill search is active whenever we are in list view
+    if (viewMode === 'list' && searchType !== 'skill') {
+      setSearchType('skill');
+    }
+  }, [viewMode, searchType]);
 
   useEffect(() => {
     // Animate section tabs appearance/disappearance
@@ -192,18 +214,21 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
         </Animated.View>
       )}
 
-      {shouldRenderSections && (
+      {(shouldRenderSections || viewMode === 'list') && (
         <Animated.View
           style={[
             styles.sectionTabsContainer,
             {
-              opacity: sectionTabsAnim,
+              opacity: viewMode === 'list' ? 1 : sectionTabsAnim,
               transform: [
                 {
-                  translateY: sectionTabsAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [-20, 0],
-                  }),
+                  translateY:
+                    viewMode === 'list'
+                      ? 0
+                      : sectionTabsAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-20, 0],
+                      }),
                 },
               ],
             },
@@ -214,7 +239,11 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
               styles.sectionTab,
               searchType === 'address' && styles.sectionTabActive,
             ]}
-            onPress={() => setSearchType('address')}
+            onPress={() => {
+              // Switch to map and enable address search
+              setSearchType('address');
+              setViewMode('map');
+            }}
           >
             <MaterialCommunityIcons
               name="map-marker"
@@ -262,11 +291,15 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
               <MapViewLeaflet
                 userLocation={userLocation}
                 radiusKm={selectedDistance}
-                talents={filteredTalents}
+                talents={filteredTalents} // Keep for legacy/fallback if needed, but clusters are main
+                clusters={mapClusters}
                 filtersActive={filtersActive}
                 focusTalent={focusTalent}
                 onTalentClick={handleTalentPress}
-                onSwitchToList={() => setViewMode('list')}
+                onSwitchToList={() => {
+                  setSearchType('skill');
+                  setViewMode('list');
+                }}
                 onClusterClick={(talents) => {
                   setClusterTalents(talents);
                   setClusterModalVisible(true);
@@ -299,76 +332,142 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
                 style={styles.talentCard}
                 onPress={() => handleTalentPress(talent.id)}
               >
-                <Avatar
-                  uri={talent.avatar}
-                  name={talent.name}
-                  size={60}
-                  style={styles.talentAvatar}
-                />
-                <View style={styles.talentInfo}>
-                  <View style={styles.talentHeader}>
-                    <Text style={styles.talentName}>{talent.name}</Text>
-                    {talent.averageRating && talent.reviewCount && talent.reviewCount >= 5 ? (
-                      <View style={styles.ratingContainer}>
-                        <Text style={styles.ratingIcon}>⭐</Text>
-                        <Text style={styles.ratingText}>{talent.averageRating.toFixed(1)}</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  {talent.location?.city && (
-                    <Text style={styles.talentLocation}>📍 {talent.location.city}</Text>
-                  )}
-                  <View style={styles.skillsContainer}>
-                    {(() => {
-                      const allSkills = talent.skillsWithPrices || [];
-                      // Sort skills: green matches first, then orange, then others
-                      const sortedSkills = [...allSkills].sort((a, b) => {
-                        const aLower = a.subject.toLowerCase();
-                        const bLower = b.subject.toLowerCase();
+                {(() => {
+                  // Precompute match data per talent for reuse in badges
+                  const userWantMatches = (talent.skillsWithPrices || []).filter(skill =>
+                    userLearnSkills.some(ls => ls.subject.toLowerCase() === skill.subject.toLowerCase())
+                  );
+                  const theyWantMatches = (talent.learnSkillSubjects || []).filter(subject =>
+                    userSkills.some(s => s.subject.toLowerCase() === subject.toLowerCase())
+                  );
 
-                        const aIsGreen = userLearnSkills.some(ls => ls.subject.toLowerCase() === aLower);
-                        const bIsGreen = userLearnSkills.some(ls => ls.subject.toLowerCase() === bLower);
+                  const uniqueUserWant = uniqByNormalized(userWantMatches.map(s => s.subject));
+                  const uniqueTheyWant = uniqByNormalized(theyWantMatches);
+                  const userWantSetNorm = new Set(uniqueUserWant.map(normalizeSubject));
 
-                        const aIsOrange = !aIsGreen &&
-                          (talent.learnSkillSubjects || []).includes(aLower) &&
-                          userSkills.some(s => s.subject.toLowerCase() === aLower);
-                        const bIsOrange = !bIsGreen &&
-                          (talent.learnSkillSubjects || []).includes(bLower) &&
-                          userSkills.some(s => s.subject.toLowerCase() === bLower);
+                  const allSkills = talent.skillsWithPrices || [];
 
-                        // Priority: Green (2) > Orange (1) > Normal (0)
-                        const aPriority = aIsGreen ? 2 : aIsOrange ? 1 : 0;
-                        const bPriority = bIsGreen ? 2 : bIsOrange ? 1 : 0;
+                  // Exclude subjects already displayed as your desired skills to avoid duplicates
+                  const filteredSkills = allSkills.filter(
+                    (skill) => !userWantSetNorm.has(normalizeSubject(skill.subject))
+                  );
 
-                        return bPriority - aPriority;
-                      });
+                  const sortedSkills = [...filteredSkills].sort((a, b) => {
+                    const aLower = a.subject.toLowerCase();
+                    const bLower = b.subject.toLowerCase();
 
-                      return sortedSkills.slice(0, 2).map((skill, index) => {
-                        const skillLower = skill.subject.toLowerCase();
-                        const isMatch = userLearnSkills.some(ls => ls.subject.toLowerCase() === skillLower);
-                        const isReverseMatch = !isMatch &&
-                          (talent.learnSkillSubjects || []).includes(skillLower) &&
-                          userSkills.some(s => s.subject.toLowerCase() === skillLower);
-                        return (
-                          <View key={index} style={[
-                            styles.skillBadge,
-                            isMatch && styles.skillBadgeMatch,
-                            isReverseMatch && styles.skillBadgeReverseMatch
-                          ]}>
-                            {isMatch && <Text style={styles.matchIndicator}>✓</Text>}
-                            {isReverseMatch && <Text style={styles.matchIndicator}>↔</Text>}
-                            <Text style={styles.skillText}>{skill.subject}</Text>
+                    const aIsGreen = userLearnSkills.some(ls => ls.subject.toLowerCase() === aLower);
+                    const bIsGreen = userLearnSkills.some(ls => ls.subject.toLowerCase() === bLower);
+
+                    const aIsOrange = !aIsGreen &&
+                      (talent.learnSkillSubjects || []).includes(aLower) &&
+                      userSkills.some(s => s.subject.toLowerCase() === aLower);
+                    const bIsOrange = !bIsGreen &&
+                      (talent.learnSkillSubjects || []).includes(bLower) &&
+                      userSkills.some(s => s.subject.toLowerCase() === bLower);
+
+                    const aPriority = aIsGreen ? 2 : aIsOrange ? 1 : 0;
+                    const bPriority = bIsGreen ? 2 : bIsOrange ? 1 : 0;
+
+                    return bPriority - aPriority;
+                  });
+
+                  const hasUserWant = uniqueUserWant.length > 0;
+                  const hasTheyWant = uniqueTheyWant.length > 0;
+                  const matchLabel = hasUserWant && hasTheyWant ? 'perfect' : (hasUserWant || hasTheyWant ? 'match' : null);
+
+                  return (
+                    <>
+                      {matchLabel ? (
+                        <View style={[styles.matchPill, matchLabel === 'perfect' && styles.matchPillPerfect]}>
+                          <Text style={styles.matchPillText}>{matchLabel === 'perfect' ? 'perfect match' : 'match'}</Text>
+                        </View>
+                      ) : (
+                        talent.averageRating && talent.reviewCount && talent.reviewCount >= 5 ? (
+                          <View style={styles.matchPill}>
+                            <Text style={styles.ratingPillText}>⭐ {talent.averageRating.toFixed(1)}</Text>
                           </View>
-                        );
-                      });
-                    })()}
-                    {(talent.skillsWithPrices || []).length > 2 ? (
-                      <View style={styles.moreSkillsBadge}>
-                        <Text style={styles.moreSkillsText}>+{(talent.skillsWithPrices || []).length - 2} meer</Text>
+                        ) : null
+                      )}
+                      <Avatar
+                        uri={talent.avatar}
+                        name={talent.name}
+                        size={60}
+                        style={styles.talentAvatar}
+                      />
+                      <View style={styles.talentInfo}>
+                        <View style={[styles.talentHeader, styles.rowBetween]}>
+                          <Text style={styles.talentName}>{talent.name}</Text>
+                        </View>
+
+                        <View style={[styles.rowBetween, { marginTop: 2 }]}>
+                          {talent.location?.city ? (
+                            <Text style={styles.talentLocation}>📍 {talent.location.city}</Text>
+                          ) : <View />}
+                          {matchLabel && talent.averageRating && talent.reviewCount && talent.reviewCount >= 5 ? (
+                            <View style={styles.ratingPill}>
+                              <Text style={styles.ratingPillText}>⭐ {talent.averageRating.toFixed(1)}</Text>
+                            </View>
+                          ) : null}
+                        </View>
+
+                        {(uniqueUserWant.length > 0 || uniqueTheyWant.length > 0) && (
+                          <View style={{ marginTop: 6, flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+                            {uniqueUserWant.length > 0 && (
+                              <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+                                {uniqueUserWant.map((subject, idx) => (
+                                  <View key={`uw-${idx}`} style={[styles.skillBadge, styles.skillBadgeMatch, { marginBottom: 4 }]}>
+                                    <Text style={styles.matchIndicator}>✓</Text>
+                                    <Text style={styles.skillText}>{subject}</Text>
+                                  </View>
+                                ))}
+                              </View>
+                            )}
+
+                            {uniqueTheyWant.length > 0 && (
+                              <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 4 }}>
+                                {uniqueTheyWant.map((subject, idx) => (
+                                  <View key={`tw-${idx}`} style={[styles.skillBadge, styles.skillBadgeReverseMatch, { marginBottom: 4 }]}>
+                                    <Text style={styles.matchIndicator}>↔</Text>
+                                    <Text style={styles.skillText}>{subject}</Text>
+                                  </View>
+                                ))}
+                              </View>
+                            )}
+                          </View>
+                        )}
+
+                        {sortedSkills.length > 0 && (
+                          <View style={styles.skillsContainer}>
+                            {sortedSkills.slice(0, 2).map((skill, index) => {
+                              const skillLower = skill.subject.toLowerCase();
+                              const isMatch = userLearnSkills.some(ls => ls.subject.toLowerCase() === skillLower);
+                              const isReverseMatch = !isMatch &&
+                                (talent.learnSkillSubjects || []).includes(skillLower) &&
+                                userSkills.some(s => s.subject.toLowerCase() === skillLower);
+                              return (
+                                <View key={index} style={[
+                                  styles.skillBadge,
+                                  isMatch && styles.skillBadgeMatch,
+                                  isReverseMatch && styles.skillBadgeReverseMatch
+                                ]}>
+                                  {isMatch && <Text style={styles.matchIndicator}>✓</Text>}
+                                  {isReverseMatch && <Text style={styles.matchIndicator}>↔</Text>}
+                                  <Text style={styles.skillText}>{skill.subject}</Text>
+                                </View>
+                              );
+                            })}
+                            {sortedSkills.length > 2 && (
+                              <View style={styles.moreSkillsBadge}>
+                                <Text style={styles.moreSkillsText}>+{sortedSkills.length - 2} meer</Text>
+                              </View>
+                            )}
+                          </View>
+                        )}
                       </View>
-                    ) : null}
-                  </View>
-                </View>
+                    </>
+                  );
+                })()}
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -402,22 +501,58 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
                   </TouchableOpacity>
                 </View>
                 <ScrollView showsVerticalScrollIndicator={false}>
-                  {clusterTalents.map((t, idx) => (
-                    <TouchableOpacity
-                      key={idx}
-                      style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(148, 163, 184, 0.1)' }}
-                      onPress={() => {
-                        setClusterModalVisible(false);
-                        if (t.id) handleTalentPress(t.id);
-                      }}
-                    >
-                      <Avatar uri={t.avatar} name={t.name} size={50} style={{ marginRight: 15 }} />
-                      <View>
-                        <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>{t.name}</Text>
-                        <Text style={{ color: '#7c3aed', fontSize: 12 }}>Bekijk profiel</Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
+                  {clusterTalents.map((t, idx) => {
+                    const talent = t as Talent;
+
+                    // Logic from List View (reused)
+                    const userWantMatches = (talent.skillsWithPrices || []).filter(skill =>
+                      userLearnSkills.some(ls => ls.subject.toLowerCase() === skill.subject.toLowerCase())
+                    );
+                    const theyWantMatches = (talent.learnSkillSubjects || []).filter(subject =>
+                      userSkills.some(s => s.subject.toLowerCase() === subject.toLowerCase())
+                    );
+
+                    const uniqueUserWant = uniqByNormalized(userWantMatches.map(s => s.subject));
+                    const uniqueTheyWant = uniqByNormalized(theyWantMatches);
+
+                    return (
+                      <TouchableOpacity
+                        key={idx}
+                        style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(148, 163, 184, 0.1)' }}
+                        onPress={() => {
+                          setClusterModalVisible(false);
+                          if (t.id) handleTalentPress(t.id);
+                        }}
+                      >
+                        <Avatar uri={t.avatar} name={t.name} size={50} style={{ marginRight: 15 }} />
+                        <View style={{ flex: 1 }}>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>{t.name}</Text>
+                            <Text style={{ color: '#7c3aed', fontSize: 12 }}>Bekijk profiel</Text>
+                          </View>
+
+                          {/* Matches Display */}
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                            {uniqueUserWant.slice(0, 2).map((subject, i) => (
+                              <View key={`uw-${i}`} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(16, 185, 129, 0.2)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                <Text style={{ color: '#10b981', fontSize: 10, marginRight: 4 }}>✓</Text>
+                                <Text style={{ color: '#10b981', fontSize: 11 }}>{subject}</Text>
+                              </View>
+                            ))}
+                            {uniqueTheyWant.slice(0, 2).map((subject, i) => (
+                              <View key={`tw-${i}`} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(124, 58, 237, 0.2)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                <Text style={{ color: '#a78bfa', fontSize: 10, marginRight: 4 }}>↔</Text>
+                                <Text style={{ color: '#a78bfa', fontSize: 11 }}>{subject}</Text>
+                              </View>
+                            ))}
+                            {(uniqueUserWant.length + uniqueTheyWant.length) === 0 && (
+                              <Text style={{ color: '#94A3B8', fontSize: 12 }}>Geen directe match</Text>
+                            )}
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </ScrollView>
               </View>
             </TouchableWithoutFeedback>
