@@ -183,23 +183,25 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
             },
           ]}
         >
-          {distanceOptions.map((distance) => (
-            <TouchableOpacity
-              key={distance}
-              style={[styles.dropdownOption, selectedDistance === distance && styles.dropdownOptionActive]}
-              onPress={() => {
-                onSelectDistance(distance);
-                setShowDistanceDropdown(false);
-              }}
-            >
-              <Text
-                style={[styles.dropdownOptionText, selectedDistance === distance && styles.dropdownOptionTextActive]}
+          <ScrollView style={{ flex: 1 }} scrollEnabled showsVerticalScrollIndicator={true} nestedScrollEnabled={true}>
+            {distanceOptions.map((distance) => (
+              <TouchableOpacity
+                key={distance}
+                style={[styles.dropdownOption, selectedDistance === distance && styles.dropdownOptionActive]}
+                onPress={() => {
+                  onSelectDistance(distance);
+                  setShowDistanceDropdown(false);
+                }}
               >
-                {`${distance} km`}
-              </Text>
-              {selectedDistance === distance && <Ionicons name="checkmark" size={18} color="#7c3aed" />}
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[styles.dropdownOptionText, selectedDistance === distance && styles.dropdownOptionTextActive]}
+                >
+                  {`${distance} km`}
+                </Text>
+                {selectedDistance === distance && <Ionicons name="checkmark" size={18} color="#7c3aed" />}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </Animated.View>
       )}
 
@@ -212,7 +214,6 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
               left: categoryLayout.x + 16,
               minWidth: Math.max(categoryLayout.width, 160),
               maxWidth: Math.max(categoryLayout.width, 200),
-              maxHeight: 300,
               opacity: categoryDropdownAnim,
               transform: [
                 {
@@ -231,7 +232,7 @@ export const FiltersBar: React.FC<FiltersBarProps> = ({
             },
           ]}
         >
-          <ScrollView scrollEnabled showsVerticalScrollIndicator>
+          <ScrollView scrollEnabled showsVerticalScrollIndicator={true} nestedScrollEnabled={true} style={{ flex: 1 }}>
             {categoryOptions.map((category) => (
               <TouchableOpacity
                 key={category.id}

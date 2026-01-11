@@ -26,6 +26,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { resolveSkillIntelligence, SkillResolutionResult } from '../services/skillIntelligenceService';
 import { ROOT_CATEGORIES } from '../constants/categories';
 import { useRef } from 'react';
+import { FullScreenVideoModal } from '../components/FullScreenVideoModal';
 
 interface ProfileScreenProps {
   onNavigate?: (screen: 'availability') => void;
@@ -50,11 +51,19 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
   const [learnModalVisible, setLearnModalVisible] = useState(false);
   const [newLearnSubject, setNewLearnSubject] = useState('');
 
-  const [videoModalVisible, setVideoModalVisible] = useState(false);
+  const [editVideoModalVisible, setEditVideoModalVisible] = useState(false);
   const [editingVideoIndex, setEditingVideoIndex] = useState<number | null>(null);
   const [videoTitle, setVideoTitle] = useState('');
   const [videoDescription, setVideoDescription] = useState('');
   const [selectedVideoUri, setSelectedVideoUri] = useState<string | null>(null);
+
+  // Player State
+  const [playerModalVisible, setPlayerModalVisible] = useState(false);
+  const [playingVideo, setPlayingVideo] = useState<{
+    url: string;
+    title: string;
+    description: string;
+  } | null>(null);
 
   const [profileName, setProfileName] = useState('');
   const [profileLocation, setProfileLocation] = useState('');
@@ -355,7 +364,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
       setEditingVideoIndex(index);
       setVideoTitle('');
       setVideoDescription('');
-      setVideoModalVisible(true);
+      setEditVideoModalVisible(true);
     }
   };
 
@@ -398,7 +407,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
       }
 
       await updateUserProfile({ promoVideos: currentVideos });
-      setVideoModalVisible(false);
+      setEditVideoModalVisible(false);
       setSelectedVideoUri(null);
     } catch (error) {
       console.error('Error saving video metadata:', error);
@@ -705,10 +714,12 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                     key={index}
                     onPress={() => {
                       if (hasVideo) {
-                        Linking.openURL(videoUrl).catch(err => {
-                          console.error('Error opening video URL:', err);
-                          Alert.alert('Fout', 'Kon de video niet openen');
+                        setPlayingVideo({
+                          url: videoUrl,
+                          title: videoTitleVal,
+                          description: videoDescVal
                         });
+                        setPlayerModalVisible(true);
                       } else {
                         handleVideoPicker(index);
                       }
@@ -741,7 +752,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                             setEditingVideoIndex(index);
                             setVideoTitle(videoTitleVal);
                             setVideoDescription(videoDescVal);
-                            setVideoModalVisible(true);
+                            setEditVideoModalVisible(true);
                           }}
                           style={{
                             position: 'absolute',
@@ -836,9 +847,9 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
         <Modal
           animationType="slide"
           transparent={true}
-          visible={videoModalVisible}
+          visible={editVideoModalVisible}
           onRequestClose={() => {
-            setVideoModalVisible(false);
+            setEditVideoModalVisible(false);
             setSelectedVideoUri(null);
           }}
         >
@@ -872,7 +883,7 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
                 <View style={styles.modalButtons}>
                   <TouchableOpacity
                     onPress={() => {
-                      setVideoModalVisible(false);
+                      setEditVideoModalVisible(false);
                       setSelectedVideoUri(null);
                       setVideoTitle('');
                       setVideoDescription('');
@@ -974,138 +985,158 @@ export default function ProfileScreen({ onNavigate }: ProfileScreenProps) {
         >
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Profiel Bewerken</Text>
+              <View style={[styles.modalContent, { maxHeight: '80%' }]}>
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  <Text style={styles.modalTitle}>Profiel Bewerken</Text>
 
-
-                <Text style={styles.inputLabel}>Gebruikersnaam</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Gebruikersnaam..."
-                  value={tempName}
-                  onChangeText={setTempName}
-                />
-
-                <Text style={styles.inputLabel}>Adres of Straat</Text>
-                <View style={{ zIndex: 1000 }}>
+                  {/* Content wrapped in ScrollView */}
+                  <Text style={styles.inputLabel}>Gebruikersnaam</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="Typ je adres..."
-                    value={tempStreet}
-                    onChangeText={searchAddress}
-                    onFocus={() => addressSuggestions.length > 0 && setShowAddressSuggestions(true)}
+                    placeholder="Gebruikersnaam..."
+                    value={tempName}
+                    onChangeText={setTempName}
                   />
-                  {showAddressSuggestions && (
-                    <ScrollView
-                      style={[styles.autocompleteDropdown, { maxHeight: 150 }]}
-                      nestedScrollEnabled={true}
-                      keyboardShouldPersistTaps="handled"
-                    >
-                      {addressSuggestions.map((item, index) => {
-                        const { properties } = item;
-                        const mainText = properties.street
-                          ? `${properties.street}${properties.housenumber ? ' ' + properties.housenumber : ''}`
-                          : properties.name;
-                        const subText = `${properties.postcode || ''} ${properties.city || ''} ${properties.country || ''}`.trim();
 
-                        return (
-                          <TouchableOpacity
-                            key={index}
-                            style={styles.suggestionItem}
-                            onPress={() => selectAddressSuggestion(item)}
-                          >
-                            <Text style={styles.suggestionText}>{mainText}</Text>
-                            {subText ? (
-                              <Text style={styles.suggestionSubtext}>{subText}</Text>
-                            ) : null}
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </ScrollView>
-                  )}
-                </View>
-
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <View style={{ flex: 0.48 }}>
-                    <Text style={styles.inputLabel}>Postcode</Text>
+                  <Text style={styles.inputLabel}>Adres of Straat</Text>
+                  <View style={{ zIndex: 1000 }}>
                     <TextInput
                       style={styles.input}
-                      placeholder="Bijv. 1030"
-                      value={tempZipCode}
-                      onChangeText={setTempZipCode}
+                      placeholder="Typ je adres..."
+                      value={tempStreet}
+                      onChangeText={searchAddress}
+                      onFocus={() => addressSuggestions.length > 0 && setShowAddressSuggestions(true)}
                     />
-                  </View>
-                  <View style={{ flex: 0.48 }}>
-                    <Text style={styles.inputLabel}>Stad</Text>
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Bijv. Brussel"
-                      value={tempCity}
-                      onChangeText={setTempCity}
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.labelContainer}>
-                  <Text style={styles.inputLabel}>Over mij</Text>
-                  <Text style={styles.charCount}>{tempAbout?.length || 0}/175</Text>
-                </View>
-                <TextInput
-                  style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
-                  placeholder="Vertel iets over jezelf..."
-                  value={tempAbout}
-                  onChangeText={setTempAbout}
-                  multiline={true}
-                  numberOfLines={4}
-                  maxLength={175}
-                />
-
-                <Text style={styles.inputLabel}>Profielfoto</Text>
-                <View style={styles.imageEditContainer}>
-                  <View style={styles.tempImageContainer}>
-                    {tempImage ? (
-                      <Image source={{ uri: tempImage as string }} style={styles.tempImage} />
-                    ) : (
-                      <View style={styles.profileImagePlaceholder}>
-                        <Ionicons name="person" size={40} color="#ccc" />
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.imageButtons}>
-                    <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
-                      <Ionicons name="image-outline" size={20} color={authColors.text} />
-                      <Text style={styles.imagePickerButtonText}>Galerij</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.imagePickerButton} onPress={takePhoto}>
-                      <Ionicons name="camera-outline" size={20} color={authColors.text} />
-                      <Text style={styles.imagePickerButtonText}>Camera</Text>
-                    </TouchableOpacity>
-                    {(tempImage || userProfile?.photoURL) && (
-                      <TouchableOpacity
-                        style={[styles.imagePickerButton, { borderColor: '#ff4444' }]}
-                        onPress={() => setTempImage(null)}
+                    {showAddressSuggestions && (
+                      <ScrollView
+                        style={[styles.autocompleteDropdown, { maxHeight: 150 }]}
+                        nestedScrollEnabled={true}
+                        keyboardShouldPersistTaps="handled"
                       >
-                        <Ionicons name="trash-outline" size={20} color="#ff4444" />
-                        <Text style={[styles.imagePickerButtonText, { color: '#ff4444' }]}>Verwijder</Text>
-                      </TouchableOpacity>
+                        {addressSuggestions.map((item, index) => {
+                          const { properties } = item;
+                          const mainText = properties.street
+                            ? `${properties.street}${properties.housenumber ? ' ' + properties.housenumber : ''}`
+                            : properties.name;
+                          const subText = `${properties.postcode || ''} ${properties.city || ''} ${properties.country || ''}`.trim();
+
+                          return (
+                            <TouchableOpacity
+                              key={index}
+                              style={styles.suggestionItem}
+                              onPress={() => selectAddressSuggestion(item)}
+                            >
+                              <Text style={styles.suggestionText}>{mainText}</Text>
+                              {subText ? (
+                                <Text style={styles.suggestionSubtext}>{subText}</Text>
+                              ) : null}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </ScrollView>
                     )}
                   </View>
-                </View>
 
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.cancelButton}>
-                    <Text style={styles.cancelButtonText}>Annuleren</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={saveProfile} style={styles.saveButton}>
-                    <Text style={styles.saveButtonText}>Opslaan</Text>
-                  </TouchableOpacity>
-                </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <View style={{ flex: 0.48 }}>
+                      <Text style={styles.inputLabel}>Postcode</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Bijv. 1030"
+                        value={tempZipCode}
+                        onChangeText={setTempZipCode}
+                      />
+                    </View>
+                    <View style={{ flex: 0.48 }}>
+                      <Text style={styles.inputLabel}>Stad</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="Bijv. Brussel"
+                        value={tempCity}
+                        onChangeText={setTempCity}
+                      />
+                    </View>
+                  </View>
+
+                  <View style={styles.labelContainer}>
+                    <Text style={styles.inputLabel}>Over mij</Text>
+                    <Text style={styles.charCount}>{tempAbout?.length || 0}/175</Text>
+                  </View>
+                  <TextInput
+                    style={[styles.input, { height: 100, textAlignVertical: 'top' }]}
+                    placeholder="Vertel iets over jezelf..."
+                    value={tempAbout}
+                    onChangeText={setTempAbout}
+                    multiline={true}
+                    numberOfLines={4}
+                    maxLength={175}
+                  />
+
+                  <Text style={styles.inputLabel}>Profielfoto</Text>
+                  <View style={styles.imageEditContainer}>
+                    <View style={styles.tempImageContainer}>
+                      {tempImage ? (
+                        <Image source={{ uri: tempImage as string }} style={styles.tempImage} />
+                      ) : (
+                        <View style={styles.profileImagePlaceholder}>
+                          <Ionicons name="person" size={40} color="#ccc" />
+                        </View>
+                      )}
+                    </View>
+                    <View style={styles.imageButtons}>
+                      <TouchableOpacity style={styles.imagePickerButton} onPress={pickImage}>
+                        <Ionicons name="image-outline" size={20} color={authColors.text} />
+                        <Text style={styles.imagePickerButtonText}>Galerij</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.imagePickerButton} onPress={takePhoto}>
+                        <Ionicons name="camera-outline" size={20} color={authColors.text} />
+                        <Text style={styles.imagePickerButtonText}>Camera</Text>
+                      </TouchableOpacity>
+                      {(tempImage || userProfile?.photoURL) && (
+                        <TouchableOpacity
+                          style={[styles.imagePickerButton, { borderColor: '#ff4444' }]}
+                          onPress={() => setTempImage(null)}
+                        >
+                          <Ionicons name="trash-outline" size={20} color="#ff4444" />
+                          <Text style={[styles.imagePickerButtonText, { color: '#ff4444' }]}>Verwijder</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity onPress={() => setEditModalVisible(false)} style={styles.cancelButton}>
+                      <Text style={styles.cancelButtonText}>Annuleren</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={saveProfile} style={styles.saveButton}>
+                      <Text style={styles.saveButtonText}>Opslaan</Text>
+                    </TouchableOpacity>
+                  </View>
+                </ScrollView>
               </View>
             </View>
           </TouchableWithoutFeedback>
         </Modal>
 
       </ScrollView>
+
+      {/* Full Screen Player Modal */}
+      {playingVideo && userProfile && (
+        <FullScreenVideoModal
+          visible={playerModalVisible}
+          videoUrl={playingVideo.url}
+          title={playingVideo.title}
+          description={playingVideo.description}
+          onClose={() => {
+            setPlayerModalVisible(false);
+            setPlayingVideo(null);
+          }}
+          userProfile={{
+            name: userProfile.displayName,
+            avatar: userProfile.photoURL || '',
+          }}
+        />
+      )}
     </SafeAreaView >
   );
 }
