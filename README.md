@@ -168,6 +168,38 @@ Als de app geen skills herkent, controleer dan of uw telefoon en computer op het
 
 ---
 
+## API Documentatie
+
+Een overzicht van alle interne en externe API's die binnen het Skillsy ecosysteem worden gebruikt.
+
+### 1. Skillsy Intelligence Service (Intern)
+Onze eigen Python/FastAPI microservice die fungeert als het 'brein' voor skill-herkenning.
+- **Base URL**: `http://<LOCAL_PC_IP>:8000`
+
+| Methode | Endpoint | Beschrijving | Request Body |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/resolve-skill` | Analyseert, normaliseert en categoriseert een skill. | `{ "text": "string", "locale": "nl" }` |
+| `GET` | `/health` | Eenvoudige check of de service online is. | - |
+
+### 2. Externe Services
+Deze API's worden aangeroepen door de Intelligence Service voor data-verrijking of door de app voor assets.
+
+| Service | Doel | Endpoint URL |
+| :--- | :--- | :--- |
+| **DuckDuckGo** | Context zoeken voor onbekende skills (Web Augmentatie). | `https://api.duckduckgo.com/?q={term}&format=json` |
+| **Wikipedia** | Fallback definities ophalen (NL & EN). | `https://nl.wikipedia.org/api/rest_v1/page/summary/{term}` |
+| **UI Avatars** | Genereren van standaard avatars o.b.v. naam. | `https://ui-avatars.com/api/?name={naam}` |
+| **OpenStreetMap (Nominatim)** | Omzetten van adressen naar coördinaten (Geocoding). | `https://nominatim.openstreetmap.org/search` |
+| **OpenStreetMap (Tiles)** | Kaartlagen tonen in de app. | `https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png` |
+
+### 3. Firebase (BaaS)
+Wij gebruiken Google Firebase als managed backend. Er is geen traditionele REST API voor deze onderdelen; de communicatie verloopt via de Firebase SDK.
+- **Firestore**: Real-time NoSQL database.
+- **Authentication**: Veilig inloggen en sessiebeheer.
+- **Storage**: Opslag van gebruikersmedia (foto's/video's).
+
+---
+
 ## Credits
 
 | Project Team | Met begeleiding van |
