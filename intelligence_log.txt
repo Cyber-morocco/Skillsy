@@ -292,3 +292,27 @@ Discovery Category Similarities:
   - fotografie: 0.0325
   - overig: 0.1875
 Final Decision: DISCOVERY in Category 'academisch'
+
+--- NEW REQUEST: 'houtbewerking' ---
+Input Text: houtbewerking
+Web Augmented: True
+Enriched Text: Houtbewerking of houtverwerking is het bewerken van hout. Deze bewerking kan constructiewerk of houtsnijwerk (kunst) inhouden. Houtbewerking kan zowel handmatig als machinaal gedaan worden....
+Calculation Details (Top 3 Candidates):
+  - [Engels bijles] Total: 0.1572 (Sem: 0.0404, Fuz: 0.2300, Pop: 0.4400)
+  - [HTML & CSS] Total: 0.1774 (Sem: 0.0388, Fuz: 0.2000, Pop: 0.6400)
+  - [Akoestische gitaar] Total: 0.1665 (Sem: 0.0355, Fuz: 0.3100, Pop: 0.3600)
+Discovery Category Similarities:
+  - muziek: 0.3048
+  - sport: 0.1839
+  - talen: 0.1675
+  - tech: 0.2610
+  - creatief: 0.4104
+  - academisch: 0.1557
+  - design: 0.1830
+  - koken: 0.3166
+  - business: 0.2025
+  - zorg: 0.0257
+  - ambacht: 0.6956
+  - fotografie: 0.2628
+  - overig: 0.1367
+Final Decision: DISCOVERY in Category 'ambacht'

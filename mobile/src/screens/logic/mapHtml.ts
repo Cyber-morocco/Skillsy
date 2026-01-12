@@ -194,7 +194,8 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents, clusters, filter
                  
                  marker.on('click', () => {
                      const talentData = cluster.talents.map(t => ({ 
-                       id: t.id, 
+                       id: t.id,
+                        userId: t.userId || t.id, 
                        name: t.name || t.displayName, 
                        avatar: t.avatar || t.photoURL 
                      }));
@@ -302,3 +303,4 @@ export const buildMapHtml = ({ userLocation, radiusKm, talents, clusters, filter
     </html>
   `;
 };
+

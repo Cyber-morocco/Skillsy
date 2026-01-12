@@ -428,9 +428,9 @@ export const useExploreMap = () => {
     }
   };
 
-  // Reset map to user/profile location when address search is cleared
+  // Reset map to user/profile location when search is cleared
   useEffect(() => {
-    if (searchType === 'address' && searchQuery === '') {
+    if (searchQuery === '') {
       if (locationPermissionGranted) {
         // If GPS is allowed, use it (centerToUserLocation handles fetching)
         centerToUserLocation();
@@ -439,7 +439,7 @@ export const useExploreMap = () => {
         setUserLocation(profileLocationRef.current);
       }
     }
-  }, [searchQuery, searchType, locationPermissionGranted]);
+  }, [searchQuery, locationPermissionGranted]);
 
   return {
     CATEGORY_OPTIONS,

@@ -73,7 +73,7 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
 
   const filtersAnim = useRef(new Animated.Value(0)).current;
 
-  const filtersActive = (selectedDistance !== null) || (selectedCategories.length > 0) || (Boolean(skillSearch && skillSearch.trim().length > 0));
+  const filtersActive = (selectedDistance !== null) || (selectedCategories.length > 0) || (searchType === 'skill' && Boolean(skillSearch && skillSearch.trim().length > 0));
 
   useEffect(() => {
     if (viewMode !== 'list') {
@@ -521,7 +521,13 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
                         style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(148, 163, 184, 0.1)' }}
                         onPress={() => {
                           setClusterModalVisible(false);
-                          if (t.id) handleTalentPress(t.id);
+                          if (t.userId && onViewProfile) {
+                            onViewProfile({
+                              uid: t.userId,
+                              name: t.name,
+                              avatar: t.avatar
+                            });
+                          }
                         }}
                       >
                         <Avatar uri={t.avatar} name={t.name} size={50} style={{ marginRight: 15 }} />
@@ -545,9 +551,7 @@ export default function ExploreMapScreen({ onViewProfile, onVideoFeed }: Explore
                                 <Text style={{ color: '#a78bfa', fontSize: 11 }}>{subject}</Text>
                               </View>
                             ))}
-                            {(uniqueUserWant.length + uniqueTheyWant.length) === 0 && (
-                              <Text style={{ color: '#94A3B8', fontSize: 12 }}>Geen directe match</Text>
-                            )}
+                            
                           </View>
                         </View>
                       </TouchableOpacity>
